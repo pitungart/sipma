@@ -697,6 +697,7 @@
 }
 
 .fi-header-subheading {
+    max-width: 56rem; /* setara max-w-4xl (bawaan Filament max-w-2xl terlalu sempit) */
     margin-top: 4px;
     font-size: 13px;
     color: var(--sp-muted);
@@ -930,6 +931,12 @@ input.fi-input,
 }
 
 .fi-input::placeholder {
+    color: var(--sp-light);
+}
+
+/* Select bawaan: opsi kosong ("Pilih salah satu opsi") tampil sebagai placeholder, sama dengan
+   select yang bisa dicari — bukan teks gelap seperti isian */
+select.fi-select-input:has(option[value='']:checked) {
     color: var(--sp-light);
 }
 
@@ -2864,6 +2871,688 @@ input.fi-input,
     font-weight: 600;
     text-align: center;
     color: var(--sp-primary);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   20. Sistem → Penomoran
+   Hanya token yang ada: primary (+ -l, -ink), netral, danger untuk galat.
+   ───────────────────────────────────────────────────────────── */
+.sipma-tile-sm {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+}
+
+.sipma-tile-sm .sipma-tile-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Kartu jenis nomor */
+.sipma-num-types {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.sipma-num-type {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    text-align: start;
+    transition: box-shadow 0.12s ease;
+}
+
+.sipma-num-type:hover {
+    box-shadow: 0 0 0 1px var(--sp-border-2);
+}
+
+/* Tanpa var(--sp-shadow): di mode gelap nilainya "none" dan membatalkan seluruh deklarasi */
+.sipma-num-type.is-active {
+    box-shadow: 0 0 0 2px var(--sp-primary);
+}
+
+.sipma-num-type.is-active .sipma-tile {
+    background-color: var(--sp-primary);
+    color: #FFFFFF;
+}
+
+.sipma-num-type:focus-visible {
+    outline: 2px solid var(--sp-primary);
+    outline-offset: 2px;
+}
+
+.sipma-num-type-label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--sp-muted);
+}
+
+.sipma-num-type.is-active .sipma-num-type-label {
+    color: var(--sp-primary-ink);
+}
+
+.sipma-num-type-preview {
+    display: block;
+    overflow: hidden;
+    margin-top: 2px;
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 13.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--sp-heading);
+}
+
+/* Titik "belum disimpan" di pojok kartu */
+.sipma-num-type-dirty {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background-color: var(--sp-primary);
+    box-shadow: 0 0 0 3px var(--sp-primary-l);
+}
+
+/* Kepala kartu: pratinjau nomor berikutnya (chip) & terakhir terbit, satu baris */
+/* Kepala kartu editor (keputusan 7 Oktober 2026, pengecualian R-2.15/R-2.16): lingkaran-lingkaran
+   besar berwarna lembut yang saling menumpuk lalu diberi blur besar, seperti teknik "layer blur" —
+   tone lapang keluarga primary & warning di atas dasar putih-lavender. Statis. */
+.sipma-num-head {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px 32px;
+    overflow: hidden;
+    padding: 24px;
+    background-color: #F6F4FD;
+}
+
+.sipma-num-aura {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    filter: blur(56px);
+    pointer-events: none;
+}
+
+.sipma-num-shape {
+    position: absolute;
+    display: block;
+    aspect-ratio: 1;
+    border-radius: 50%;
+}
+
+/* Berselang-seling sepanjang lebar: primary di atas, warning di bawah, agar kuning tersebar rata */
+.sipma-num-shape.is-1 { left: -8%;  top: -60%; width: 26%; background-color: #B4B5F8; } /* primary muda */
+.sipma-num-shape.is-2 { left: 4%;   top: 45%;  width: 22%; background-color: #FBEBC4; } /* warning pucat */
+.sipma-num-shape.is-3 { left: 18%;  top: -45%; width: 26%; background-color: #8C8EF4; } /* primary */
+.sipma-num-shape.is-4 { left: 32%;  top: 40%;  width: 22%; background-color: #F6DFA4; } /* krem warning */
+.sipma-num-shape.is-5 { left: 40%;  top: -55%; width: 20%; background-color: #6466E9; } /* primary dasar */
+.sipma-num-shape.is-6 { left: 61%;  top: 45%;  width: 20%; background-color: #EBC35F; } /* warning pekat */
+.sipma-num-shape.is-7 { right: 10%; top: -60%; width: 18%; background-color: #B9BAF9; } /* lavender muda */
+.sipma-num-shape.is-8 { right: -8%; top: -20%; width: 20%; background-color: #E0E0FD; } /* lavender pucat */
+.sipma-num-shape.is-9 { right: 2%;  top: 50%;  width: 18%; background-color: #F8E3B0; } /* krem warning */
+
+.sipma-num-head-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+}
+
+.sipma-num-head-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 7px;
+    background-color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sp-primary-ink);
+}
+
+.sipma-num-head-badge-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.sipma-num-head-when {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #4D5375;
+}
+
+/* Judul pekat (bukan teks bergradien) agar tidak tenggelam di latar berwarna */
+.sipma-num-head-title {
+    margin-top: 8px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    color: #33368A;
+}
+
+/* Kotak pratinjau: kaca buram transparan bertepi putih */
+.sipma-num-live {
+    min-width: 300px;
+    padding: 14px 16px;
+    border-radius: var(--sp-radius-card);
+    background-color: rgba(255, 255, 255, 0.18);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65), 0 10px 30px rgba(75, 77, 214, 0.10);
+}
+
+.sipma-num-live-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--sp-muted);
+}
+
+.sipma-num-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background-color: var(--sp-success-l);
+    font-size: 10.5px;
+    letter-spacing: 0.3px;
+    text-transform: none;
+    color: var(--sp-success-ink);
+}
+
+.sipma-num-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background-color: #5EC26A;
+    animation: sipma-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes sipma-pulse {
+    50% { opacity: 0.35; }
+}
+
+.sipma-num-live-number {
+    margin: 8px 0 10px;
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    color: var(--sp-heading);
+    word-break: break-all;
+}
+
+.sipma-num-live-number.is-empty {
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--sp-muted);
+}
+
+.sipma-num-live-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(32, 41, 58, 0.08);
+    font-size: 12px;
+    color: var(--sp-muted);
+}
+
+.sipma-num-live-last {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    color: var(--sp-heading);
+}
+
+.sipma-num-live-last.is-none {
+    font-family: inherit;
+}
+
+/* Mode gelap: dasar gelap, lingkaran dipudarkan agar tidak silau */
+.dark .sipma-num-head {
+    background-color: #1A1830;
+}
+
+.dark .sipma-num-aura {
+    opacity: 0.38;
+}
+
+.dark .sipma-num-head-badge {
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.dark .sipma-num-head-title {
+    color: #FFFFFF;
+}
+
+.dark .sipma-num-head-when {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.dark .sipma-num-live {
+    background-color: rgba(22, 27, 43, 0.25);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10), 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.dark .sipma-num-live-foot {
+    border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+    .sipma-num-live-dot {
+        animation: none;
+    }
+}
+
+/* Kaki kartu editor: status simpan di kiri, tombol Simpan di kanan */
+.sipma-num-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding: 14px 24px;
+    border-top: 1px solid var(--sp-border);
+    background-color: var(--sp-subtle);
+}
+
+.sipma-num-foot-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--sp-success-ink);
+}
+
+.sipma-num-foot.is-dirty .sipma-num-foot-status {
+    color: var(--sp-warning-ink);
+}
+
+.sipma-num-foot-icon {
+    width: 16px;
+    height: 16px;
+    flex: none;
+}
+
+/* Aturan penomoran di atas daftar atribut */
+.sipma-num-rules {
+    margin-bottom: 14px;
+    font-size: 13px;
+}
+
+.sipma-num-rules ul {
+    margin-top: 4px;
+    padding-inline-start: 18px;
+    list-style: disc;
+}
+
+.sipma-num-rules li + li {
+    margin-top: 2px;
+}
+
+/* Yang perlu diketahui: tiga fakta sejajar di satu kartu */
+.sipma-num-facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px 24px;
+    padding: 18px 24px;
+}
+
+.sipma-num-fact {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.sipma-num-fact .sipma-tile {
+    flex: none;
+}
+
+.sipma-num-fact-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-num-fact-body {
+    margin-top: 2px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--sp-muted);
+}
+
+/* Blok isi kartu, dipisah satu garis tipis */
+.sipma-num-block {
+    padding: 20px 24px;
+}
+
+.sipma-num-block + .sipma-num-block {
+    border-top: 1px solid var(--sp-border);
+}
+
+.sipma-num-block-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.sipma-num-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Pemisah: chip; yang aktif berlatar primary teks putih (R-4.1q) */
+.sipma-num-seps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sipma-num-sep {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 14px 0 6px;
+    border-radius: var(--sp-radius-control);
+    background-color: var(--sp-card);
+    box-shadow: 0 0 0 1px var(--sp-border-2);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sp-text);
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.sipma-num-sep:hover {
+    background-color: var(--sp-hover);
+    color: var(--sp-heading);
+}
+
+.sipma-num-sep:focus-visible {
+    outline: 2px solid var(--sp-primary);
+    outline-offset: 2px;
+}
+
+.sipma-num-sep-glyph {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background-color: var(--sp-gray-l);
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-num-sep.is-active {
+    background-color: var(--sp-primary);
+    box-shadow: none;
+    color: #FFFFFF;
+}
+
+.sipma-num-sep.is-active .sipma-num-sep-glyph {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #FFFFFF;
+}
+
+/* Daftar atribut: baris bergaris, bukan kotak di dalam kotak (R-2.9) */
+.sipma-num-rows {
+    border-top: 1px solid var(--sp-border);
+}
+
+.sipma-num-row {
+    display: grid;
+    grid-template-columns: 24px 170px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--sp-border);
+}
+
+.sipma-num-index {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background-color: var(--sp-primary-l);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sp-primary-ink);
+}
+
+.sipma-num-kind {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sipma-num-kind-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-num-kind-example {
+    overflow: hidden;
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 12px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--tone-ink);
+}
+
+.sipma-num-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sipma-num-field {
+    flex: 0 1 190px;
+    min-width: 0;
+}
+
+.sipma-num-field.is-wide {
+    flex: 1 1 260px;
+    max-width: 420px;
+}
+
+.sipma-num-field.is-narrow {
+    flex: 0 1 170px;
+}
+
+.sipma-num-error {
+    flex-basis: 100%;
+    font-size: 12.5px;
+    color: var(--sp-danger-ink);
+}
+
+.sipma-num-error.is-block {
+    margin-top: 12px;
+}
+
+.sipma-num-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Naik / turun / hapus: target 34px, ikon teks isi (kontras), hapus merah */
+.sipma-num-act {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--sp-radius-control);
+    box-shadow: 0 0 0 1px var(--sp-border);
+    color: var(--sp-text);
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.sipma-num-act:hover:not(:disabled) {
+    background-color: var(--sp-hover);
+    color: var(--sp-heading);
+}
+
+.sipma-num-act.is-danger {
+    color: var(--sp-danger-ink);
+}
+
+.sipma-num-act.is-danger:hover {
+    background-color: var(--sp-danger-l);
+    color: var(--sp-danger-ink);
+}
+
+.sipma-num-act:disabled {
+    box-shadow: none;
+    color: var(--sp-border-2);
+    cursor: not-allowed;
+}
+
+.sipma-num-act:focus-visible {
+    outline: 2px solid var(--sp-primary);
+    outline-offset: 2px;
+}
+
+.sipma-num-act-icon {
+    width: 17px;
+    height: 17px;
+}
+
+.sipma-num-empty {
+    padding: 28px 16px;
+    border: 1px dashed var(--sp-border-2);
+    border-radius: var(--sp-radius-control);
+    text-align: center;
+    font-size: 13px;
+    color: var(--sp-muted);
+}
+
+/* Nomor di dalam teks (modal konfirmasi simpan) */
+.sipma-num-mono {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-weight: 500;
+    color: var(--sp-heading);
+    white-space: nowrap;
+}
+
+.sipma-num-mono.is-new {
+    color: var(--sp-primary-ink);
+}
+
+/* Modal simulasi */
+.sipma-num-sim {
+    border-top: 1px solid var(--sp-border);
+}
+
+.sipma-num-sim-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 2px;
+    border-bottom: 1px solid var(--sp-border);
+}
+
+.sipma-num-sim-order {
+    font-size: 12.5px;
+    color: var(--sp-muted);
+}
+
+.sipma-num-sim-number {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--sp-heading);
+}
+
+.sipma-num-sim-row:first-child .sipma-num-sim-number {
+    color: var(--sp-primary-ink);
+}
+
+.sipma-num-sim-empty {
+    font-size: 13px;
+    color: var(--sp-muted);
+}
+
+@media (max-width: 1023px) {
+    .sipma-num-types {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sipma-num-facts {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* Baris atribut: nomor, tipe, tombol di atas; isian selebar baris di bawahnya */
+    .sipma-num-row {
+        grid-template-columns: 24px minmax(0, 1fr) auto;
+        row-gap: 10px;
+    }
+
+    .sipma-num-fields {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .sipma-num-field,
+    .sipma-num-field.is-wide,
+    .sipma-num-field.is-narrow {
+        flex: 1 1 160px;
+        max-width: none;
+    }
+}
+
+@media (max-width: 639px) {
+    .sipma-num-head,
+    .sipma-num-block,
+    .sipma-num-facts,
+    .sipma-num-foot {
+        padding: 16px;
+    }
+
+    .sipma-num-foot .fi-btn {
+        width: 100%;
+    }
+
+    .sipma-num-live {
+        min-width: 0;
+        width: 100%;
+    }
+
+    /* Kepala lebih tinggi di HP: lingkaran diperbesar agar tetap menutup bidang */
+    .sipma-num-shape {
+        transform: scale(2.2);
+    }
+
+    .sipma-num-live-number {
+        font-size: 19px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

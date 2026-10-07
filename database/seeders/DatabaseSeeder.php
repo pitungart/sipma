@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             CountrySeeder::class,
             FacultySeeder::class,
             ProgramSeeder::class,
+            NumberFormatSeeder::class,
         ]);
 
         User::firstOrCreate(

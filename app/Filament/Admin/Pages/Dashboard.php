@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Resources\StudentResource;
 use App\Models\Student;
 use App\Support\ApplicantExport;
 use Filament\Actions\Action;
@@ -57,6 +58,13 @@ class Dashboard extends BaseDashboard
                 ->action(fn (): StreamedResponse => ApplicantExport::download(
                     Student::query()->visibleTo(Filament::auth()->user()),
                 )),
+
+            // Pendaftaran atas nama pendaftar: hanya Super Admin (keputusan #6)
+            Action::make('newApplication')
+                ->label(__('admin.applicant.actions.new'))
+                ->icon('lucide-plus')
+                ->visible(fn (): bool => StudentResource::canCreate())
+                ->url(fn (): string => StudentResource::getUrl('create')),
         ];
     }
 }

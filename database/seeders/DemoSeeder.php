@@ -7,6 +7,7 @@ use App\Enums\DocumentType;
 use App\Enums\Gender;
 use App\Enums\LoaStatus;
 use App\Enums\MouStatus;
+use App\Enums\NumberType;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\StudentStatus;
@@ -16,6 +17,7 @@ use App\Models\Agent;
 use App\Models\Program;
 use App\Models\Student;
 use App\Models\User;
+use App\Support\Numbering;
 use App\Support\PrivateFiles;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
@@ -131,6 +133,7 @@ class DemoSeeder extends Seeder
         $agent->mous()->create([
             'file_path' => $this->dummyFile(PrivateFiles::agentDirectory($agent->id, 'mou'), 'pdf'),
             'status' => $mouStatus,
+            'mou_number' => $mouStatus === MouStatus::Approved ? Numbering::next(NumberType::Mou) : null,
             'verified_at' => $mouStatus === MouStatus::Approved ? now()->subMonths(6) : null,
         ]);
 
@@ -171,6 +174,7 @@ class DemoSeeder extends Seeder
             'revision_note' => $status === StudentStatus::Revision ? 'Please re-upload the medical statement signed by a doctor.' : null,
         ]);
         $student->created_at = $createdAt ?? now();
+        $student->registration_number = $isDraft ? null : Numbering::next(NumberType::Application);
         $student->save();
 
         if (! $isDraft || $user) {
@@ -183,7 +187,7 @@ class DemoSeeder extends Seeder
 
         if ($status === StudentStatus::LoaIssued) {
             $student->loa()->create([
-                'loa_number' => 'DEMO/LOA/'.str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT),
+                'loa_number' => Numbering::next(NumberType::Loa),
                 'file_path' => $this->dummyFile(PrivateFiles::studentDirectory($student->id, 'loa'), 'pdf'),
                 'status' => LoaStatus::Uploaded,
                 'issued_at' => now()->subDays(random_int(1, 60)),
@@ -224,6 +228,7 @@ class DemoSeeder extends Seeder
             'amount' => $student->program->admission_fee,
             'proof_file' => $this->dummyFile(PrivateFiles::studentDirectory($student->id, 'payments'), 'png'),
             'status' => $status,
+            'receipt_number' => $status === PaymentStatus::Verified ? Numbering::next(NumberType::Receipt) : null,
             'verified_at' => $status === PaymentStatus::Verified ? now() : null,
         ]);
     }

@@ -3,12 +3,14 @@
 namespace App\Workflow;
 
 use App\Enums\MouStatus;
+use App\Enums\NumberType;
 use App\Enums\UserRole;
 use App\Models\Agent;
 use App\Models\Mou;
 use App\Models\User;
 use App\Notifications\MouReviewed;
 use App\Notifications\MouSubmitted;
+use App\Support\Numbering;
 use App\Support\PrivateFiles;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
@@ -69,6 +71,8 @@ final class MouWorkflow
 
         $mou->update([
             'status' => $status,
+            // Nomor MOU diberikan saat disetujui (Sistem → Penomoran)
+            'mou_number' => $status === MouStatus::Approved ? ($mou->mou_number ?? Numbering::next(NumberType::Mou)) : $mou->mou_number,
             'revision_note' => $note,
             'verified_by' => auth()->id(),
             'verified_at' => now(),

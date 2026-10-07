@@ -4,16 +4,24 @@ namespace App\Filament\Admin\Resources;
 
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
+use App\Enums\Gender;
+use App\Enums\MouStatus;
+use App\Enums\Religion;
 use App\Enums\StudentStatus;
 use App\Filament\Admin\Resources\StudentResource\Pages;
 use App\Models\AcademicPeriod;
+use App\Models\Agent;
+use App\Models\Country;
 use App\Models\Program;
 use App\Models\Student;
 use Filament\Facades\Filament;
+use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 /**
@@ -78,9 +86,115 @@ class StudentResource extends Resource
                 ->whereIn('type', DocumentType::required())]);
     }
 
+    /**
+     * Pendaftaran atas nama pendaftar oleh staf: hanya Super Admin (Gate::before);
+     * StudentPolicy::create menolak Admin Fakultas.
+     */
     public static function canCreate(): bool
     {
-        return false; // pendaftar mendaftar sendiri atau lewat agen
+        return static::can('create');
+    }
+
+    /**
+     * Data pendaftar hanya bisa diubah selama draf atau perlu revisi; setelah diajukan, terkunci.
+     */
+    public static function canEdit(Model $record): bool
+    {
+        return $record->status->isEditable() && static::can('update', $record);
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema([
+            Forms\Components\Section::make(__('admin.applicant.steps.identity'))->columns(2)->schema(static::identityFields()),
+            Forms\Components\Section::make(__('admin.applicant.steps.contact'))->columns(2)->schema(static::contactFields()),
+            Forms\Components\Section::make(__('admin.applicant.steps.passport'))->columns(2)->schema(static::passportFields()),
+            Forms\Components\Section::make(__('admin.applicant.steps.program'))->columns(2)->schema(static::programFields()),
+        ]);
+    }
+
+    /**
+     * @return list<Forms\Components\Component>
+     */
+    public static function identityFields(): array
+    {
+        return [
+            Forms\Components\TextInput::make('full_name')->label(__('workflow.fields.full_name'))->required()->maxLength(255)->columnSpanFull(),
+            Forms\Components\Select::make('gender')->label(__('workflow.fields.gender'))->options(Gender::class)->required(),
+            Forms\Components\Select::make('nationality_code')->label(__('workflow.fields.nationality_code'))->options(fn (): array => Country::options())->searchable()->required(),
+            Forms\Components\TextInput::make('place_of_birth')->label(__('workflow.fields.place_of_birth'))->required()->maxLength(255),
+            Forms\Components\DatePicker::make('date_of_birth')->label(__('workflow.fields.date_of_birth'))->required()->native(false)->maxDate(now()),
+            Forms\Components\Select::make('religion')->label(__('admin.applicant.fields.religion'))->options(Religion::class)->helperText(__('admin.applicant.religion_hint')),
+        ];
+    }
+
+    /**
+     * @return list<Forms\Components\Component>
+     */
+    public static function contactFields(): array
+    {
+        return [
+            Forms\Components\TextInput::make('email')->label(__('workflow.fields.email'))->email()->required()->maxLength(255),
+            Forms\Components\TextInput::make('phone_number')->label(__('workflow.fields.phone_number'))->tel()->required()->maxLength(30)->helperText(__('admin.applicant.phone_hint')),
+            Forms\Components\Textarea::make('permanent_address')->label(__('workflow.fields.permanent_address'))->required()->rows(2)->columnSpanFull(),
+            Forms\Components\TextInput::make('state')->label(__('admin.applicant.fields.state'))->maxLength(100),
+            Forms\Components\TextInput::make('post_code')->label(__('admin.applicant.fields.post_code'))->maxLength(20),
+            Forms\Components\TextInput::make('home_university')->label(__('workflow.fields.home_university'))->required()->maxLength(255),
+            Forms\Components\Select::make('home_university_country_code')->label(__('workflow.fields.home_university_country_code'))->options(fn (): array => Country::options())->searchable()->required(),
+        ];
+    }
+
+    /**
+     * @return list<Forms\Components\Component>
+     */
+    public static function passportFields(): array
+    {
+        return [
+            Forms\Components\TextInput::make('passport_number')
+                ->label(__('workflow.fields.passport_number'))
+                ->required()
+                ->maxLength(50)
+                ->dehydrateStateUsing(fn (string $state): string => mb_strtoupper(trim($state)))
+                ->columnSpanFull(),
+            Forms\Components\DatePicker::make('date_of_issued_passport')->label(__('workflow.fields.date_of_issued_passport'))->required()->native(false)->maxDate(now()),
+            Forms\Components\DatePicker::make('date_of_passport_expiry')->label(__('workflow.fields.date_of_passport_expiry'))->required()->native(false)->after('date_of_issued_passport'),
+        ];
+    }
+
+    /**
+     * @return list<Forms\Components\Component>
+     */
+    public static function programFields(): array
+    {
+        return [
+            Forms\Components\Select::make('program_id')
+                ->label(__('admin.program.label'))
+                ->options(fn (): array => Program::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
+                ->searchable()
+                ->required()
+                ->live()
+                ->afterStateUpdated(fn (Forms\Set $set) => $set('academic_period_id', null)),
+            Forms\Components\Select::make('academic_period_id')
+                ->label(__('admin.period.label'))
+                ->options(fn (Forms\Get $get): array => AcademicPeriod::query()
+                    ->where('program_id', $get('program_id'))
+                    ->where('is_active', true)
+                    ->orderByDesc('registration_opens_at')
+                    ->pluck('name', 'id')
+                    ->all())
+                ->helperText(__('admin.applicant.period_hint')),
+            Forms\Components\Select::make('agent_id')
+                ->label(__('admin.dashboard.source'))
+                ->options(fn (): array => Agent::query()
+                    ->whereHas('mous', fn (Builder $q) => $q->where('status', MouStatus::Approved))
+                    ->orderBy('company_name')
+                    ->pluck('company_name', 'id')
+                    ->all())
+                ->placeholder(__('admin.dashboard.source_self'))
+                ->helperText(__('admin.applicant.source_hint'))
+                ->searchable()
+                ->columnSpanFull(),
+        ];
     }
 
     public static function table(Table $table): Table
@@ -99,8 +213,9 @@ class StudentResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('full_name')
                     ->label(__('admin.dashboard.applicant_name'))
-                    ->description(fn (Student $record): string => collect([$record->passport_number, $record->nationality?->name])->filter()->implode(' · '))
-                    ->searchable(['full_name', 'email', 'passport_number'])
+                    // Nomor pendaftaran (setelah diajukan) seperti ID di template; draf memakai nomor paspor
+                    ->description(fn (Student $record): string => collect([$record->registration_number ?? $record->passport_number, $record->nationality?->name])->filter()->implode(' · '))
+                    ->searchable(['full_name', 'email', 'passport_number', 'registration_number'])
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('program.name')
@@ -173,7 +288,9 @@ class StudentResource extends Resource
     {
         return [
             'index' => Pages\ListApplicants::route('/'),
+            'create' => Pages\CreateApplicant::route('/create'),
             'view' => Pages\ViewApplicant::route('/{record}'),
+            'edit' => Pages\EditApplicant::route('/{record}/edit'),
         ];
     }
 }

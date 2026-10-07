@@ -42,6 +42,9 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()
                     ->label(fn (): string => __('admin.groups.master_data'))
                     ->collapsible(),
+                NavigationGroup::make()
+                    ->label(fn (): string => __('admin.groups.system'))
+                    ->collapsible(false),
             ])
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')

@@ -4,13 +4,16 @@ namespace App\Filament\Admin\Resources\StudentResource\Pages;
 
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
+use App\Enums\NumberType;
 use App\Enums\PaymentStatus;
 use App\Enums\StudentStatus;
 use App\Filament\Admin\Resources\StudentResource;
+use App\Filament\Support\FormModal;
 use App\Models\Document;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Support\ActivityDescriber;
+use App\Support\Numbering;
 use App\Support\Rupiah;
 use App\Workflow\StudentWorkflow;
 use App\Workflow\WorkflowException;
@@ -46,7 +49,7 @@ class ViewApplicant extends ViewRecord
 
     public function getSubheading(): ?string
     {
-        return collect([$this->record->passport_number, $this->record->program?->name, $this->record->agent?->company_name ?? __('admin.dashboard.source_self')])
+        return collect([$this->record->registration_number, $this->record->passport_number, $this->record->program?->name, $this->record->agent?->company_name ?? __('admin.dashboard.source_self')])
             ->filter()
             ->implode(' · ');
     }
@@ -76,13 +79,32 @@ class ViewApplicant extends ViewRecord
             && in_array($this->record->status, $statuses, true);
 
         return [
+            // Atas nama pendaftar (keputusan #6): ubah data & ajukan selama draf / perlu revisi
+            Action::make('editApplicant')
+                ->label(__('admin.applicant.actions.edit'))
+                ->icon('lucide-pencil')
+                ->color('gray')
+                ->visible(fn (): bool => StudentResource::canEdit($this->record))
+                ->url(fn (): string => StudentResource::getUrl('edit', ['record' => $this->record])),
+
+            Action::make('submit')
+                ->label(__('admin.applicant.actions.submit'))
+                ->icon('lucide-send')
+                ->visible($visibleWhen(StudentStatus::Draft, StudentStatus::Revision))
+                ->requiresConfirmation()
+                ->modalHeading(__('admin.applicant.submit_heading', ['name' => $this->record->full_name]))
+                ->modalDescription(__('admin.applicant.submit_description'))
+                ->modalIcon('lucide-send')
+                ->modalSubmitActionLabel(__('admin.applicant.actions.submit'))
+                ->action(fn () => $this->run(fn (StudentWorkflow $w) => $w->submit($this->record), 'submitted')),
+
             Action::make('startReview')
                 ->label(__('admin.applicant.actions.start_review'))
                 ->icon('lucide-search-check')
                 ->visible($visibleWhen(StudentStatus::Submitted))
                 ->action(fn () => $this->run(fn (StudentWorkflow $w) => $w->startReview($this->record), 'started_review')),
 
-            Action::make('requestRevision')
+            FormModal::apply(Action::make('requestRevision'))
                 ->label(__('admin.applicant.actions.request_revision'))
                 ->icon('lucide-undo-2')
                 ->color('gray')
@@ -116,7 +138,7 @@ class ViewApplicant extends ViewRecord
                 ->modalSubmitActionLabel(__('admin.applicant.actions.approve'))
                 ->action(fn () => $this->run(fn (StudentWorkflow $w) => $w->approve($this->record), 'approved')),
 
-            Action::make('issueLoa')
+            FormModal::apply(Action::make('issueLoa'))
                 ->label(__('admin.applicant.actions.issue_loa'))
                 ->icon('lucide-file-up')
                 ->visible($visibleWhen(StudentStatus::Approved))
@@ -138,7 +160,10 @@ class ViewApplicant extends ViewRecord
                         ->required(),
                     TextInput::make('loa_number')
                         ->label(__('admin.applicant.fields.loa_number'))
-                        ->helperText(__('admin.applicant.loa_number_hint'))
+                        ->placeholder(fn (): string => $this->record->loa?->loa_number ?? Numbering::preview(NumberType::Loa))
+                        ->helperText(fn (): string => $this->record->loa?->loa_number
+                            ? __('admin.applicant.loa_number_keep', ['number' => $this->record->loa->loa_number])
+                            : __('admin.applicant.loa_number_hint'))
                         ->maxLength(100)
                         ->unique('loas', 'loa_number', ignorable: fn () => $this->record->loa),
                 ])
@@ -150,6 +175,43 @@ class ViewApplicant extends ViewRecord
     }
 
     // ── Aksi per dokumen (tab Dokumen) ───────────────────────────────────────
+
+    /**
+     * Unggah / ganti dokumen atas nama pendaftar (draf atau perlu revisi). Ketentuan format
+     * tampil sebelum kontrol unggah (R-3.8).
+     */
+    public function uploadDocumentAction(): Action
+    {
+        $type = fn (array $arguments): DocumentType => DocumentType::from($arguments['type'] ?? '');
+
+        return FormModal::apply(Action::make('uploadDocument'))
+            ->label(fn (array $arguments): string => $this->record->documents()->where('type', $type($arguments))->exists()
+                ? __('admin.applicant.actions.replace_document')
+                : __('admin.applicant.actions.upload_document'))
+            ->icon('lucide-upload')
+            ->color('gray')
+            ->size('sm')
+            ->modalHeading(fn (array $arguments): string => __('admin.applicant.actions.upload_document').' · '.$type($arguments)->getLabel())
+            ->modalDescription(fn (array $arguments): string => $type($arguments)->hint())
+            ->modalIcon('lucide-upload')
+            ->modalWidth(MaxWidth::Large)
+            ->modalSubmitActionLabel(__('admin.master.save'))
+            ->form(fn (array $arguments): array => [
+                FileUpload::make('file')
+                    ->label(__('admin.applicant.fields.document_file'))
+                    ->acceptedFileTypes(collect($type($arguments)->extensions())
+                        ->map(fn (string $ext): string => $ext === 'pdf' ? 'application/pdf' : 'image/'.($ext === 'jpg' ? 'jpeg' : $ext))
+                        ->unique()->values()->all())
+                    ->maxSize(Document::MAX_FILE_SIZE_KB)
+                    ->storeFiles(false) // StudentWorkflow menyimpannya di disk privat
+                    ->required(),
+            ])
+            ->action(function (array $arguments, array $data) use ($type): void {
+                abort_unless($this->canVerify(), 403);
+
+                $this->run(fn (StudentWorkflow $w) => $w->uploadDocument($this->record, $type($arguments), $data['file']), 'document_uploaded');
+            });
+    }
 
     public function previewDocumentAction(): Action
     {
@@ -187,7 +249,7 @@ class ViewApplicant extends ViewRecord
     {
         $key = $status === DocumentStatus::Revision ? 'revise_document' : 'reject_document';
 
-        return Action::make($name)
+        return FormModal::apply(Action::make($name))
             ->label(__("admin.applicant.actions.{$key}"))
             ->icon($icon)
             ->color('gray')
@@ -241,7 +303,7 @@ class ViewApplicant extends ViewRecord
 
     public function rejectPaymentAction(): Action
     {
-        return Action::make('rejectPayment')
+        return FormModal::apply(Action::make('rejectPayment'))
             ->label(__('admin.payment.actions.reject'))
             ->icon('lucide-x')
             ->color('gray')
@@ -272,6 +334,7 @@ class ViewApplicant extends ViewRecord
         return [
             'canVerify' => $this->canVerify(),
             'canReview' => $this->canVerify() && $student->status === StudentStatus::InReview,
+            'canUpload' => $this->canVerify() && $student->status->isEditable(),
             'profile' => $this->profile($student),
             'documents' => $this->documents($student),
             'fees' => $this->fees($student),
@@ -288,6 +351,7 @@ class ViewApplicant extends ViewRecord
         $date = fn ($value): ?string => $value?->translatedFormat('j F Y');
 
         return [
+            ['label' => __('admin.applicant.fields.registration_number'), 'value' => $s->registration_number ?? __('admin.applicant.registration_number_pending'), 'mono' => filled($s->registration_number)],
             ['label' => __('workflow.fields.email'), 'value' => $s->email],
             ['label' => __('workflow.fields.phone_number'), 'value' => $s->phone_number],
             ['label' => __('workflow.fields.gender'), 'value' => $s->gender?->getLabel()],
@@ -367,7 +431,13 @@ class ViewApplicant extends ViewRecord
         try {
             app()->call($step);
         } catch (WorkflowException $e) {
-            Notification::make()->danger()->title($e->getMessage())->send();
+            Notification::make()
+                ->danger()
+                ->title($e->getMessage())
+                // Daftar butir yang kurang; body dirender sebagai HTML tersanitasi, jadi baris baru memakai <br>
+                ->body($e->missing->isNotEmpty() ? $e->missing->pluck('label')->map(fn (string $l): string => '• '.e($l))->implode('<br>') : null)
+                ->persistent($e->missing->isNotEmpty())
+                ->send();
 
             return;
         }

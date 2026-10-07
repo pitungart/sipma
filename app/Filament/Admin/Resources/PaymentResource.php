@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources;
 use App\Enums\PaymentStatus;
 use App\Filament\Admin\Resources\Concerns\RunsWorkflow;
 use App\Filament\Admin\Resources\PaymentResource\Pages;
+use App\Filament\Support\FormModal;
 use App\Models\Payment;
 use App\Support\Rupiah;
 use App\Workflow\StudentWorkflow;
@@ -107,6 +108,12 @@ class PaymentResource extends Resource
                     ->label(__('admin.dashboard.status'))
                     ->badge(),
 
+                Tables\Columns\TextColumn::make('receipt_number')
+                    ->label(__('admin.payment.fields.receipt_number'))
+                    ->placeholder('—')
+                    ->searchable()
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('admin.payment.fields.uploaded_at'))
                     ->date('j M Y, H.i')
@@ -139,7 +146,7 @@ class PaymentResource extends Resource
                         __('admin.applicant.done.payment_verified'),
                     )),
 
-                Tables\Actions\Action::make('reject')
+                FormModal::apply(Tables\Actions\Action::make('reject'))
                     ->iconButton()
                     ->icon('lucide-x')
                     ->color('gray')

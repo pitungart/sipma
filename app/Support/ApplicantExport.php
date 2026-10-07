@@ -21,6 +21,7 @@ final class ApplicantExport
             $out = fopen('php://output', 'w');
 
             fputcsv($out, [
+                __('admin.applicant.fields.registration_number'),
                 __('admin.dashboard.applicant_name'),
                 'Email',
                 __('admin.applicant.fields.passport_number'),
@@ -38,6 +39,7 @@ final class ApplicantExport
                 ->latest()
                 ->lazy()
                 ->each(fn (Student $student) => fputcsv($out, [
+                    $student->registration_number,
                     $student->full_name,
                     $student->email,
                     $student->passport_number,

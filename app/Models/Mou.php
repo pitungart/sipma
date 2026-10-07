@@ -19,6 +19,7 @@ class Mou extends Model
 
     protected $fillable = [
         'agent_id',
+        'mou_number',
         'file_path',
         'status',
         'revision_note',

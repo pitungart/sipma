@@ -238,6 +238,69 @@ class AdmissionsPanelTest extends WorkflowTestCase
             ->assertDontSeeHtml('sipma-board-columns');
     }
 
+    public function test_super_admin_registers_an_applicant_on_their_behalf(): void
+    {
+        $program = $this->program();
+        $admin = $this->superAdmin();
+
+        Livewire::actingAs($admin)
+            ->test(StudentResource\Pages\CreateApplicant::class)
+            ->fillForm([
+                'full_name' => 'Walk-in Applicant',
+                'gender' => 'female',
+                'nationality_code' => 'AU',
+                'place_of_birth' => 'Perth',
+                'date_of_birth' => '2002-02-02',
+                'email' => 'walkin@example.test',
+                'phone_number' => '+61 400 000 000',
+                'permanent_address' => '1 Beach Road',
+                'home_university' => 'Curtin University',
+                'home_university_country_code' => 'AU',
+                'passport_number' => 'pb7654321',
+                'date_of_issued_passport' => '2024-01-01',
+                'date_of_passport_expiry' => '2034-01-01',
+                'program_id' => $program->id,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $student = Student::query()->where('email', 'walkin@example.test')->firstOrFail();
+        $this->assertSame(StudentStatus::Draft, $student->status);
+        $this->assertSame('PB7654321', $student->passport_number);
+        $this->assertNull($student->user_id);
+
+        // Unggah dokumen atas nama pendaftar lalu ajukan dari halaman detail
+        $page = Livewire::actingAs($admin)->test(ViewApplicant::class, ['record' => $student->getRouteKey()]);
+
+        $page->callAction('submit')->assertNotified();
+        $this->assertSame(StudentStatus::Draft, $student->fresh()->status, 'incomplete application is refused');
+
+        foreach (DocumentType::required() as $type) {
+            $page->callAction('uploadDocument', data: ['file' => $this->file($type)], arguments: ['type' => $type->value])
+                ->assertHasNoActionErrors();
+        }
+
+        $page->callAction('submit');
+        $this->assertSame(StudentStatus::Submitted, $student->fresh()->status);
+        $this->assertCount(count(DocumentType::required()), $student->documents);
+
+        // Setelah diajukan, data terkunci
+        $this->assertFalse(StudentResource::canEdit($student->fresh()));
+        $this->actingAs($admin)->get(StudentResource::getUrl('edit', ['record' => $student]))->assertForbidden();
+    }
+
+    public function test_only_super_admin_sees_the_new_application_button(): void
+    {
+        $student = $this->submitted();
+        $facultyAdmin = $this->facultyAdmin($student->program->faculty);
+
+        $this->actingAs($this->superAdmin())->get('/admin')->assertSee(__('admin.applicant.actions.new'));
+        $this->actingAs($this->superAdmin())->get(StudentResource::getUrl('create'))->assertOk();
+
+        $this->actingAs($facultyAdmin)->get('/admin')->assertDontSee(__('admin.applicant.actions.new'));
+        $this->actingAs($facultyAdmin)->get(StudentResource::getUrl('create'))->assertForbidden();
+    }
+
     public function test_payments_are_verified_and_rejected_from_the_list(): void
     {
         $student = $this->student($this->program(admissionFee: 250000), StudentStatus::Approved);

@@ -59,9 +59,11 @@
         @if ($canVerify)
             {{-- Dokumen --}}
             <section x-show="tab === 'documents'" x-cloak class="sipma-section">
-                @unless ($canReview)
+                @if ($canUpload)
+                    <p class="sipma-section-hint">{{ __('admin.applicant.upload_on_behalf') }}</p>
+                @elseif (! $canReview)
                     <p class="sipma-section-hint">{{ __('admin.applicant.review_locked', ['status' => $record->status->getLabel()]) }}</p>
-                @endunless
+                @endif
 
                 <ul class="sipma-rows">
                     @foreach ($documents as $item)
@@ -92,6 +94,9 @@
                                 <x-sipma.status-badge :status="$doc->status" />
                                 <div class="sipma-row-actions">
                                     {{ ($this->previewDocumentAction)(['document' => $doc->getKey()]) }}
+                                    @if ($canUpload && $doc->status !== DocumentStatus::Approved)
+                                        {{ ($this->uploadDocumentAction)(['type' => $item['type']->value]) }}
+                                    @endif
                                     @if ($canReview)
                                         @if ($doc->status !== DocumentStatus::Approved)
                                             {{ ($this->approveDocumentAction)(['document' => $doc->getKey()]) }}
@@ -106,6 +111,11 @@
                                 </div>
                             @else
                                 <span class="sipma-status sipma-tone-gray"><span class="sipma-status-dot"></span>{{ __('admin.applicant.missing') }}</span>
+                                @if ($canUpload)
+                                    <div class="sipma-row-actions">
+                                        {{ ($this->uploadDocumentAction)(['type' => $item['type']->value]) }}
+                                    </div>
+                                @endif
                             @endif
                         </li>
                     @endforeach
@@ -143,7 +153,12 @@
                                 <x-filament::icon icon="lucide-receipt" class="sipma-tile-icon" />
                             </span>
                             <div class="sipma-row-main">
-                                <div class="sipma-row-title">{{ $payment->type->getLabel() }} · {{ Rupiah::format($payment->amount) }}</div>
+                                <div class="sipma-row-title">
+                                    {{ $payment->type->getLabel() }} · {{ Rupiah::format($payment->amount) }}
+                                    @if ($payment->receipt_number)
+                                        <span class="sipma-row-tag">{{ __('admin.payment.fields.receipt_number') }} {{ $payment->receipt_number }}</span>
+                                    @endif
+                                </div>
                                 <div class="sipma-row-meta">
                                     {{ collect([$payment->paymentAccount?->bank_name, $payment->va_number ? 'VA '.$payment->va_number : null])->filter()->implode(' · ') ?: __('admin.payment.no_account') }}
                                     · {{ $payment->created_at->translatedFormat('j M Y, H.i') }}

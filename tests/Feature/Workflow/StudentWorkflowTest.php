@@ -195,6 +195,31 @@ class StudentWorkflowTest extends WorkflowTestCase
         $this->assertSame(StudentStatus::LoaIssued, $student->fresh()->status);
     }
 
+    public function test_loa_numbers_are_automatic_sequential_and_kept_on_reupload(): void
+    {
+        $this->actingAs($this->superAdmin());
+        $year = now()->year;
+
+        $first = $this->workflow()->issueLoa($this->student(status: StudentStatus::Approved), $this->pdf());
+        $second = $this->workflow()->issueLoa($this->student(status: StudentStatus::Approved), $this->pdf());
+        $manual = $this->workflow()->issueLoa($this->student(status: StudentStatus::Approved), $this->pdf(), 'KUI/123/2026');
+
+        $this->assertSame("LOA/SIPMA/{$year}/0001", $first->loa_number);
+        $this->assertSame("LOA/SIPMA/{$year}/0002", $second->loa_number);
+        $this->assertSame('KUI/123/2026', $manual->loa_number);
+
+        // Unggah ulang untuk pendaftar yang sama tetap memakai nomornya
+        $student = $first->student;
+        $student->update(['status' => StudentStatus::Approved]);
+        $again = $this->workflow()->issueLoa($student->fresh(), $this->pdf());
+        $this->assertSame("LOA/SIPMA/{$year}/0001", $again->loa_number);
+
+        // Tahun baru mulai dari 0001 lagi
+        $this->travelTo(now()->addYear()->startOfYear());
+        $next = $this->workflow()->issueLoa($this->student(status: StudentStatus::Approved), $this->pdf());
+        $this->assertSame('LOA/SIPMA/'.($year + 1).'/0001', $next->loa_number);
+    }
+
     public function test_payment_only_after_approval_and_rejection_notifies_owner(): void
     {
         $owner = $this->studentUser();

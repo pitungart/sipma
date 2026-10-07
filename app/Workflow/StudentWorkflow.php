@@ -5,6 +5,7 @@ namespace App\Workflow;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Enums\LoaStatus;
+use App\Enums\NumberType;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\StudentStatus;
@@ -21,6 +22,7 @@ use App\Notifications\LoaIssued;
 use App\Notifications\PaymentRejected;
 use App\Notifications\PaymentSubmitted;
 use App\Notifications\RevisionRequested;
+use App\Support\Numbering;
 use App\Support\PrivateFiles;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -103,6 +105,8 @@ final class StudentWorkflow
         $student->update([
             'status' => StudentStatus::Submitted,
             'submitted_at' => now(),
+            // Nomor pendaftaran diberikan saat pertama kali diajukan; pengajuan ulang tetap memakainya
+            'registration_number' => $student->registration_number ?? Numbering::next(NumberType::Application),
         ]);
 
         Notification::send($this->kui(), new ApplicationSubmitted($student, $resubmitted));
@@ -258,6 +262,7 @@ final class StudentWorkflow
 
         $payment->update([
             'status' => PaymentStatus::Verified,
+            'receipt_number' => $payment->receipt_number ?? Numbering::next(NumberType::Receipt),
             'rejection_note' => null,
             'verified_by' => auth()->id(),
             'verified_at' => now(),
@@ -288,6 +293,7 @@ final class StudentWorkflow
 
     /**
      * UC-26: unggah LOA bertanda tangan. Hanya setelah disetujui dan semua biaya terverifikasi.
+     * Nomor LOA otomatis (Sistem → Penomoran) bila staf tidak mengisinya.
      */
     public function issueLoa(Student $student, UploadedFile $file, ?string $loaNumber = null): Loa
     {
@@ -304,8 +310,11 @@ final class StudentWorkflow
         return DB::transaction(function () use ($student, $file, $loaNumber): Loa {
             $old = $student->loa?->file_path;
 
+            // Nomor manual menang; tanpa itu, unggah ulang memakai nomor lama, LOA baru dapat nomor otomatis.
+            $number = filled($loaNumber) ? $loaNumber : ($student->loa?->loa_number ?? Numbering::next(NumberType::Loa));
+
             $loa = $student->loa()->updateOrCreate([], [
-                'loa_number' => $loaNumber,
+                'loa_number' => $number,
                 'file_path' => PrivateFiles::store($file, PrivateFiles::studentDirectory($student->getKey(), 'loa'))['file_path'],
                 'status' => LoaStatus::Uploaded,
                 'issued_by' => auth()->id(),

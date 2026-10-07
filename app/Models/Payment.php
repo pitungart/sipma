@@ -20,6 +20,7 @@ class Payment extends Model
 
     protected $fillable = [
         'student_id',
+        'receipt_number',
         'type',
         'amount',
         'payment_account_id',

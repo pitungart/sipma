@@ -7,6 +7,7 @@ use App\Enums\DocumentType;
 use App\Enums\StudentStatus;
 use App\Filament\Admin\Resources\Pages\ListWithStatusTabs;
 use App\Filament\Admin\Resources\StudentResource;
+use App\Filament\Support\FormModal;
 use App\Filament\Support\InitialsAvatarProvider;
 use App\Models\Student;
 use App\Support\ApplicantExport;
@@ -110,6 +111,12 @@ class ListApplicants extends ListWithStatusTabs
                 ->visible(fn (): bool => ! $this->isBoard())
                 // Ekspor = yang sedang dilihat: tab, pencarian, dan saringan aktif
                 ->action(fn (): StreamedResponse => ApplicantExport::download($this->getFilteredSortedTableQuery())),
+
+            Action::make('newApplication')
+                ->label(__('admin.applicant.actions.new'))
+                ->icon('lucide-plus')
+                ->visible(fn (): bool => StudentResource::canCreate())
+                ->url(fn (): string => StudentResource::getUrl('create')),
         ];
     }
 
@@ -171,7 +178,7 @@ class ListApplicants extends ListWithStatusTabs
             'name' => $student->full_name,
             'initials' => InitialsAvatarProvider::initialsOf($student->full_name),
             'tone' => InitialsAvatarProvider::toneOf($student->full_name),
-            'country' => $student->nationality?->name,
+            'country' => collect([$student->registration_number, $student->nationality?->name])->filter()->implode(' · ') ?: null,
             'program' => $student->program?->name,
             'agent' => $student->agent?->company_name ?? __('admin.dashboard.source_self'),
             'documents' => "{$approved}/{$required}",
@@ -235,7 +242,7 @@ class ListApplicants extends ListWithStatusTabs
      */
     public function boardRevisionAction(): Action
     {
-        return Action::make('boardRevision')
+        return FormModal::apply(Action::make('boardRevision'))
             ->modalHeading(fn (array $arguments): string => __('admin.applicant.actions.request_revision').' · '.$this->boardStudent($arguments)->full_name)
             ->modalDescription(__('admin.applicant.revision_modal'))
             ->modalIcon('lucide-undo-2')

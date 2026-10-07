@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources;
 use App\Enums\MouStatus;
 use App\Filament\Admin\Resources\AgentResource\Pages;
 use App\Filament\Admin\Resources\Concerns\RunsWorkflow;
+use App\Filament\Support\FormModal;
 use App\Models\Agent;
 use App\Workflow\MouWorkflow;
 use Filament\Forms\Components\Textarea;
@@ -113,6 +114,7 @@ class AgentResource extends Resource
                 Tables\Columns\TextColumn::make('latestMou.status')
                     ->label(__('admin.agent.fields.mou'))
                     ->badge()
+                    ->description(fn (Agent $record): ?string => $record->latestMou?->mou_number)
                     ->placeholder(__('admin.agent.no_mou')),
 
                 Tables\Columns\TextColumn::make('latestMou.created_at')
@@ -145,7 +147,7 @@ class AgentResource extends Resource
                         __('admin.agent.done.approved'),
                     )),
 
-                Tables\Actions\Action::make('rejectMou')
+                FormModal::apply(Tables\Actions\Action::make('rejectMou'))
                     ->iconButton()
                     ->icon('lucide-x')
                     ->color('gray')
