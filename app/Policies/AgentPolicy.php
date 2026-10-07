@@ -13,6 +13,15 @@ use App\Models\User;
  */
 class AgentPolicy
 {
+    /**
+     * UC-24 daftar agen: hanya Super Admin (lewat Gate::before). Wajib ditulis eksplisit —
+     * Filament menganggap method policy yang tidak ada sebagai "diizinkan".
+     */
+    public function viewAny(User $user): bool
+    {
+        return false;
+    }
+
     public function view(User $user, Agent $agent): bool
     {
         return $agent->user_id === $user->id;
@@ -26,5 +35,13 @@ class AgentPolicy
     public function update(User $user, Agent $agent): bool
     {
         return $agent->user_id === $user->id;
+    }
+
+    /**
+     * Agen tidak dihapus dari panel; data pendaftarnya terikat ke agen.
+     */
+    public function delete(User $user, Agent $agent): bool
+    {
+        return false;
     }
 }

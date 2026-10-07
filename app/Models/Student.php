@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Gender;
+use App\Enums\Religion;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,11 +28,12 @@ class Student extends Model
         'user_id',
         'agent_id',
         'program_id',
+        'academic_period_id',
         'full_name',
         'gender',
         'place_of_birth',
         'date_of_birth',
-        'nationality',
+        'nationality_code',
         'religion',
         'permanent_address',
         'state',
@@ -39,7 +41,7 @@ class Student extends Model
         'email',
         'phone_number',
         'home_university',
-        'country_of_home_university',
+        'home_university_country_code',
         'passport_number',
         'date_of_issued_passport',
         'date_of_passport_expiry',
@@ -53,6 +55,7 @@ class Student extends Model
     {
         return [
             'gender' => Gender::class,
+            'religion' => Religion::class,
             'date_of_birth' => 'date',
             'date_of_issued_passport' => 'date',
             'date_of_passport_expiry' => 'date',
@@ -95,6 +98,14 @@ class Student extends Model
         };
     }
 
+    /**
+     * Akun yang menerima notifikasi pendaftaran ini: mahasiswa mandiri, atau agen yang mendaftarkannya.
+     */
+    public function owner(): ?User
+    {
+        return $this->user ?? $this->agent?->user;
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -108,6 +119,27 @@ class Student extends Model
     public function program(): BelongsTo
     {
         return $this->belongsTo(Program::class);
+    }
+
+    public function academicPeriod(): BelongsTo
+    {
+        return $this->belongsTo(AcademicPeriod::class);
+    }
+
+    /**
+     * Kewarganegaraan (master negara).
+     */
+    public function nationality(): BelongsTo
+    {
+        return $this->belongsTo(Country::class, 'nationality_code', 'code');
+    }
+
+    /**
+     * Negara tempat universitas asal berada (master negara).
+     */
+    public function homeUniversityCountry(): BelongsTo
+    {
+        return $this->belongsTo(Country::class, 'home_university_country_code', 'code');
     }
 
     public function documents(): HasMany

@@ -41,6 +41,15 @@ class ProgramPolicy
         return $this->managesProgram($user, $program);
     }
 
+    /**
+     * Hapus permanen hanya untuk Super Admin (lewat Gate::before); method ini harus ada
+     * agar Filament tidak menganggapnya diizinkan.
+     */
+    public function forceDelete(User $user, Program $program): bool
+    {
+        return false;
+    }
+
     private function isFacultyAdmin(User $user): bool
     {
         return $user->hasRole(UserRole::Admin) && $user->faculty_id !== null;

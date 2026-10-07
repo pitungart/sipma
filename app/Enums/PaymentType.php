@@ -11,9 +11,6 @@ enum PaymentType: string implements HasLabel
 
     public function getLabel(): string
     {
-        return match ($this) {
-            self::AdmissionFee => 'Admission Fee',
-            self::TuitionFee => 'Tuition Fee',
-        };
+        return __("enums.payment_type.{$this->value}");
     }
 }

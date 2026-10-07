@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('loas', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('student_id')->unique()->constrained()->cascadeOnDelete();
-            $table->string('loa_number', 100)->nullable();
+            $table->string('loa_number', 100)->nullable()->unique(); // digenerate sistem saat LOA diterbitkan
             $table->string('file_path')->nullable();
             $table->string('status', 20)->default('pending'); // App\Enums\LoaStatus
             $table->foreignUuid('issued_by')->nullable()->constrained('users')->nullOnDelete();

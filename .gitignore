@@ -21,7 +21,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-/.agents
+/agents
 # File sistem operasi
 .DS_Store
 Thumbs.db

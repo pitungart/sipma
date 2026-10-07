@@ -15,20 +15,20 @@
         >
             {{-- R-3.3: ringkasan error menerima fokus, tiap butir tertaut ke field --}}
             @if ($showErrorSummary && $errors->any())
-                <div class="rounded-control bg-danger/5 px-4 py-3 ring-1 ring-inset ring-danger/40" aria-labelledby="error-summary-title">
-                    <h2 id="error-summary-title" tabindex="-1" class="sipma-focus flex items-center gap-2 rounded-chip text-small font-medium text-danger">
-                        @svg('heroicon-m-exclamation-circle', 'h-5 w-5 shrink-0', ['aria-hidden' => 'true'])
+                <div class="rounded-card bg-danger-bg px-4 py-3 ring-1 ring-inset ring-danger/30" aria-labelledby="error-summary-title">
+                    <h2 id="error-summary-title" tabindex="-1" class="sipma-focus flex items-center gap-2 rounded-md text-small font-medium text-danger-text">
+                        @svg('lucide-circle-alert', 'h-5 w-5 shrink-0', ['aria-hidden' => 'true'])
                         {{ __('portal.login.error_summary') }}
                     </h2>
 
-                    <ul class="mt-2 list-disc space-y-1 ps-8 text-small text-danger">
+                    <ul class="mt-2 list-disc space-y-1 ps-8 text-small text-danger-text">
                         @foreach ($errors->messages() as $field => $messages)
                             @php($target = str_replace('.', '-', $field))
                             <li>
                                 <a
                                     href="#{{ $target }}"
                                     x-on:click.prevent="document.getElementById(@js($target))?.focus()"
-                                    class="sipma-focus rounded-chip underline decoration-danger/40 underline-offset-4 hover:decoration-danger"
+                                    class="sipma-focus rounded-md underline decoration-danger-text/40 underline-offset-4 hover:decoration-danger-text"
                                 >{{ $messages[0] }}</a>
                             </li>
                         @endforeach

@@ -18,12 +18,7 @@ enum DocumentStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): string
     {
-        return match ($this) {
-            self::Pending => 'Awaiting Verification',
-            self::Approved => 'Approved',
-            self::Revision => 'Revision Required',
-            self::Rejected => 'Rejected',
-        };
+        return __("enums.document_status.{$this->value}");
     }
 
     public function getColor(): string
@@ -38,10 +33,10 @@ enum DocumentStatus: string implements HasColor, HasIcon, HasLabel
     public function getIcon(): string
     {
         return match ($this) {
-            self::Pending => 'heroicon-m-clock',
-            self::Approved => 'heroicon-m-check-circle',
-            self::Revision => 'heroicon-m-exclamation-triangle',
-            self::Rejected => 'heroicon-m-x-circle',
+            self::Pending => 'lucide-clock',
+            self::Approved => 'lucide-circle-check',
+            self::Revision => 'lucide-triangle-alert',
+            self::Rejected => 'lucide-circle-x',
         };
     }
 }

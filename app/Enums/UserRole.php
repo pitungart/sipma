@@ -13,11 +13,16 @@ enum UserRole: string implements HasLabel
 
     public function getLabel(): string
     {
-        return match ($this) {
-            self::SuperAdmin => 'Super Admin',
-            self::Admin => 'Faculty Admin',
-            self::Agent => 'Agent',
-            self::Student => 'Student',
-        };
+        return __("enums.role.{$this->value}");
+    }
+
+    /**
+     * Role staf universitas, yaitu yang dikelola di panel /admin.
+     *
+     * @return list<self>
+     */
+    public static function adminRoles(): array
+    {
+        return [self::SuperAdmin, self::Admin];
     }
 }

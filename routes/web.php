@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PrivateFileController;
 use App\Http\Controllers\SwitchLocaleController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
@@ -20,3 +21,11 @@ Route::get('/login', Login::class)->name('login');
 Route::get('/locale/{locale}', SwitchLocaleController::class)
     ->whereIn('locale', Locale::SUPPORTED)
     ->name('locale.switch');
+
+// Berkas privat (dokumen, bukti bayar, MOU, LOA): selalu lewat Policy, tidak pernah URL publik (R-4.10)
+Route::middleware('auth')->prefix('files')->name('files.')->group(function (): void {
+    Route::get('/documents/{document}', [PrivateFileController::class, 'document'])->name('document');
+    Route::get('/payments/{payment}', [PrivateFileController::class, 'payment'])->name('payment');
+    Route::get('/mous/{mou}', [PrivateFileController::class, 'mou'])->name('mou');
+    Route::get('/loas/{loa}', [PrivateFileController::class, 'loa'])->name('loa');
+});

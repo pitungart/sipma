@@ -22,6 +22,7 @@ class Payment extends Model
         'student_id',
         'type',
         'amount',
+        'payment_account_id',
         'va_number',
         'proof_file',
         'status',
@@ -48,6 +49,14 @@ class Payment extends Model
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
+    }
+
+    /**
+     * Rekening tujuan dari master. va_number di baris ini adalah salinan historisnya.
+     */
+    public function paymentAccount(): BelongsTo
+    {
+        return $this->belongsTo(PaymentAccount::class);
     }
 
     public function verifier(): BelongsTo

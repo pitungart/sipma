@@ -1,0 +1,2875 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@config 'tailwind.config.js';
+
+/*
+ * Tema panel SIPMA (admin, agen, mahasiswa) — sipma-desing-rules.md v5.0.
+ * Sumber visual: agents/Template Dashboard Lengkap/Dashboard SIPMA.dc.html.
+ *
+ * Token ditulis sebagai variabel CSS dengan pasangan terang/gelap; Filament menaruh kelas
+ * .dark di <html>. Aturan ditulis di luar @layer agar menimpa utility bawaan Filament.
+ */
+
+/* ─────────────────────────────────────────────────────────────
+   0. Token
+   ───────────────────────────────────────────────────────────── */
+:root {
+    --sp-bg: #F5F6FA;
+    --sp-card: #FFFFFF;
+    --sp-sidebar: #FFFFFF;
+    --sp-border: #E7E9EF;
+    --sp-border-2: #D9DCE4;
+    --sp-hover: #F3F4F8;
+    --sp-subtle: #F8F9FB;
+    --sp-heading: #20293A;
+    --sp-text: #4D5562;
+    --sp-muted: #6D727F;
+    --sp-light: #90949E;
+    --sp-gray-l: #F1F2F5;
+
+    --sp-primary: #6466E9;
+    --sp-primary-h: #5254D6;
+    --sp-primary-l: #EFEFFD;
+    --sp-primary-ink: #4B4DD6;
+    --sp-warning: #E2B53F;
+    --sp-warning-l: #FCF7EB;
+    --sp-warning-ink: #94700F;
+    --sp-danger: #DD524C;
+    --sp-danger-l: #FCEDED;
+    --sp-danger-ink: #B83A34;
+    --sp-info: #52B3D1;
+    --sp-info-l: #EDF7FA;
+    --sp-info-ink: #2A7F99;
+    --sp-success: #5EC26A;
+    --sp-success-l: #EEF9F0;
+    --sp-success-ink: #2F8A3B;
+    --sp-gray: #90949E;
+    --sp-gray-ink: #6D727F;
+
+    --sp-shadow: 0 1px 2px rgba(32, 41, 58, 0.04), 0 1px 3px rgba(32, 41, 58, 0.05);
+    --sp-shadow-lg: 0 16px 40px rgba(32, 41, 58, 0.16);
+    --sp-overlay: rgba(32, 41, 58, 0.45);
+    --sp-radius-card: 12px;
+    --sp-radius-control: 8px;
+    --sp-radius-modal: 14px;
+}
+
+.dark {
+    --sp-bg: #0E1220;
+    --sp-card: #161B2B;
+    --sp-sidebar: #131826;
+    --sp-border: #252B3C;
+    --sp-border-2: #323949;
+    --sp-hover: #1E2436;
+    --sp-subtle: #1A2031;
+    --sp-heading: #F2F3F7;
+    --sp-text: #C8CBD4;
+    --sp-muted: #9BA0AD;
+    --sp-light: #737988;
+    --sp-gray-l: #222839;
+
+    --sp-primary: #7C7EF2;
+    --sp-primary-h: #8E90F5;
+    --sp-primary-l: rgba(124, 126, 242, 0.16);
+    --sp-primary-ink: #A9AAF8;
+    --sp-warning-l: rgba(226, 181, 63, 0.14);
+    --sp-warning-ink: #EBC867;
+    --sp-danger-l: rgba(221, 82, 76, 0.15);
+    --sp-danger-ink: #F08782;
+    --sp-info-l: rgba(82, 179, 209, 0.14);
+    --sp-info-ink: #7FCBE2;
+    --sp-success-l: rgba(94, 194, 106, 0.14);
+    --sp-success-ink: #86D690;
+    --sp-gray-ink: #9BA0AD;
+
+    --sp-shadow: none;
+    --sp-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+    --sp-overlay: rgba(5, 8, 16, 0.7);
+    color-scheme: dark;
+}
+
+/* Nada warna yang dipakai ulang: latar lembut + teks "-ink" (badge, tile, avatar) */
+.sipma-tone-primary { --tone: var(--sp-primary); --tone-l: var(--sp-primary-l); --tone-ink: var(--sp-primary-ink); }
+.sipma-tone-info { --tone: var(--sp-info); --tone-l: var(--sp-info-l); --tone-ink: var(--sp-info-ink); }
+.sipma-tone-success { --tone: var(--sp-success); --tone-l: var(--sp-success-l); --tone-ink: var(--sp-success-ink); }
+.sipma-tone-warning { --tone: var(--sp-warning); --tone-l: var(--sp-warning-l); --tone-ink: var(--sp-warning-ink); }
+.sipma-tone-danger { --tone: var(--sp-danger); --tone-l: var(--sp-danger-l); --tone-ink: var(--sp-danger-ink); }
+.sipma-tone-gray { --tone: var(--sp-gray); --tone-l: var(--sp-gray-l); --tone-ink: var(--sp-gray-ink); }
+
+/* ─────────────────────────────────────────────────────────────
+   1. Dasar
+   ───────────────────────────────────────────────────────────── */
+.fi-body {
+    background-color: var(--sp-bg);
+    color: var(--sp-text);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+}
+
+.fi-body ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.fi-body ::-webkit-scrollbar-thumb {
+    background: var(--sp-border-2);
+    border-radius: 10px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   2. Sidebar: putih, garis kanan 1px, label bagian kapital kecil
+   ───────────────────────────────────────────────────────────── */
+.fi-sidebar {
+    background-color: var(--sp-sidebar);
+}
+
+@media (min-width: 1024px) {
+    .fi-sidebar {
+        top: 0;
+        height: 100vh;
+        border-inline-end: 1px solid var(--sp-border);
+        background-color: var(--sp-sidebar);
+        z-index: 25;
+    }
+}
+
+.fi-sidebar-header {
+    height: 64px;
+    padding-inline: 12px; /* gutter sama dengan menu & kartu pengguna */
+    background-color: var(--sp-sidebar);
+    border-bottom: 1px solid var(--sp-border);
+    box-shadow: none;
+    --tw-ring-shadow: 0 0 #0000;
+}
+
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-header {
+    padding-inline: 0;
+    justify-content: center;
+}
+
+.fi-sidebar-header .fi-icon-btn {
+    /* tanpa -m-1.5 bawaan agar tepi kanannya lurus dengan item menu; ms-auto tetap */
+    margin-block: 0;
+    margin-inline-end: 0;
+}
+
+/* Saat terlipat, tombol pembuka berada tepat di tengah rel (sejajar ikon menu di bawahnya) */
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-header .fi-icon-btn {
+    margin-inline: auto;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--sp-radius-control);
+    color: var(--sp-muted);
+}
+
+.fi-sidebar-header .fi-icon-btn:hover {
+    background-color: var(--sp-hover);
+    color: var(--sp-heading);
+}
+
+.fi-sidebar-header .fi-icon-btn svg {
+    width: 19px;
+    height: 19px;
+}
+
+.fi-sidebar-nav {
+    padding: 16px 12px;
+    row-gap: 0;
+    background-color: var(--sp-sidebar);
+    /* Filament mencadangkan ruang scrollbar (inline style) sehingga celah kanan > kiri */
+    scrollbar-gutter: auto !important;
+}
+
+.fi-body .fi-sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.fi-sidebar-nav-groups {
+    row-gap: 0;
+    margin-inline: 0; /* Filament menarik daftar -8px (-mx-2) sehingga celah kiri ≠ kanan */
+}
+
+.fi-sidebar-group,
+.fi-sidebar-group-items {
+    row-gap: 2px;
+}
+
+/* Label bagian: 11px, kapital, renggang — grup yang bisa dilipat memakai chevron kecil */
+.fi-sidebar-group-button {
+    padding: 16px 12px 6px;
+}
+
+.fi-sidebar-group:first-child > .fi-sidebar-group-button {
+    padding-top: 4px;
+}
+
+.fi-sidebar-group-label {
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--sp-light);
+}
+
+.fi-sidebar-group-collapse-button {
+    width: 20px;
+    height: 20px;
+    margin: -4px -6px -4px 0;
+    color: var(--sp-light);
+}
+
+.fi-sidebar-group-collapse-button svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Saat menyempit jadi rel ikon: label diganti garis pemisah antar bagian */
+.fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-group + .fi-sidebar-group::before {
+    content: '';
+    display: block;
+    height: 1px;
+    margin: 10px 8px;
+    background-color: var(--sp-border);
+}
+
+.fi-sidebar-item-button {
+    height: 38px;
+    padding: 0 12px;
+    gap: 12px;
+    border-radius: var(--sp-radius-control);
+    transition: background-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.fi-sidebar-item-button:hover,
+.fi-sidebar-item-button:focus-visible {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px var(--sp-border);
+}
+
+.fi-sidebar-item-icon {
+    width: 19px;
+    height: 19px;
+    color: var(--sp-text);
+}
+
+.fi-sidebar-item-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--sp-text);
+}
+
+.fi-sidebar-item-active .fi-sidebar-item-button,
+.fi-sidebar-item-active .fi-sidebar-item-button:hover {
+    background-color: var(--sp-primary-l);
+    box-shadow: none;
+}
+
+.fi-sidebar-item-active .fi-sidebar-item-icon,
+.fi-sidebar-item-active .fi-sidebar-item-label {
+    color: var(--sp-primary-ink);
+}
+
+/* Garis/titik penghubung sub-menu bawaan Filament tidak dipakai: setiap item berikon */
+.fi-sidebar-item-grouped-border {
+    display: none;
+}
+
+/* Kartu pengguna di kaki sidebar */
+.sipma-sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 12px;
+    border-top: 1px solid var(--sp-border);
+    background-color: var(--sp-sidebar);
+}
+
+.fi-sidebar:not(.fi-sidebar-open) .sipma-sidebar-user {
+    justify-content: center;
+    padding-inline: 0;
+}
+
+.fi-sidebar:not(.fi-sidebar-open) .sipma-sidebar-user-identity {
+    display: none;
+}
+
+@media (max-width: 1023px) {
+    .fi-sidebar:not(.fi-sidebar-open) .sipma-sidebar-user-identity {
+        display: flex;
+    }
+}
+
+.sipma-sidebar-user-identity {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.sipma-sidebar-user-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sp-heading);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sipma-sidebar-user-email {
+    font-size: 12px;
+    color: var(--sp-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Lockup merek */
+.sipma-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sipma-brand-mark {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background-color: var(--sp-primary);
+    color: #FFFFFF;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.sipma-brand-logo {
+    width: auto;
+    height: 32px;
+    flex: none;
+}
+
+.sipma-brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.sipma-brand-name {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--sp-heading);
+}
+
+.sipma-brand-org {
+    font-size: 11.5px;
+    color: var(--sp-light);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   3. Topbar: menempel penuh, garis bawah, kontrol 38px
+   ───────────────────────────────────────────────────────────── */
+.fi-topbar {
+    z-index: 20;
+}
+
+.fi-topbar > nav {
+    height: 64px;
+    padding-inline: 16px;
+    background-color: var(--sp-card);
+    border-bottom: 1px solid var(--sp-border);
+    box-shadow: none;
+    --tw-ring-shadow: 0 0 #0000;
+}
+
+@media (min-width: 768px) {
+    .fi-topbar > nav {
+        padding-inline: 32px;
+    }
+}
+
+.fi-topbar > nav > div:last-of-type,
+.fi-topbar [x-persist^='topbar.end'] {
+    column-gap: 12px; /* 6px terlalu rapat untuk ikon 38px berdampingan */
+}
+
+.fi-topbar .fi-icon-btn {
+    color: var(--sp-muted);
+}
+
+.sipma-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sipma-icon-btn,
+.fi-topbar-database-notifications-btn {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--sp-radius-control);
+    color: var(--sp-muted);
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.sipma-icon-btn:hover,
+.fi-topbar-database-notifications-btn:hover {
+    background-color: var(--sp-hover);
+    color: var(--sp-heading);
+}
+
+.sipma-icon-btn:focus-visible,
+.sipma-user-trigger:focus-visible {
+    outline: 2px solid var(--sp-primary);
+    outline-offset: 2px;
+}
+
+.sipma-icon,
+.fi-topbar-database-notifications-btn svg {
+    width: 19px;
+    height: 19px;
+}
+
+/* Lonceng bawaan memakai -m-1.5 (−6px tiap sisi) sehingga memakan jarak ke tetangganya */
+.fi-topbar-database-notifications-btn {
+    margin: 0;
+}
+
+/* Jumlah notifikasi belum dibaca: bulatan merah kecil di sudut lonceng */
+.fi-topbar-database-notifications-btn .fi-icon-btn-badge-ctn {
+    top: 4px;
+    inset-inline-start: auto;
+    inset-inline-end: 2px;
+}
+
+.fi-topbar-database-notifications-btn .fi-badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background-color: var(--sp-danger);
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 700;
+    box-shadow: 0 0 0 2px var(--sp-card);
+}
+
+.sipma-flag {
+    display: block;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px rgba(32, 41, 58, 0.14);
+}
+
+.sipma-flag-sm {
+    width: 22px;
+    height: 22px;
+    flex: none;
+}
+
+.sipma-user-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 6px 0 4px;
+    border-radius: var(--sp-radius-control);
+    color: var(--sp-text);
+}
+
+.sipma-user-trigger:hover {
+    background-color: var(--sp-hover);
+}
+
+.sipma-user-trigger-chevron {
+    width: 16px;
+    height: 16px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   4. Dropdown & menu
+   ───────────────────────────────────────────────────────────── */
+.fi-dropdown-panel {
+    border-radius: var(--sp-radius-card);
+    background-color: var(--sp-card);
+    box-shadow: 0 0 0 1px var(--sp-border), var(--sp-shadow-lg);
+    --tw-ring-shadow: 0 0 #0000;
+}
+
+.fi-dropdown-panel > * + * {
+    border-color: var(--sp-border);
+}
+
+.fi-dropdown-list {
+    padding: 6px;
+    row-gap: 2px;
+}
+
+.fi-dropdown-list-item {
+    border-radius: 7px;
+    padding: 8px 10px;
+}
+
+.fi-dropdown-list-item:hover,
+.fi-dropdown-list-item:focus-visible {
+    background-color: var(--sp-hover);
+}
+
+.fi-dropdown-list-item-label {
+    font-size: 13.5px;
+    color: var(--sp-text);
+}
+
+.fi-dropdown-header {
+    padding: 10px;
+}
+
+.sipma-menu-kicker {
+    padding: 12px 16px 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--sp-light);
+}
+
+.sipma-lang .fi-dropdown-panel {
+    width: 220px;
+}
+
+.sipma-lang .fi-dropdown-list-item[aria-current='true'] {
+    background-color: var(--sp-primary-l);
+}
+
+.sipma-lang-option {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+}
+
+.sipma-lang-option-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    line-height: 1.2;
+    text-align: start;
+}
+
+.sipma-lang-option-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-lang-option-region {
+    font-size: 11.5px;
+    color: var(--sp-light);
+}
+
+.sipma-lang-check {
+    width: 16px;
+    height: 16px;
+    color: var(--sp-primary);
+}
+
+.fi-user-menu .fi-dropdown-panel {
+    width: 220px;
+}
+
+.sipma-user-card {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 16px 12px;
+}
+
+.sipma-user-card-name {
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-user-card-role {
+    font-size: 12px;
+    color: var(--sp-light);
+}
+
+.fi-user-menu .fi-dropdown-list-item-icon {
+    color: var(--sp-muted);
+}
+
+.fi-user-menu .sipma-logout .fi-dropdown-list-item-label,
+.fi-user-menu .sipma-logout .fi-dropdown-list-item-icon {
+    color: var(--sp-danger-ink);
+}
+
+.fi-user-menu .sipma-logout:hover {
+    background-color: var(--sp-danger-l);
+}
+
+/* Aksi yang dinonaktifkan di dalam menu: hover dikembalikan agar tooltip alasannya muncul */
+.fi-dropdown-list-item:disabled {
+    pointer-events: auto;
+    cursor: not-allowed;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   5. Avatar
+   ───────────────────────────────────────────────────────────── */
+.sipma-avatar {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background-color: var(--tone-l, var(--sp-primary-l));
+    color: var(--tone-ink, var(--sp-primary-ink));
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.sipma-avatar-soft {
+    width: 34px;
+    height: 34px;
+    font-size: 12.5px;
+}
+
+.sipma-avatar-solid {
+    width: 30px;
+    height: 30px;
+    background-color: var(--sp-primary);
+    color: #FFFFFF;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   6. Halaman: lebar penuh, padding tetap; breadcrumb di atas judul 24px
+   ───────────────────────────────────────────────────────────── */
+.fi-main-ctn {
+    background-color: transparent;
+}
+
+.fi-main {
+    /* Tanpa batas lebar: padding kiri-kanan tetap (16px / 32px) baik sidebar terbuka maupun
+       terlipat. Batas 1440px membuat konten tertahan di tengah dengan celah ±130px saat dilipat. */
+    max-width: none;
+    padding-inline: 16px;
+}
+
+@media (min-width: 768px) {
+    .fi-main {
+        padding-inline: 32px;
+    }
+}
+
+.fi-page > section {
+    padding-top: 28px;
+    padding-bottom: 56px;
+    row-gap: 24px;
+}
+
+.fi-header {
+    gap: 16px;
+}
+
+.fi-header-heading,
+.sipma-page-title {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    color: var(--sp-heading);
+}
+
+.fi-header-subheading {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--sp-muted);
+}
+
+.fi-breadcrumbs {
+    margin-bottom: 6px;
+}
+
+.fi-breadcrumbs-list {
+    column-gap: 6px;
+}
+
+.fi-breadcrumbs-item {
+    column-gap: 6px;
+}
+
+.fi-breadcrumbs-item-label {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--sp-light);
+}
+
+.fi-breadcrumbs-item:last-child .fi-breadcrumbs-item-label {
+    color: var(--sp-muted);
+}
+
+/* Pemisah "/" seperti template, menggantikan chevron */
+.fi-breadcrumbs-item-separator {
+    display: none;
+}
+
+.fi-breadcrumbs-item + .fi-breadcrumbs-item::before {
+    content: '/';
+    font-size: 13px;
+    color: var(--sp-light);
+}
+
+.sipma-page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.sipma-page-kicker {
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--sp-light);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   7. Kartu: putih, garis 1px, radius 12, bayangan halus
+   ───────────────────────────────────────────────────────────── */
+.fi-section,
+.fi-ta-ctn,
+.fi-wi-stats-overview-stat,
+.fi-fo-tabs:not(.fi-contained-false),
+.fi-in-tabs,
+.fi-wi-chart > .fi-section,
+.sipma-card {
+    border-radius: var(--sp-radius-card);
+    background-color: var(--sp-card);
+    box-shadow: 0 0 0 1px var(--sp-border), var(--sp-shadow);
+    --tw-ring-shadow: 0 0 #0000;
+}
+
+.fi-section-header {
+    padding: 16px 20px;
+}
+
+.fi-section:has(> .fi-section-content-ctn) > .fi-section-header {
+    border-bottom: 1px solid var(--sp-border);
+}
+
+.fi-section-header-heading {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.fi-section-header-description {
+    margin-top: 2px;
+    font-size: 12.5px;
+    color: var(--sp-light);
+}
+
+.fi-section-content-ctn {
+    border-color: var(--sp-border);
+}
+
+.fi-section-content {
+    padding: 24px;
+}
+
+.fi-section-footer {
+    border-color: var(--sp-border);
+    background-color: var(--sp-subtle);
+}
+
+.fi-wi {
+    gap: 16px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   8. Tombol: 38px, radius 8, 600 13.5px
+   ───────────────────────────────────────────────────────────── */
+.fi-btn {
+    border-radius: var(--sp-radius-control);
+    font-weight: 600;
+}
+
+.fi-btn.fi-size-md,
+.fi-btn.fi-btn-size-md {
+    min-height: 38px;
+    padding-inline: 14px;
+    font-size: 13.5px;
+}
+
+.fi-btn.fi-size-sm,
+.fi-btn.fi-btn-size-sm {
+    min-height: 34px;
+    padding-inline: 12px;
+    font-size: 13px;
+}
+
+.fi-btn:not(.fi-btn-outlined):not(.fi-color-gray) {
+    box-shadow: none;
+}
+
+.fi-btn.fi-color-primary:not(.fi-btn-outlined) {
+    background-color: var(--sp-primary);
+}
+
+.fi-btn.fi-color-primary:not(.fi-btn-outlined):hover {
+    background-color: var(--sp-primary-h);
+}
+
+.fi-btn.fi-color-danger:not(.fi-btn-outlined):hover,
+.fi-btn.fi-color-success:not(.fi-btn-outlined):hover,
+.fi-btn.fi-color-warning:not(.fi-btn-outlined):hover,
+.fi-btn.fi-color-info:not(.fi-btn-outlined):hover {
+    filter: brightness(0.92);
+}
+
+/* Sekunder: garis 1px, latar kartu */
+.fi-btn.fi-color-gray {
+    background-color: var(--sp-card);
+    color: var(--sp-heading);
+    box-shadow: 0 0 0 1px var(--sp-border-2);
+}
+
+.fi-btn.fi-color-gray:hover {
+    background-color: var(--sp-hover);
+}
+
+.fi-btn.fi-color-gray .fi-btn-icon {
+    color: currentColor;
+}
+
+.fi-btn-outlined.fi-color-primary {
+    color: var(--sp-primary-ink);
+    box-shadow: 0 0 0 1px var(--sp-primary);
+}
+
+.fi-btn-outlined.fi-color-primary:hover {
+    background-color: var(--sp-primary-l);
+}
+
+.fi-link {
+    font-weight: 600;
+}
+
+.fi-icon-btn {
+    border-radius: 7px;
+}
+
+/* Ikon aksi baris tabel: netral, berubah warna saat hover */
+.fi-ta-actions .fi-icon-btn,
+.fi-ta-actions .fi-link {
+    color: var(--sp-muted);
+}
+
+.fi-ta-actions .fi-icon-btn:hover {
+    background-color: var(--sp-hover);
+    color: var(--sp-primary-ink);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   9. Input: 40px, garis 1px, fokus garis indigo + cincin lembut
+   ───────────────────────────────────────────────────────────── */
+.fi-input-wrp {
+    border-radius: var(--sp-radius-control);
+    background-color: var(--sp-card);
+    box-shadow: 0 0 0 1px var(--sp-border-2);
+    --tw-ring-shadow: 0 0 #0000;
+}
+
+.fi-input-wrp:focus-within {
+    box-shadow: 0 0 0 1px var(--sp-primary), 0 0 0 4px var(--sp-primary-l);
+}
+
+.fi-input-wrp.fi-invalid {
+    box-shadow: 0 0 0 1px var(--sp-danger), 0 0 0 4px var(--sp-danger-l);
+}
+
+.fi-input-wrp.fi-disabled {
+    background-color: var(--sp-subtle);
+    box-shadow: 0 0 0 1px var(--sp-border);
+}
+
+/* Tinggi tetap 40px untuk input satu baris dan select (textarea tidak ikut) */
+input.fi-input,
+.fi-select-input,
+.fi-input-wrp select {
+    height: 40px;
+    padding-block: 0;
+}
+
+/* Select yang bisa dicari (Choices.js) tidak memakai .fi-select-input */
+.fi-input-wrp {
+    min-height: 40px;
+    align-items: center;
+}
+
+.fi-input,
+.fi-select-input {
+    font-size: 14px;
+    color: var(--sp-heading);
+}
+
+.fi-input::placeholder {
+    color: var(--sp-light);
+}
+
+.fi-input-wrp-prefix,
+.fi-input-wrp-suffix {
+    border-color: var(--sp-border-2);
+}
+
+.fi-input-wrp-label {
+    font-size: 13px;
+    color: var(--sp-muted);
+}
+
+.fi-fo-field-wrp-label > span,
+.fi-fo-field-wrp-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sp-heading);
+}
+
+.fi-fo-field-wrp-helper-text,
+.fi-fo-field-wrp-hint {
+    font-size: 12px;
+    color: var(--sp-light);
+}
+
+.fi-fo-field-wrp-error-message {
+    font-size: 12px;
+    color: var(--sp-danger-ink);
+}
+
+.fi-checkbox-input,
+.fi-radio-input {
+    border-color: var(--sp-border-2);
+    accent-color: var(--sp-primary);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   10. Tabel
+   ───────────────────────────────────────────────────────────── */
+.fi-ta-ctn {
+    overflow: hidden;
+}
+
+.fi-ta-ctn > * + *,
+.fi-ta-ctn .fi-ta-header-ctn > * + *,
+.fi-ta-content,
+.fi-ta-header-toolbar,
+.fi-ta-ctn .fi-pagination {
+    border-color: var(--sp-border);
+}
+
+.fi-ta-header {
+    padding: 16px 20px;
+}
+
+.fi-ta-header-heading {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.fi-ta-header-description {
+    font-size: 12.5px;
+    color: var(--sp-light);
+}
+
+.fi-ta-header-toolbar {
+    padding: 12px 16px;
+}
+
+.fi-ta-table {
+    font-size: 13.5px;
+}
+
+.fi-ta-table > thead > tr {
+    background-color: var(--sp-subtle);
+}
+
+.fi-ta-table > :not([hidden]) ~ :not([hidden]),
+.fi-ta-table > tbody > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--sp-border);
+}
+
+.fi-ta-header-cell {
+    padding-block: 10px;
+}
+
+.fi-ta-header-cell-label,
+.fi-ta-header-cell-sort-btn {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sp-muted);
+}
+
+.fi-ta-row {
+    transition: background-color 0.1s ease;
+}
+
+.fi-ta-row:hover {
+    background-color: var(--sp-subtle);
+}
+
+.fi-ta-row.fi-selected {
+    background-color: var(--sp-primary-l);
+}
+
+.fi-ta-text-item-label {
+    font-size: 13.5px;
+    color: var(--sp-text);
+}
+
+.fi-ta-cell:first-of-type .fi-ta-text-item-label,
+.fi-ta-cell:has(.fi-ta-selection-checkbox) + .fi-ta-cell .fi-ta-text-item-label {
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.fi-ta-text-item-description,
+.fi-ta-text-item .fi-ta-text-description {
+    font-size: 12px;
+    color: var(--sp-light);
+}
+
+.fi-ta-empty-state {
+    padding-block: 56px;
+}
+
+.fi-ta-empty-state-icon-ctn {
+    background-color: var(--sp-gray-l);
+}
+
+.fi-ta-empty-state-icon {
+    color: var(--sp-light);
+}
+
+.fi-ta-empty-state-heading {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.fi-ta-empty-state-description {
+    color: var(--sp-muted);
+}
+
+/* Paginasi: halaman aktif bidang indigo */
+.fi-pagination {
+    padding: 12px 16px;
+}
+
+.fi-pagination-overview {
+    font-size: 13px;
+    color: var(--sp-muted);
+}
+
+.fi-pagination-items {
+    border-radius: var(--sp-radius-control);
+    box-shadow: none;
+    gap: 4px;
+    --tw-ring-shadow: 0 0 #0000;
+}
+
+.fi-pagination-items > * + * {
+    border: 0;
+}
+
+.fi-pagination-item-button {
+    min-width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    justify-content: center;
+}
+
+.fi-pagination-item-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sp-text);
+}
+
+.fi-pagination-item.fi-active .fi-pagination-item-button {
+    background-color: var(--sp-primary);
+}
+
+.fi-pagination-item.fi-active .fi-pagination-item-label {
+    color: #FFFFFF;
+}
+
+.fi-pagination-records-per-page-select .fi-input-wrp {
+    box-shadow: 0 0 0 1px var(--sp-border-2);
+}
+
+.fi-pagination-records-per-page-select .fi-select-input {
+    padding-block: 6px;
+    font-size: 13px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   11. Tab bergaris bawah (template), bukan pil
+   ───────────────────────────────────────────────────────────── */
+.fi-tabs {
+    gap: 4px;
+    padding: 0 16px;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: inset 0 -1px 0 var(--sp-border);
+    --tw-ring-shadow: 0 0 #0000;
+}
+
+.fi-tabs.fi-contained {
+    border-radius: var(--sp-radius-card) var(--sp-radius-card) 0 0;
+}
+
+.fi-tabs-item {
+    height: 46px;
+    padding: 0 10px;
+    border-radius: 0;
+}
+
+.fi-tabs-item:hover {
+    background-color: transparent;
+}
+
+.fi-tabs-item-label {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sp-muted);
+}
+
+.fi-tabs-item-icon {
+    color: var(--sp-muted);
+}
+
+.fi-tabs-item.fi-active {
+    background-color: transparent;
+    box-shadow: inset 0 -2px 0 var(--sp-primary);
+}
+
+.fi-tabs-item.fi-active .fi-tabs-item-label,
+.fi-tabs-item.fi-active .fi-tabs-item-icon {
+    color: var(--sp-primary-ink);
+}
+
+.fi-tabs-item .fi-badge {
+    min-width: 22px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: var(--sp-gray-l);
+    color: var(--sp-muted);
+}
+
+.fi-tabs-item.fi-active .fi-badge {
+    background-color: var(--sp-primary-l);
+    color: var(--sp-primary-ink);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   12. Badge status: latar lembut, teks "-ink", titik berwarna
+   ───────────────────────────────────────────────────────────── */
+.fi-badge {
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: none;
+    --tw-ring-shadow: 0 0 #0000;
+}
+
+.fi-badge.fi-color-primary { background-color: var(--sp-primary-l); color: var(--sp-primary-ink); --dot: var(--sp-primary); }
+.fi-badge.fi-color-info { background-color: var(--sp-info-l); color: var(--sp-info-ink); --dot: var(--sp-info); }
+.fi-badge.fi-color-success { background-color: var(--sp-success-l); color: var(--sp-success-ink); --dot: var(--sp-success); }
+.fi-badge.fi-color-warning { background-color: var(--sp-warning-l); color: var(--sp-warning-ink); --dot: var(--sp-warning); }
+.fi-badge.fi-color-danger { background-color: var(--sp-danger-l); color: var(--sp-danger-ink); --dot: var(--sp-danger); }
+.fi-badge.fi-color-gray { background-color: var(--sp-gray-l); color: var(--sp-muted); --dot: var(--sp-light); }
+
+/* Badge status berikon (enum): ikon diganti titik 6px seperti template */
+.fi-badge:has(> .fi-badge-icon) {
+    height: 24px;
+    padding-inline: 9px;
+    gap: 6px;
+}
+
+.fi-badge:has(> .fi-badge-icon)::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: 999px;
+    background-color: var(--dot, currentColor);
+}
+
+.fi-badge > .fi-badge-icon {
+    display: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   13. Modal: radius 14, kepala bergaris, kaki abu
+   ───────────────────────────────────────────────────────────── */
+.fi-modal-close-overlay {
+    background-color: var(--sp-overlay);
+}
+
+.fi-modal-window {
+    border-radius: var(--sp-radius-modal);
+    background-color: var(--sp-card);
+    box-shadow: var(--sp-shadow-lg);
+    --tw-ring-shadow: 0 0 #0000;
+}
+
+.fi-modal-slide-over-window {
+    border-radius: 0;
+}
+
+.fi-modal-heading {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--sp-heading);
+}
+
+.fi-modal-description {
+    font-size: 13.5px;
+    color: var(--sp-muted);
+}
+
+.fi-modal-icon-bg {
+    background-color: var(--tone-l, var(--sp-primary-l));
+}
+
+.fi-modal-footer.fi-sticky {
+    padding: 14px 24px;
+    border-top: 1px solid var(--sp-border);
+    background-color: var(--sp-subtle);
+    border-radius: 0 0 var(--sp-radius-modal) var(--sp-radius-modal);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   14. Notifikasi toast
+   ───────────────────────────────────────────────────────────── */
+.fi-no-notification {
+    border-radius: var(--sp-radius-card);
+    background-color: var(--sp-card);
+    box-shadow: 0 0 0 1px var(--sp-border), var(--sp-shadow-lg);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   15. Komponen dashboard (Blade + Tailwind sendiri)
+   ───────────────────────────────────────────────────────────── */
+.sipma-fill {
+    height: 100%;
+}
+
+.sipma-clip {
+    overflow: hidden;
+}
+
+.sipma-min-0 {
+    min-width: 0;
+}
+
+.sipma-card-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+}
+
+.sipma-card-head-ruled {
+    border-bottom: 1px solid var(--sp-border);
+}
+
+.sipma-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-card-desc {
+    margin-top: 2px;
+    font-size: 12.5px;
+    color: var(--sp-light);
+}
+
+.sipma-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sp-primary);
+}
+
+.sipma-link:hover {
+    color: var(--sp-primary-h);
+}
+
+/* Kartu angka */
+.sipma-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.sipma-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+}
+
+.sipma-stat-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sipma-stat-label {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--sp-muted);
+}
+
+.sipma-tile {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background-color: var(--tone-l);
+    color: var(--tone-ink);
+}
+
+.sipma-tile-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.sipma-stat-value {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.8px;
+    color: var(--sp-heading);
+}
+
+.sipma-stat-foot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+}
+
+.sipma-pill {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background-color: var(--tone-l);
+    color: var(--tone-ink);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.sipma-stat-caption {
+    color: var(--sp-light);
+}
+
+/* Segmen (pil di dalam wadah abu) */
+.sipma-segment {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 9px;
+    background-color: var(--sp-gray-l);
+}
+
+.sipma-segment-btn {
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sp-muted);
+}
+
+.sipma-segment-btn.is-active {
+    /* Pil aktif berwarna primary (bukan putih) agar segmen tidak datar putih-abu */
+    background-color: var(--sp-primary);
+    color: #FFFFFF;
+    box-shadow: 0 1px 2px rgba(32, 41, 58, 0.12);
+}
+
+.sipma-segment-btn:not(.is-active):hover {
+    color: var(--sp-heading);
+}
+
+/* Grafik garis */
+.sipma-legend {
+    display: flex;
+    gap: 18px;
+    padding: 0 20px;
+    font-size: 12.5px;
+    color: var(--sp-muted);
+}
+
+.sipma-legend > span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sipma-legend-line {
+    width: 10px;
+    height: 3px;
+    border-radius: 2px;
+    background-color: var(--sp-primary);
+}
+
+.sipma-legend-dash {
+    width: 10px;
+    border-top: 2px dashed var(--sp-light);
+}
+
+.sipma-chart-card {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Grafik mengisi sisa tinggi kartu (minimal 200px) agar tidak ada ruang kosong di bawahnya */
+.sipma-chart {
+    position: relative;
+    display: grid;
+    flex: 1;
+    grid-template-columns: 32px 1fr;
+    grid-template-rows: minmax(200px, 1fr) 28px;
+    padding: 16px 20px 8px 12px;
+}
+
+.sipma-chart-yaxis {
+    position: relative;
+    grid-row: 1;
+    grid-column: 1;
+}
+
+.sipma-chart-yaxis span {
+    position: absolute;
+    right: 8px;
+    transform: translateY(-50%);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--sp-light);
+}
+
+.sipma-chart-plot {
+    position: relative;
+    grid-row: 1;
+    grid-column: 2;
+}
+
+.sipma-chart-svg {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.sipma-chart-grid {
+    stroke: var(--sp-border);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.sipma-chart-stop-top {
+    stop-color: var(--sp-primary);
+    stop-opacity: 0.2;
+}
+
+.sipma-chart-stop-bottom {
+    stop-color: var(--sp-primary);
+    stop-opacity: 0;
+}
+
+.sipma-chart-prev {
+    fill: none;
+    stroke: var(--sp-light);
+    stroke-width: 2;
+    stroke-dasharray: 4 4;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.sipma-chart-line {
+    fill: none;
+    stroke: var(--sp-primary);
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.sipma-chart-dot {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    border: 2px solid var(--sp-primary);
+    background-color: var(--sp-card);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.sipma-chart-hover {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+}
+
+.sipma-chart-guide {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: var(--sp-border-2);
+    pointer-events: none;
+}
+
+.sipma-chart-xaxis {
+    position: relative;
+    grid-row: 2;
+    grid-column: 2;
+}
+
+.sipma-chart-xaxis span {
+    position: absolute;
+    top: 10px;
+    transform: translateX(-50%);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--sp-light);
+}
+
+.sipma-chart-tip {
+    position: absolute;
+    z-index: 2;
+    transform: translate(-50%, calc(-100% - 12px)); /* di atas titik */
+    padding: 8px 10px;
+    border-radius: 8px;
+    background-color: var(--sp-heading);
+    color: var(--sp-card);
+    font-size: 12px;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.sipma-chart-tip.is-below {
+    transform: translate(-50%, 12px); /* titik dekat tepi atas: tooltip di bawahnya */
+}
+
+.sipma-chart-tip-title {
+    margin-bottom: 2px;
+    font-weight: 600;
+}
+
+/* Bar per program */
+.sipma-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px 20px 20px;
+}
+
+.sipma-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sipma-bar-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.sipma-bar-name {
+    color: var(--sp-text);
+}
+
+.sipma-bar-value {
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-progress {
+    height: 6px;
+    border-radius: 4px;
+    background-color: var(--sp-gray-l);
+}
+
+.sipma-progress-fill {
+    height: 6px;
+    border-radius: 4px;
+    background-color: var(--sp-primary);
+}
+
+/* Tabel ringkas */
+.sipma-table-scroll {
+    overflow-x: auto;
+}
+
+.sipma-table {
+    width: 100%;
+    min-width: 560px;
+    border-collapse: collapse;
+    font-size: 13.5px;
+}
+
+.sipma-table thead tr {
+    background-color: var(--sp-subtle);
+}
+
+.sipma-table th {
+    padding: 10px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: start;
+    color: var(--sp-muted);
+}
+
+.sipma-table td {
+    padding: 11px 12px;
+    color: var(--sp-text);
+}
+
+.sipma-table th:first-child,
+.sipma-table td:first-child {
+    padding-inline-start: 20px;
+}
+
+.sipma-table th:last-child,
+.sipma-table td:last-child {
+    padding-inline-end: 20px;
+}
+
+.sipma-table tbody tr {
+    border-top: 1px solid var(--sp-border);
+}
+
+.sipma-table tbody tr:hover {
+    background-color: var(--sp-subtle);
+}
+
+.sipma-end {
+    text-align: end !important;
+}
+
+.sipma-muted {
+    color: var(--sp-muted) !important;
+}
+
+.sipma-nowrap {
+    white-space: nowrap;
+}
+
+.sipma-person {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sipma-person-name {
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-person-meta {
+    font-size: 12px;
+    color: var(--sp-light);
+}
+
+.sipma-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    padding: 0 9px;
+    border-radius: 6px;
+    background-color: var(--tone-l);
+    color: var(--tone-ink);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.sipma-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background-color: var(--tone);
+}
+
+/* Agenda */
+.sipma-agenda {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px 12px;
+}
+
+.sipma-agenda-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 8px;
+    border-radius: 8px;
+}
+
+.sipma-agenda-item:hover {
+    background-color: var(--sp-subtle);
+}
+
+.sipma-date-tile {
+    flex: none;
+    width: 46px;
+    padding: 6px 0;
+    border-radius: 9px;
+    background-color: var(--tone-l);
+    color: var(--tone-ink);
+    text-align: center;
+}
+
+.sipma-date-tile-day {
+    display: block;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.sipma-date-tile-month {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.sipma-agenda-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-agenda-meta {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--sp-light);
+}
+
+/* Aktivitas */
+.sipma-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 20px;
+}
+
+.sipma-timeline-item {
+    display: flex;
+    gap: 12px;
+}
+
+.sipma-timeline-dot {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    margin-top: 5px;
+    border-radius: 999px;
+    background-color: var(--tone);
+    box-shadow: 0 0 0 3px var(--sp-card), 0 0 0 4px var(--sp-border);
+}
+
+.sipma-timeline-text {
+    font-size: 13.5px;
+    color: var(--sp-heading);
+}
+
+.sipma-timeline-time {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--sp-light);
+}
+
+/* Donut sumber pendaftar */
+.sipma-donut-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 24px 20px;
+}
+
+.sipma-donut {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.sipma-donut-svg {
+    width: 150px;
+    height: 150px;
+    transform: rotate(-90deg);
+}
+
+.sipma-donut-track,
+.sipma-donut-seg {
+    fill: none;
+    stroke-width: 14;
+}
+
+.sipma-donut-track {
+    stroke: var(--sp-gray-l);
+}
+
+.sipma-stroke-primary {
+    stroke: var(--sp-primary);
+}
+
+.sipma-stroke-warning {
+    stroke: var(--sp-warning);
+}
+
+.sipma-donut-center {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    text-align: center;
+}
+
+.sipma-donut-total {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--sp-heading);
+}
+
+.sipma-donut-caption {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--sp-light);
+}
+
+.sipma-donut-legend {
+    display: flex;
+    min-width: 180px;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.sipma-donut-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sipma-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+.sipma-bg-primary {
+    background-color: var(--sp-primary);
+}
+
+.sipma-bg-warning {
+    background-color: var(--sp-warning);
+}
+
+.sipma-donut-label {
+    flex: 1;
+    color: var(--sp-text);
+}
+
+.sipma-donut-value {
+    font-weight: 700;
+    color: var(--sp-heading);
+}
+
+.sipma-donut-pct {
+    width: 44px;
+    font-size: 12.5px;
+    text-align: end;
+    color: var(--sp-light);
+}
+
+.sipma-donut-note {
+    padding-top: 12px;
+    border-top: 1px solid var(--sp-border);
+    font-size: 12.5px;
+    color: var(--sp-light);
+}
+
+/* Empty state */
+.sipma-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 40px 24px;
+    text-align: center;
+}
+
+.sipma-empty-icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    margin-bottom: 6px;
+    border-radius: 999px;
+    background-color: var(--sp-gray-l);
+    color: var(--sp-light);
+}
+
+.sipma-empty-svg {
+    width: 22px;
+    height: 22px;
+}
+
+.sipma-empty-title {
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-empty-desc {
+    font-size: 13px;
+    color: var(--sp-muted);
+}
+
+/* Ringkasan di atas tabel resource (widget SummaryLine) */
+.sipma-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sipma-summary-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 7px;
+    background-color: var(--sp-card);
+    box-shadow: 0 0 0 1px var(--sp-border);
+    font-size: 13px;
+    color: var(--sp-muted);
+}
+
+.sipma-summary-chip strong {
+    font-weight: 700;
+    color: var(--sp-heading);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   16. Master data (template): tab entitas, sakelar, aksi ikon, modal
+   ───────────────────────────────────────────────────────────── */
+.sipma-master-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 16px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--sp-border);
+}
+
+.sipma-master-tab {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--sp-muted);
+    box-shadow: inset 0 -2px 0 transparent;
+}
+
+.sipma-master-tab:hover {
+    color: var(--sp-heading);
+}
+
+.sipma-master-tab.is-active {
+    color: var(--sp-primary-ink);
+    box-shadow: inset 0 -2px 0 var(--sp-primary);
+}
+
+.sipma-master-tab-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.sipma-master-tab-count {
+    display: grid;
+    place-items: center;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background-color: var(--sp-gray-l);
+    color: var(--sp-muted);
+    font-size: 11.5px;
+}
+
+.sipma-master-tab.is-active .sipma-master-tab-count {
+    background-color: var(--sp-primary-l);
+    color: var(--sp-primary-ink);
+}
+
+/* Tab status penerimaan: angka selalu berwarna statusnya (sama dengan badge & kolom kanban);
+   tab aktif memakai warna status itu untuk teks dan garis bawahnya. */
+.sipma-master-tab.has-tone .sipma-master-tab-count {
+    background-color: var(--tone-l);
+    color: var(--tone-ink);
+}
+
+.sipma-master-tab.has-tone.is-active {
+    color: var(--tone-ink);
+    box-shadow: inset 0 -2px 0 var(--tone);
+}
+
+/* Toolbar: pencarian di kiri (template), saring & kolom di kanan */
+/* Wadah aksi massal kosong tetap memakan gap 16px sehingga kiri (32px) ≠ kanan (16px) */
+.fi-ta-header-toolbar > div:first-child:not(:has(*)) {
+    display: none;
+}
+
+.fi-ta-header-toolbar > div:last-child {
+    flex: 1;
+    margin-inline-start: 0;
+}
+
+.fi-ta-header-toolbar .fi-ta-search-field {
+    order: -1;
+    width: 100%;
+    max-width: 340px;
+    margin-inline-end: auto;
+}
+
+.fi-ta-search-field .fi-input-wrp {
+    min-height: 36px;
+}
+
+.fi-ta-search-field input.fi-input {
+    height: 36px;
+    font-size: 13.5px;
+}
+
+/* Sakelar status di tabel: 34×18, label di sampingnya */
+.sipma-switch {
+    display: flex;
+    width: max-content;
+    align-items: center;
+    gap: 8px;
+}
+
+.sipma-switch > [role='switch'] {
+    width: 34px;
+    height: 18px;
+}
+
+.sipma-switch > [role='switch'] > span {
+    width: 14px;
+    height: 14px;
+}
+
+.sipma-switch > [role='switch'][aria-checked='true'] > span {
+    --tw-translate-x: 16px;
+}
+
+.sipma-switch > [role='switch'][aria-checked='false'],
+.fi-fo-toggle[aria-checked='false'] {
+    background-color: var(--sp-border-2);
+}
+
+.sipma-switch-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sp-muted);
+}
+
+.sipma-switch-label.is-on {
+    color: var(--sp-success-ink);
+}
+
+/* Baris lebih rapat (template: padding 12px) */
+.fi-ta-text,
+.fi-ta-toggle,
+.fi-ta-icon {
+    padding-block: 12px;
+}
+
+/* Deskripsi di bawah nilai sel (mis. kode di bawah nama): 12px abu muda, rapat */
+.fi-ta-text {
+    row-gap: 2px;
+}
+
+.fi-ta-text > p {
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--sp-light);
+}
+
+.fi-ta-text-item-label {
+    line-height: 1.35;
+}
+
+/* Aksi baris berupa ikon 32px; hapus memerah saat hover */
+.fi-ta-actions {
+    gap: 2px;
+}
+
+.fi-ta-actions .fi-icon-btn {
+    width: 32px;
+    height: 32px;
+}
+
+.fi-ta-actions .fi-icon-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.fi-ta-actions .fi-icon-btn.sipma-row-delete:hover {
+    background-color: var(--sp-danger-l);
+    color: var(--sp-danger-ink);
+}
+
+.fi-ta-actions .fi-icon-btn:disabled,
+.fi-ta-actions .fi-icon-btn.fi-disabled {
+    opacity: 0.4;
+}
+
+/* Modal form: kepala bergaris dengan tile ikon 38px, subjudul kecil */
+.fi-modal-header.fi-sticky {
+    padding: 20px 56px 20px 24px;
+    align-items: center;
+    column-gap: 12px;
+    border-color: var(--sp-border);
+    background-color: var(--sp-card);
+}
+
+.fi-modal-header div:has(> .fi-modal-icon) {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 10px;
+    background-color: var(--sp-primary-l);
+    color: var(--sp-primary-ink);
+}
+
+.fi-modal-header .fi-modal-icon {
+    width: 18px;
+    height: 18px;
+    color: inherit;
+}
+
+.fi-modal-header.fi-sticky .fi-modal-description {
+    margin-top: 0;
+    font-size: 12.5px;
+    color: var(--sp-light);
+}
+
+.fi-modal-close-btn {
+    color: var(--sp-light);
+}
+
+/* Modal konfirmasi (hapus): ikon merah 48px di tengah, tombol selebar modal */
+.fi-modal-header .justify-center > div:has(> .fi-modal-icon) {
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+}
+
+.fi-ta-empty-state-icon-ctn {
+    /* Lingkaran 52px dengan ikon tepat di tengah (padding bawaan Filament membuatnya meleset 2px) */
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+}
+
+.fi-modal-header div.fi-color-danger:has(> .fi-modal-icon) {
+    background-color: var(--sp-danger-l);
+    color: var(--sp-danger-ink);
+}
+
+.fi-modal-header .justify-center + div .fi-modal-heading {
+    font-size: 17px;
+}
+
+/* Section di dalam modal: tanpa kotak (R-2.9), judul kecil + garis pemisah */
+.fi-modal .fi-section {
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.fi-modal .fi-section-header {
+    padding: 0 0 12px;
+    border-bottom: 0 !important;
+}
+
+.fi-modal .fi-section-header-heading {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--sp-light);
+}
+
+.fi-modal .fi-section-content-ctn {
+    border-top: 0;
+}
+
+.fi-modal .fi-section-content {
+    padding: 0;
+}
+
+.fi-modal .fi-fo-component-ctn {
+    row-gap: 20px;
+}
+
+/* Sakelar "Aktif" di modal: kartu bergaris, label kiri, sakelar kanan */
+.sipma-toggle-card {
+    padding: 12px 14px;
+    border: 1px solid var(--sp-border);
+    border-radius: 10px;
+}
+
+.sipma-toggle-card .fi-fo-field-wrp-label {
+    width: 100%;
+    flex-direction: row-reverse;
+    justify-content: space-between;
+}
+
+.sipma-toggle-card .fi-fo-field-wrp-label > span {
+    font-weight: 600;
+}
+
+.sipma-toggle-card .fi-fo-field-wrp-helper-text {
+    margin-top: -6px;
+}
+
+.fi-fo-toggle {
+    width: 38px;
+    height: 20px;
+}
+
+.fi-fo-toggle > span {
+    width: 16px;
+    height: 16px;
+}
+
+.fi-fo-toggle[aria-checked='true'] > span {
+    --tw-translate-x: 18px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   17. Garis waktu langkah pendaftaran (x-sipma.status-timeline)
+   ───────────────────────────────────────────────────────────── */
+.sipma-timeline-steps {
+    display: flex;
+    flex-wrap: nowrap; /* satu baris seperti template; teks dipotong, layar sempit digulir */
+    overflow-x: auto;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: var(--sp-radius-card);
+    background-color: var(--sp-card);
+    box-shadow: 0 0 0 1px var(--sp-border), var(--sp-shadow);
+}
+
+.sipma-step {
+    display: flex;
+    flex: 0 1 auto;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px 6px 6px;
+    border-radius: 12px;
+}
+
+.sipma-step.is-current {
+    background-color: var(--tone-l);
+}
+
+.sipma-step-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background-color: var(--sp-gray-l);
+    color: var(--sp-light);
+}
+
+.sipma-step.is-done .sipma-step-icon,
+.sipma-step.is-current .sipma-step-icon {
+    background-color: var(--tone);
+    color: #FFFFFF;
+}
+
+.sipma-step-svg {
+    width: 18px;
+    height: 18px;
+}
+
+.sipma-step-text {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.sipma-step-kicker {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--sp-light);
+}
+
+.sipma-step.is-current .sipma-step-kicker {
+    color: var(--tone-ink);
+}
+
+.sipma-step-label,
+.sipma-step-desc {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sipma-step-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--sp-muted);
+}
+
+.sipma-step.is-done .sipma-step-label,
+.sipma-step.is-current .sipma-step-label {
+    color: var(--sp-heading);
+}
+
+.sipma-step-desc {
+    font-size: 12px;
+    color: var(--sp-light);
+}
+
+.sipma-step-line {
+    flex: 1 1 12px;
+    min-width: 8px;
+    height: 2px;
+    border-radius: 2px;
+    background-color: var(--sp-border);
+}
+
+.sipma-step-line.is-done {
+    background-color: var(--sp-primary);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   18. Penerimaan: kartu bertautan, detail pendaftar, pratinjau berkas
+   ───────────────────────────────────────────────────────────── */
+.sipma-card-link {
+    transition: box-shadow 0.12s ease;
+}
+
+.sipma-card-link:hover {
+    box-shadow: 0 0 0 1px var(--sp-border-2), var(--sp-shadow);
+}
+
+.sipma-row-link {
+    display: block;
+}
+
+.sipma-row-link:hover {
+    color: var(--sp-primary-ink);
+}
+
+.sipma-applicant-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.sipma-applicant-status .sipma-timeline-steps {
+    width: 100%;
+}
+
+.sipma-alert {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background-color: var(--tone-l);
+    color: var(--tone-ink);
+    font-size: 13.5px;
+}
+
+.sipma-alert-icon {
+    width: 18px;
+    height: 18px;
+    flex: none;
+}
+
+.sipma-section {
+    padding: 20px 24px 24px;
+}
+
+.sipma-section-hint {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background-color: var(--sp-subtle);
+    font-size: 13px;
+    color: var(--sp-muted);
+}
+
+.sipma-def-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px 24px;
+}
+
+.sipma-def-grid dt {
+    font-size: 12px;
+    color: var(--sp-light);
+}
+
+.sipma-def-grid dd {
+    margin-top: 2px;
+    font-weight: 500;
+    color: var(--sp-heading);
+}
+
+.sipma-mono {
+    font-family: 'DM Mono', ui-monospace, monospace;
+}
+
+.sipma-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.sipma-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 14px;
+    padding: 14px 0;
+    border-top: 1px solid var(--sp-border);
+}
+
+.sipma-rows > .sipma-row:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.sipma-row-main {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.sipma-row-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-row-tag {
+    padding: 1px 7px;
+    border-radius: 6px;
+    background-color: var(--sp-gray-l);
+    color: var(--sp-muted);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.sipma-row-meta {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--sp-light);
+    overflow-wrap: anywhere;
+}
+
+.sipma-row-note {
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: var(--sp-danger-ink);
+}
+
+.sipma-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.sipma-row-loa {
+    margin-top: 8px;
+}
+
+.sipma-fees {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background-color: var(--sp-subtle);
+}
+
+.sipma-fees li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+}
+
+.sipma-fees li > span:first-child {
+    flex: 1;
+    color: var(--sp-text);
+}
+
+.sipma-fees b {
+    font-weight: 700;
+    color: var(--sp-heading);
+}
+
+.sipma-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.sipma-preview-frame {
+    width: 100%;
+    height: 70vh;
+    border: 1px solid var(--sp-border);
+    border-radius: 10px;
+    background-color: var(--sp-subtle);
+}
+
+.sipma-preview-image {
+    max-width: 100%;
+    max-height: 70vh;
+    margin-inline: auto;
+    border: 1px solid var(--sp-border);
+    border-radius: 10px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   19. Sakelar tampilan & papan kanban pendaftar
+   ───────────────────────────────────────────────────────────── */
+/* Segmen "Tabel | Kanban": grup tombol seukuran tombol Ekspor (38px, 13,5px/600, ikon 20px,
+   radius 8, garis 1px). Pilihan aktif berlatar primary agar tidak datar putih-abu. */
+.sipma-segment-lg {
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border-radius: var(--sp-radius-control);
+    background-color: var(--sp-card);
+    box-shadow: 0 0 0 1px var(--sp-border-2);
+}
+
+.sipma-segment-lg .sipma-segment-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sp-text);
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.sipma-segment-lg .sipma-segment-btn + .sipma-segment-btn {
+    box-shadow: inset 1px 0 0 var(--sp-border-2);
+}
+
+.sipma-segment-lg .sipma-segment-btn:not(.is-active):hover {
+    background-color: var(--sp-hover);
+    color: var(--sp-heading);
+}
+
+.sipma-segment-lg .sipma-segment-btn.is-active {
+    background-color: var(--sp-primary);
+    color: #FFFFFF;
+    box-shadow: none;
+}
+
+.sipma-segment-lg .sipma-segment-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.sipma-segment-btn:focus-visible {
+    outline: 2px solid var(--sp-primary);
+    outline-offset: -2px;
+}
+
+.sipma-bg-success { background-color: var(--sp-success); }
+.sipma-bg-danger { background-color: var(--sp-danger); }
+.sipma-bg-info { background-color: var(--sp-info); }
+
+.sipma-board-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--sp-muted);
+}
+
+.sipma-board-hint-icon {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    color: var(--sp-light);
+}
+
+.sipma-board-columns {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    /* Wadah bergulir memotong apa pun di luar tepinya; padding memberi ruang agar tidak ada yang terpotong */
+    padding: 16px;
+    overflow-x: auto;
+}
+
+.sipma-board-column {
+    display: flex;
+    flex: 1 1 0; /* lima kolom berbagi lebar konten; baru bergulir bila lebih sempit dari min-width */
+    min-width: 200px;
+    flex-direction: column;
+    max-height: calc(100vh - 300px);
+    border-radius: 10px;
+    background-color: var(--sp-subtle); /* bidang lembut tanpa garis: tidak bertumpuk kotak di dalam kartu */
+    transition: box-shadow 0.12s ease;
+}
+
+.sipma-board-column.is-over {
+    box-shadow: inset 0 0 0 2px var(--sp-primary); /* ke dalam, tidak bisa terpotong */
+}
+
+.sipma-board-column-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 14px 10px;
+}
+
+.sipma-board-column-head .sipma-status-dot {
+    width: 8px;
+    height: 8px;
+}
+
+.sipma-board-column-title {
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 600;
+    color: var(--sp-heading);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sipma-board-count {
+    display: grid;
+    place-items: center;
+    min-width: 22px;
+    height: 20px;
+    margin-inline-start: auto;
+    padding: 0 6px;
+    border-radius: 10px;
+    background-color: var(--tone-l);
+    color: var(--tone-ink);
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+.sipma-board-cards {
+    display: flex;
+    min-height: 80px;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 10px 10px;
+    overflow-y: auto;
+}
+
+.sipma-board-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    background-color: var(--sp-card);
+    box-shadow: 0 0 0 1px var(--sp-border), var(--sp-shadow);
+}
+
+.sipma-board-card[draggable='true'] {
+    cursor: grab;
+}
+
+.sipma-board-card:hover {
+    box-shadow: 0 0 0 1px var(--sp-border-2), var(--sp-shadow);
+}
+
+.sipma-board-card.is-dragging {
+    opacity: 0.5;
+}
+
+.sipma-board-card-person {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sipma-board-card-person .sipma-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 11.5px;
+}
+
+.sipma-board-card-name {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-board-card-person:hover .sipma-board-card-name {
+    color: var(--sp-primary-ink);
+}
+
+.sipma-board-card-meta {
+    display: block;
+    font-size: 12px;
+    color: var(--sp-light);
+}
+
+.sipma-board-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.sipma-board-chip {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    min-height: 22px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background-color: var(--sp-gray-l);
+    color: var(--sp-text);
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.sipma-board-chip.is-muted {
+    color: var(--sp-muted);
+    font-weight: 400;
+}
+
+.sipma-board-docs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--sp-muted);
+    white-space: nowrap;
+}
+
+.sipma-board-docs .sipma-progress {
+    flex: 1;
+    height: 5px;
+}
+
+.sipma-board-docs .sipma-progress-fill {
+    height: 5px;
+}
+
+.sipma-board-next {
+    display: block;
+    height: 30px;
+    border-radius: 7px;
+    background-color: var(--sp-card);
+    box-shadow: 0 0 0 1px var(--sp-border-2);
+    color: var(--sp-primary-ink);
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 30px;
+    text-align: center;
+}
+
+.sipma-board-next:hover {
+    background-color: var(--sp-primary-l);
+    box-shadow: 0 0 0 1px var(--sp-primary);
+}
+
+.sipma-board-empty {
+    padding: 22px 12px;
+    border: 1px dashed var(--sp-border-2);
+    border-radius: 10px;
+    font-size: 12.5px;
+    text-align: center;
+    color: var(--sp-light);
+}
+
+.sipma-board-more {
+    padding: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--sp-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fi-sidebar-item-button,
+    .fi-ta-row,
+    .sipma-icon-btn {
+        transition: none;
+    }
+}

@@ -6,36 +6,14 @@
 
 @php
     $logo = SipmaTheme::logoPath();
-
-    // Tiga cincin orbit berputar dengan kecepatan & arah berbeda.
-    // Blok @php harus mendahului semua @php(...) satu baris di file ini (keterbatasan kompilasi Blade).
-    $orbitRings = [
-        ['radius' => 12, 'inset' => 'inset-0', 'border' => 'border border-primary-200', 'duration' => 90, 'reverse' => false],
-        ['radius' => 9, 'inset' => 'inset-12', 'border' => 'border border-primary-200/80', 'duration' => 70, 'reverse' => true],
-        ['radius' => 6, 'inset' => 'inset-24', 'border' => 'border border-dashed border-gold', 'duration' => 50, 'reverse' => false],
-    ];
-
-    // Posisi awal ikon & titik di tiap cincin: sudut (derajat) dan jari-jari cincin (rem)
-    $orbitIcons = [
-        ['icon' => 'heroicon-o-academic-cap', 'angle' => -38, 'radius' => 12],
-        ['icon' => 'heroicon-o-globe-asia-australia', 'angle' => 112, 'radius' => 12],
-        ['icon' => 'heroicon-o-document-text', 'angle' => 158, 'radius' => 9],
-    ];
-
-    $orbitDots = [
-        ['angle' => 232, 'radius' => 12, 'size' => 'h-2 w-2', 'color' => 'bg-primary-300'],
-        ['angle' => 8, 'radius' => 12, 'size' => 'h-1.5 w-1.5', 'color' => 'bg-primary-400'],
-        ['angle' => 42, 'radius' => 9, 'size' => 'h-2.5 w-2.5', 'color' => 'bg-gold'],
-        ['angle' => 300, 'radius' => 6, 'size' => 'h-2 w-2', 'color' => 'bg-gold'],
-    ];
 @endphp
 
-<div class="min-h-screen bg-canvas lg:grid lg:grid-cols-2">
+<div class="min-h-screen bg-card lg:grid lg:grid-cols-2">
     {{-- Formulir di latar putih. Di DOM tetap pertama (urutan fokus & pembaca layar); di desktop tampil di kanan. --}}
-    <div class="flex min-h-screen flex-col bg-canvas px-6 py-4 sm:px-10 lg:order-last lg:px-16">
-        <header class="flex items-center justify-between gap-4 lg:justify-end">
-            {{-- Identitas hanya di mobile; di desktop sudah ada di sisi kiri --}}
-            <div class="flex min-w-0 items-center gap-3 lg:hidden">
+    <div class="flex min-h-screen flex-col bg-card px-6 py-4 sm:px-10 lg:order-last lg:px-16">
+        {{-- Header hanya di mobile: identitas + pemilih bahasa. Di desktop keduanya ada di baris atas panel kiri. --}}
+        <header class="flex items-center justify-between gap-4 lg:hidden">
+            <div class="flex min-w-0 items-center gap-3">
                 @if ($logo)
                     <img src="{{ asset($logo) }}" alt="{{ __('portal.brand.logo_alt') }}" class="h-10 w-auto shrink-0">
                 @endif
@@ -58,60 +36,55 @@
     </div>
 
     {{-- Identitas: gradien pastel + blur + grain, sticky setinggi layar; disembunyikan di bawah lg. --}}
-    <aside class="sipma-auth-bg relative isolate hidden overflow-hidden lg:sticky lg:top-0 lg:order-first lg:flex lg:h-screen lg:flex-col lg:items-center lg:justify-center lg:px-12" aria-labelledby="portal-identity">
-        <div class="sipma-blob -left-24 -top-24 h-[28rem] w-[28rem] bg-primary-200/70" aria-hidden="true"></div>
-        <div class="sipma-blob -bottom-32 -right-24 h-[30rem] w-[30rem] bg-primary-300/50" aria-hidden="true"></div>
-        <div class="sipma-blob left-[20%] top-[18%] h-[16rem] w-[16rem] bg-gold/35" aria-hidden="true"></div>
+    <aside class="sipma-auth-bg relative isolate hidden overflow-hidden lg:sticky lg:top-0 lg:order-first lg:flex lg:h-screen lg:flex-col lg:items-center lg:justify-center lg:px-12 lg:pb-10 lg:pt-28" aria-labelledby="portal-identity">
+        {{-- Bulatan warna bergerak pelan dengan irama berbeda (pengecualian R-2.19; mati untuk reduce motion) --}}
+        <div class="sipma-blob sipma-drift-a -left-24 -top-24 h-[28rem] w-[28rem] bg-primary-200/70" aria-hidden="true"></div>
+        <div class="sipma-blob sipma-drift-b -bottom-32 -right-24 h-[30rem] w-[30rem] bg-primary-300/50" aria-hidden="true"></div>
+        <div class="sipma-blob sipma-drift-c left-[20%] top-[18%] h-[16rem] w-[16rem] bg-gold/35" aria-hidden="true"></div>
         <div class="sipma-grain" aria-hidden="true"></div>
 
-        {{-- Ilustrasi orbit: logo di pusat tanpa latar, tiga cincin berputar pelan (ikon tetap tegak) --}}
-        <div class="relative grid h-[24rem] w-[24rem] shrink-0 place-items-center" aria-hidden="true">
-            @foreach ($orbitRings as $ring)
-                <div
-                    @class(['sipma-orbit-ring absolute inset-0', 'sipma-orbit-reverse' => $ring['reverse']])
-                    style="--orbit-duration: {{ $ring['duration'] }}s"
-                >
-                    <span class="absolute {{ $ring['inset'] }} rounded-full {{ $ring['border'] }}"></span>
+        {{-- Baris atas: lockup institusi di kiri (kapital, weight 600; pengecualian R-2.14 di §2.5), pemilih bahasa di kanan --}}
+        <div class="absolute inset-x-10 top-8 flex items-center justify-between gap-6 xl:inset-x-12">
+            <div class="flex min-w-0 items-center gap-4">
+                @if ($logo)
+                    <img src="{{ asset($logo) }}" alt="{{ __('portal.brand.logo_alt') }}" class="h-14 w-auto shrink-0">
+                @endif
+                <p class="text-body font-semibold uppercase leading-snug tracking-wide text-ink">
+                    <span class="block">{{ __('portal.brand.office_name') }}</span>
+                    <span class="block">{{ __('portal.brand.university') }}</span>
+                </p>
+            </div>
 
-                    @foreach (collect($orbitDots)->where('radius', $ring['radius']) as $dot)
-                        <span
-                            class="absolute left-1/2 top-1/2 rounded-full {{ $dot['size'] }} {{ $dot['color'] }}"
-                            style="transform: translate(-50%, -50%) rotate({{ $dot['angle'] }}deg) translateX({{ $dot['radius'] }}rem)"
-                        ></span>
-                    @endforeach
-
-                    @foreach (collect($orbitIcons)->where('radius', $ring['radius']) as $item)
-                        <span
-                            class="absolute left-1/2 top-1/2"
-                            style="transform: translate(-50%, -50%) rotate({{ $item['angle'] }}deg) translateX({{ $item['radius'] }}rem) rotate({{ -$item['angle'] }}deg)"
-                        >
-                            <span class="sipma-glass-grain sipma-orbit-upright grid h-11 w-11 place-items-center rounded-control text-primary">
-                                @svg($item['icon'], 'h-5 w-5')
-                            </span>
-                        </span>
-                    @endforeach
-                </div>
-            @endforeach
-
-            @if ($logo)
-                <img src="{{ asset($logo) }}" alt="" class="relative h-40 w-40 object-contain">
-            @endif
+            <x-language-switcher class="shrink-0" />
         </div>
 
-        {{-- Urutan: logo (di atas) → nama sistem → deskripsi --}}
-        <div class="relative mt-12 w-full max-w-2xl text-center">
+        {{--
+            Hero: ilustrasi mahasiswa (latar transparan) di atas grid garis putus-putus yang memudar.
+            Teks di dalam gambar tidak bisa diterjemahkan/dibaca pembaca layar, jadi dijelaskan lewat alt.
+        --}}
+        <div class="relative flex min-h-0 w-full max-w-xl justify-center">
+            <div class="sipma-dashed-grid -inset-x-10 -inset-y-8" aria-hidden="true"></div>
+            <img
+                src="{{ asset('images/students-illustration.webp') }}"
+                alt="{{ __('portal.brand.illustration_alt') }}"
+                width="1200"
+                height="800"
+                decoding="async"
+                fetchpriority="high"
+                class="sipma-float relative h-auto max-h-[48vh] w-auto max-w-full object-contain"
+            >
+        </div>
+
+        {{-- Nama sistem + deskripsi portal (identitas unit ada di lockup kiri atas) --}}
+        <div class="relative mt-6 w-full max-w-xl text-center">
             <h2 id="portal-identity">
-                <span class="block text-display tracking-tight text-primary">SIPMA</span>
+                <span class="block text-display tracking-tight text-primary-dark">SIPMA</span>
                 <span class="mt-2 block text-balance text-h2 text-ink">{{ __('portal.brand.system_name') }}</span>
             </h2>
 
             <span class="mx-auto mt-4 block h-1 w-12 rounded-full bg-gold" aria-hidden="true"></span>
 
-            {{-- Deskripsi unit ditonjolkan lewat ukuran & warna (16px, primary), tanpa latar/border --}}
-            <p class="mt-5 inline-flex items-center gap-2 text-body font-medium text-primary">
-                @svg('heroicon-o-building-library', 'h-5 w-5 shrink-0', ['aria-hidden' => 'true'])
-                {{ __('portal.brand.office') }}
-            </p>
+            <p class="mx-auto mt-4 max-w-md text-balance text-body text-ink-muted">{{ __('portal.brand.tagline') }}</p>
         </div>
     </aside>
 </div>

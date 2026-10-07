@@ -9,7 +9,15 @@ return [
     'brand' => [
         'system_name' => 'Non‑Degree International Student Admission Information System',
         'office' => 'International Office · Universitas Udayana',
+        'office_name' => 'International Office',
+        'university' => 'Universitas Udayana',
+        'tagline' => 'Application portal for non-degree programs at Universitas Udayana, for international students and partner agencies.',
+        'illustration_alt' => 'Illustration: three international students in graduation gowns holding a passport, with Balinese temples in the background and the application steps: choose a program, prepare documents, submit the application, and get your Letter of Acceptance.',
         'logo_alt' => 'Universitas Udayana logo',
+    ],
+
+    'account' => [
+        'logout' => 'Sign out',
     ],
 
     'skip_to_content' => 'Skip to main content',
@@ -19,6 +27,10 @@ return [
         'label' => 'Language',
         'en' => 'English',
         'id' => 'Bahasa Indonesia',
+        'region' => [
+            'id' => 'Indonesia',
+            'en' => 'United Kingdom',
+        ],
     ],
 
     'footer' => [
@@ -46,6 +58,7 @@ return [
             'password_confirmation' => 'Confirm password',
             'agency_name' => 'Agency name',
             'country' => 'Country',
+            'country_placeholder' => 'Select a country',
         ],
         'agency' => [
             'title' => 'About your agency',
@@ -103,7 +116,8 @@ return [
         'password_confirmation_required' => 'Type your password again.',
         'password_mismatch' => 'The passwords do not match. Type the same password in both fields.',
         'agency_name_required' => 'Enter the name of your agency.',
-        'country_required' => 'Enter the country where your agency is based.',
+        'country_required' => 'Select the country where your agency is based.',
+        'country_exists' => 'Choose a country from the list.',
         'consent' => 'To create an account, you need to agree to how we process your personal data.',
         'max' => 'This must be :max characters or fewer.',
     ],

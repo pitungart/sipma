@@ -45,8 +45,8 @@
                 x-bind:aria-pressed="revealed.toString()"
                 x-bind:aria-label="revealed ? @js(__('portal.password.hide')) : @js(__('portal.password.show'))"
             >
-                <span x-show="! revealed">@svg('heroicon-o-eye', 'h-5 w-5', ['aria-hidden' => 'true'])</span>
-                <span x-show="revealed" x-cloak>@svg('heroicon-o-eye-slash', 'h-5 w-5', ['aria-hidden' => 'true'])</span>
+                <span x-show="! revealed">@svg('lucide-eye', 'h-5 w-5', ['aria-hidden' => 'true'])</span>
+                <span x-show="revealed" x-cloak>@svg('lucide-eye-off', 'h-5 w-5', ['aria-hidden' => 'true'])</span>
             </button>
         @endif
     </div>

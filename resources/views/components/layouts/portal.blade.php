@@ -8,11 +8,11 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap">
 
     @vite('resources/css/app.css')
 </head>
-<body class="min-h-screen bg-canvas font-sans text-body text-ink antialiased">
+<body class="min-h-screen bg-card font-sans text-body text-ink antialiased">
     {{-- Target #main disediakan oleh tiap halaman --}}
     <a href="#main" class="sipma-skip-link">{{ __('portal.skip_to_content') }}</a>
 

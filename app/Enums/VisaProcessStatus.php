@@ -19,12 +19,7 @@ enum VisaProcessStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): string
     {
-        return match ($this) {
-            self::NotStarted => 'Not Started',
-            self::InProcess => 'In Process',
-            self::Approved => 'Approved',
-            self::Rejected => 'Rejected',
-        };
+        return __("enums.visa_status.{$this->value}");
     }
 
     public function getColor(): string
@@ -40,10 +35,10 @@ enum VisaProcessStatus: string implements HasColor, HasIcon, HasLabel
     public function getIcon(): string
     {
         return match ($this) {
-            self::NotStarted => 'heroicon-m-minus-circle',
-            self::InProcess => 'heroicon-m-clock',
-            self::Approved => 'heroicon-m-check-circle',
-            self::Rejected => 'heroicon-m-x-circle',
+            self::NotStarted => 'lucide-circle-minus',
+            self::InProcess => 'lucide-clock',
+            self::Approved => 'lucide-circle-check',
+            self::Rejected => 'lucide-circle-x',
         };
     }
 }

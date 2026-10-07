@@ -9,7 +9,15 @@ return [
     'brand' => [
         'system_name' => 'Sistem Informasi Penerimaan Mahasiswa Asing Non‑Degree',
         'office' => 'Kantor Urusan Internasional · Universitas Udayana',
+        'office_name' => 'Kantor Urusan Internasional',
+        'university' => 'Universitas Udayana',
+        'tagline' => 'Portal pendaftaran program non-degree Universitas Udayana bagi mahasiswa asing dan agen mitra.',
+        'illustration_alt' => 'Ilustrasi: tiga mahasiswa internasional bertoga membawa paspor, berlatar pura Bali, dengan langkah pendaftaran: pilih program, siapkan dokumen, kirim pendaftaran, dan terima Letter of Acceptance.',
         'logo_alt' => 'Logo Universitas Udayana',
+    ],
+
+    'account' => [
+        'logout' => 'Keluar',
     ],
 
     'skip_to_content' => 'Langsung ke konten utama',
@@ -19,6 +27,10 @@ return [
         'label' => 'Bahasa',
         'en' => 'English',
         'id' => 'Bahasa Indonesia',
+        'region' => [
+            'id' => 'Indonesia',
+            'en' => 'Inggris Raya',
+        ],
     ],
 
     'footer' => [
@@ -46,6 +58,7 @@ return [
             'password_confirmation' => 'Ulangi kata sandi',
             'agency_name' => 'Nama agen',
             'country' => 'Negara',
+            'country_placeholder' => 'Pilih negara',
         ],
         'agency' => [
             'title' => 'Tentang agen Anda',
@@ -102,7 +115,8 @@ return [
         'password_confirmation_required' => 'Ketik ulang kata sandi Anda.',
         'password_mismatch' => 'Kata sandi tidak sama. Ketik kata sandi yang sama di kedua kolom.',
         'agency_name_required' => 'Masukkan nama agen Anda.',
-        'country_required' => 'Masukkan negara tempat agen Anda berada.',
+        'country_required' => 'Pilih negara tempat agen Anda berada.',
+        'country_exists' => 'Pilih negara dari daftar yang tersedia.',
         'consent' => 'Untuk membuat akun, Anda perlu menyetujui cara kami memproses data pribadi Anda.',
         'max' => 'Maksimal :max karakter.',
     ],

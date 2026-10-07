@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Livewire\Auth\Register;
 use App\Models\User;
+use Filament\Facades\Filament;
 use Filament\Notifications\Auth\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -104,11 +105,15 @@ class LocaleTest extends TestCase
         foreach ($pairs as [$role, $panelId]) {
             $user = User::factory()->unverified()->create(['role' => $role]);
 
-            $this->actingAs($user)
+            $html = $this->actingAs($user)
                 ->withCookie('locale', 'id')
-                ->get(\Filament\Facades\Filament::getPanel($panelId)->getEmailVerificationPromptUrl())
+                ->get(Filament::getPanel($panelId)->getEmailVerificationPromptUrl())
                 ->assertOk()
-                ->assertSee('lang="id"', false);
+                ->getContent();
+
+            // Harus atribut <html>, bukan lang="id" pada tautan pemilih bahasa.
+            $this->assertMatchesRegularExpression('/<html\s+lang="id"/', $html, "panel {$panelId}");
+            $this->assertStringContainsString('Verifikasi alamat email', $html, "panel {$panelId}");
         }
     }
 

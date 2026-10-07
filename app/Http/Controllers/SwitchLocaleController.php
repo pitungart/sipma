@@ -18,6 +18,9 @@ class SwitchLocaleController extends Controller
         $request->session()->put(Locale::SESSION_KEY, $locale);
         Cookie::queue(Locale::COOKIE, $locale, Locale::COOKIE_MINUTES);
 
+        // Pengguna yang sedang masuk: email & notifikasi berikutnya ikut bahasa ini
+        $request->user()?->update(['locale' => $locale]);
+
         // Tanpa Referer/riwayat session, previous() jatuh ke "/" (halaman bawaan Laravel) — arahkan ke register.
         $previous = url()->previous(route('register'));
 
