@@ -3,6 +3,7 @@
 namespace App\Livewire\Auth;
 
 use App\Livewire\Forms\RegisterForm;
+use App\Models\Country;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Contracts\View\View;
@@ -53,7 +54,7 @@ class Register extends Component
     public function updated(string $property): void
     {
         if ($property === 'form.role') {
-            $this->resetValidation(['form.agency_name', 'form.country']);
+            $this->resetValidation(['form.agency_name', 'form.country_code']);
         }
 
         if (str_starts_with($property, 'form.')) {
@@ -86,7 +87,10 @@ class Register extends Component
 
     public function render(): View
     {
-        return view('livewire.auth.register')->title(__('portal.meta.title'));
+        return view('livewire.auth.register', [
+            // Daftar negara hanya dibutuhkan pada blok agen, jadi tidak dimuat untuk mahasiswa.
+            'countries' => $this->form->isAgent() ? Country::options() : [],
+        ])->title(__('portal.meta.title'));
     }
 
     private function ensureIsNotRateLimited(): void

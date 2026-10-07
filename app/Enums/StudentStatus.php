@@ -7,7 +7,7 @@ use Filament\Support\Contracts\HasIcon;
 use Filament\Support\Contracts\HasLabel;
 
 /**
- * Warna mengikuti R-1.4 dan setiap status wajib punya label + ikon (R-1.5).
+ * Warna mengikuti pemetaan status template (sipma-desing-rules.md §1.7); label + ikon wajib.
  */
 enum StudentStatus: string implements HasColor, HasIcon, HasLabel
 {
@@ -20,35 +20,30 @@ enum StudentStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): string
     {
-        return match ($this) {
-            self::Draft => 'Draft',
-            self::Submitted => 'Submitted',
-            self::InReview => 'In Review',
-            self::Revision => 'Revision Required',
-            self::Approved => 'Approved',
-            self::LoaIssued => 'LOA Issued',
-        };
+        return __("enums.student_status.{$this->value}");
     }
 
     public function getColor(): string
     {
         return match ($this) {
             self::Draft => 'gray',
-            self::Submitted, self::InReview => 'info',
+            self::Submitted => 'info', // cyan: baru diajukan
+            self::InReview => 'primary', // indigo: sedang diverifikasi
             self::Revision => 'danger',
-            self::Approved, self::LoaIssued => 'success',
+            self::Approved => 'warning', // kuning: menunggu pembayaran VA
+            self::LoaIssued => 'success',
         };
     }
 
     public function getIcon(): string
     {
         return match ($this) {
-            self::Draft => 'heroicon-m-pencil-square',
-            self::Submitted => 'heroicon-m-paper-airplane',
-            self::InReview => 'heroicon-m-clock',
-            self::Revision => 'heroicon-m-exclamation-triangle',
-            self::Approved => 'heroicon-m-check-circle',
-            self::LoaIssued => 'heroicon-m-document-check',
+            self::Draft => 'lucide-square-pen',
+            self::Submitted => 'lucide-send',
+            self::InReview => 'lucide-clock',
+            self::Revision => 'lucide-triangle-alert',
+            self::Approved => 'lucide-circle-check',
+            self::LoaIssued => 'lucide-file-check',
         };
     }
 

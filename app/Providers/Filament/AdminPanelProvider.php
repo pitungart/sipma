@@ -2,15 +2,17 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Admin\Pages\Dashboard;
+use App\Filament\Auth\RedirectToLogin;
+use App\Filament\Support\SipmaTheme;
+use App\Http\Middleware\SetLocale;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Widgets;
-use App\Filament\Support\SipmaTheme;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -26,22 +28,35 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login(\App\Filament\Auth\RedirectToLogin::class) // login terpadu di /login
+            ->login(RedirectToLogin::class) // login terpadu di /login
             ->passwordReset()
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
+            // Grup tampil sebagai label bagian kecil (template); ikon ada di tiap item, jadi
+            // grup tidak boleh berikon (Filament menolak ikon di grup dan item sekaligus).
+            ->navigationGroups([
+                NavigationGroup::make()
+                    ->label(fn (): string => __('admin.groups.main'))
+                    ->collapsible(false),
+                NavigationGroup::make()
+                    ->label(fn (): string => __('admin.groups.admissions'))
+                    ->collapsible(false),
+                NavigationGroup::make()
+                    ->label(fn (): string => __('admin.groups.master_data'))
+                    ->collapsible(),
+            ])
+            ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
+            ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
-            ])
+            ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
+            // Widget dashboard ditemukan lewat discoverWidgets; widget bawaan Filament
+            // (kartu akun & info versi) tidak dipakai karena menggantikan isi yang nyata.
+            ->widgets([])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                SetLocale::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,

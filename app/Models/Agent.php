@@ -24,7 +24,7 @@ class Agent extends Model
         'email',
         'phone',
         'address',
-        'country',
+        'country_code',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -43,6 +43,14 @@ class Agent extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Negara kedudukan agen (master negara).
+     */
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class, 'country_code', 'code');
     }
 
     /**

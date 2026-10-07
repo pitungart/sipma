@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
+use App\Support\Locale;
+use Database\Factories\UserFactory;
 use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Notifications\Auth\VerifyEmail;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,9 +19,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements FilamentUser, MustVerifyEmail
+class User extends Authenticatable implements FilamentUser, HasLocalePreference, MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, HasUuids, Notifiable, SoftDeletes;
 
     /**
@@ -42,6 +45,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'email',
         'password',
         'role',
+        'locale',
         'faculty_id',
         'is_active',
     ];
@@ -69,6 +73,14 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             'role' => UserRole::class,
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Bahasa email & notifikasi untuk pengguna ini (dipakai otomatis oleh Laravel saat mengirim).
+     */
+    public function preferredLocale(): ?string
+    {
+        return Locale::isSupported($this->locale) ? $this->locale : null;
     }
 
     /**

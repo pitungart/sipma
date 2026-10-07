@@ -15,7 +15,10 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('student_id')->constrained()->cascadeOnDelete();
             $table->string('type', 20); // App\Enums\PaymentType
-            $table->decimal('amount', 12, 2);
+            $table->decimal('amount', 12, 2); // Rupiah
+            // Rekening tujuan dari master; va_number tetap disimpan sebagai salinan historis
+            // agar riwayat pembayaran lama tidak ikut berubah saat VA di master diganti.
+            $table->foreignUuid('payment_account_id')->nullable()->constrained()->restrictOnDelete();
             $table->string('va_number', 50)->nullable(); // VA statis - bukan auto-generate
             $table->string('proof_file')->nullable();
             $table->string('status', 20)->default('pending')->index(); // App\Enums\PaymentStatus

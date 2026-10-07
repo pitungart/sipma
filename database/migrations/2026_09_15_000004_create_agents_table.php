@@ -20,9 +20,11 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('phone', 50)->nullable();
             $table->text('address')->nullable();
-            $table->string('country', 100)->nullable();
+            $table->char('country_code', 2)->nullable(); // master countries
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('country_code')->references('code')->on('countries')->restrictOnDelete();
         });
     }
 

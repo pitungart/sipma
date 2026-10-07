@@ -17,17 +17,13 @@ enum PaymentStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): string
     {
-        return match ($this) {
-            self::Pending => 'Awaiting Verification',
-            self::Verified => 'Verified',
-            self::Rejected => 'Rejected',
-        };
+        return __("enums.payment_status.{$this->value}");
     }
 
     public function getColor(): string
     {
         return match ($this) {
-            self::Pending => 'info',
+            self::Pending => 'warning', // menunggu pembayaran / verifikasi VA
             self::Verified => 'success',
             self::Rejected => 'danger',
         };
@@ -36,9 +32,9 @@ enum PaymentStatus: string implements HasColor, HasIcon, HasLabel
     public function getIcon(): string
     {
         return match ($this) {
-            self::Pending => 'heroicon-m-clock',
-            self::Verified => 'heroicon-m-check-circle',
-            self::Rejected => 'heroicon-m-x-circle',
+            self::Pending => 'lucide-clock',
+            self::Verified => 'lucide-circle-check',
+            self::Rejected => 'lucide-circle-x',
         };
     }
 }

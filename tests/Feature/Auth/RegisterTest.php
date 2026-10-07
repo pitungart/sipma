@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Enums\UserRole;
 use App\Livewire\Auth\Register;
+use App\Models\Country;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Notifications\Auth\VerifyEmail;
@@ -16,6 +17,14 @@ use Tests\TestCase;
 class RegisterTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Negara dipilih dari master, jadi harus ada sebelum formulir agen diuji.
+        Country::create(['code' => 'AU', 'name_en' => 'Australia', 'name_id' => 'Australia']);
+    }
 
     public function test_register_page_shows_both_role_options(): void
     {
@@ -62,7 +71,7 @@ class RegisterTest extends TestCase
 
         $this->fillForm(role: 'agent', email: 'contact@edu-agency.test')
             ->set('form.agency_name', 'Edu Agency')
-            ->set('form.country', 'Australia')
+            ->set('form.country_code', 'AU')
             ->call('register')
             ->assertHasNoErrors()
             ->assertRedirect(url('/agent'));
@@ -71,7 +80,8 @@ class RegisterTest extends TestCase
 
         $this->assertSame(UserRole::Agent, $user->role);
         $this->assertSame('Edu Agency', $user->agent->company_name);
-        $this->assertSame('Australia', $user->agent->country);
+        $this->assertSame('AU', $user->agent->country_code);
+        $this->assertSame('Australia', $user->agent->country->name_en);
         Notification::assertSentTo(
             $user,
             VerifyEmail::class,
@@ -79,15 +89,27 @@ class RegisterTest extends TestCase
         );
     }
 
+    public function test_country_must_come_from_the_master_list(): void
+    {
+        $this->fillForm(role: 'agent', email: 'contact@edu-agency.test')
+            ->set('form.agency_name', 'Edu Agency')
+            ->set('form.country_code', 'ZZ')
+            ->call('register')
+            ->assertHasErrors(['form.country_code' => 'exists'])
+            ->assertSee('Choose a country from the list.');
+
+        $this->assertDatabaseCount('agents', 0);
+    }
+
     public function test_agency_fields_are_required_only_for_agents(): void
     {
         $this->fillForm(role: 'agent')
             ->call('register')
-            ->assertHasErrors(['form.agency_name' => 'required', 'form.country' => 'required']);
+            ->assertHasErrors(['form.agency_name' => 'required', 'form.country_code' => 'required']);
 
         $this->fillForm(role: 'student')
             ->call('register')
-            ->assertHasNoErrors(['form.agency_name', 'form.country']);
+            ->assertHasNoErrors(['form.agency_name', 'form.country_code']);
     }
 
     public function test_admin_roles_cannot_be_self_registered(): void

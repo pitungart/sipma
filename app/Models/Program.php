@@ -57,4 +57,17 @@ class Program extends Model
     {
         return $this->hasMany(Student::class);
     }
+
+    public function academicPeriods(): HasMany
+    {
+        return $this->hasMany(AcademicPeriod::class);
+    }
+
+    /**
+     * Rekening tujuan khusus program ini (rekening umum punya program_id null).
+     */
+    public function paymentAccounts(): HasMany
+    {
+        return $this->hasMany(PaymentAccount::class);
+    }
 }

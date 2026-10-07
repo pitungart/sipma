@@ -2,13 +2,14 @@
 
 namespace App\Policies;
 
+use App\Policies\Concerns\SuperAdminOnly;
+
 /**
- * UC-22 Kelola fakultas: hanya Super Admin.
- *
- * Super Admin diizinkan lewat Gate::before (AppServiceProvider). Role lain ditolak
- * karena tidak ada method yang didefinisikan. Policy ini tetap harus ada: tanpa policy,
- * Filament mengizinkan semua aksi pada resource.
+ * UC-22 Kelola fakultas: hanya Super Admin (lolos lewat Gate::before di AppServiceProvider).
+ * Penolakan untuk role lain datang dari trait SuperAdminOnly, yang menulis method-nya secara
+ * eksplisit karena Filament mengizinkan aksi yang method-nya tidak ada di policy.
  */
 class FacultyPolicy
 {
+    use SuperAdminOnly;
 }

@@ -14,6 +14,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Master data lebih dulu: program butuh fakultas, pendaftaran butuh negara.
+        $this->call([
+            CountrySeeder::class,
+            FacultySeeder::class,
+            ProgramSeeder::class,
+        ]);
+
         User::firstOrCreate(
             ['email' => 'superadmin@sipma.test'],
             [

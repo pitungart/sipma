@@ -16,7 +16,7 @@ class Document extends Model
 
     /**
      * Batas ukuran file per dokumen dalam kilobyte (sesuai SOP KUI).
-     * Daftar 5 dokumen wajib: DocumentType::required().
+     * Daftar dokumen wajib: DocumentType::required().
      */
     public const MAX_FILE_SIZE_KB = 300;
 

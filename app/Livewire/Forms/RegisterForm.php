@@ -3,6 +3,7 @@
 namespace App\Livewire\Forms;
 
 use App\Enums\UserRole;
+use App\Models\Country;
 use App\Models\User;
 use Closure;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +34,10 @@ class RegisterForm extends Form
 
     public string $agency_name = '';
 
-    public string $country = '';
+    /**
+     * Kode negara ISO (master countries), bukan teks bebas.
+     */
+    public string $country_code = '';
 
     public bool $consent = false;
 
@@ -58,7 +62,11 @@ class RegisterForm extends Form
                 }
             }],
             'agency_name' => [Rule::requiredIf(fn (): bool => $this->isAgent()), 'nullable', 'string', 'max:255'],
-            'country' => [Rule::requiredIf(fn (): bool => $this->isAgent()), 'nullable', 'string', 'max:100'],
+            'country_code' => [
+                Rule::requiredIf(fn (): bool => $this->isAgent()),
+                'nullable',
+                Rule::exists(Country::class, 'code')->where('is_active', true),
+            ],
             'consent' => ['accepted'],
         ];
     }
@@ -81,7 +89,8 @@ class RegisterForm extends Form
             'password.min' => __('portal.validation.password_min'),
             'password_confirmation.required' => __('portal.validation.password_confirmation_required'),
             'agency_name.required' => __('portal.validation.agency_name_required'),
-            'country.required' => __('portal.validation.country_required'),
+            'country_code.required' => __('portal.validation.country_required'),
+            'country_code.exists' => __('portal.validation.country_exists'),
             'consent.accepted' => __('portal.validation.consent'),
             'max' => __('portal.validation.max'),
         ];
@@ -98,12 +107,13 @@ class RegisterForm extends Form
                 'email' => Str::lower($this->email),
                 'password' => $this->password,
                 'role' => UserRole::from($this->role),
+                'locale' => app()->getLocale(), // bahasa email & notifikasi berikutnya
             ]);
 
             if ($user->hasRole(UserRole::Agent)) {
                 $user->agent()->create([
                     'company_name' => $this->agency_name,
-                    'country' => $this->country,
+                    'country_code' => $this->country_code,
                     'email' => $user->email,
                 ]);
             }

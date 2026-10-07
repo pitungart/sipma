@@ -128,6 +128,17 @@ class LoginTest extends TestCase
             ->assertSee('Show password');
     }
 
+    public function test_identity_panel_describes_the_illustration_in_both_languages(): void
+    {
+        $this->get('/login')
+            ->assertSee('images/students-illustration.webp', false)
+            ->assertSee('Illustration: three international students');
+
+        $this->withCookie('locale', 'id')
+            ->get('/login')
+            ->assertSee('Ilustrasi: tiga mahasiswa internasional');
+    }
+
     /**
      * @param  array<string, mixed>  $attributes
      */

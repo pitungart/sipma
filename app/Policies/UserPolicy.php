@@ -2,13 +2,13 @@
 
 namespace App\Policies;
 
+use App\Policies\Concerns\SuperAdminOnly;
+
 /**
- * UC-23 Kelola admin: hanya Super Admin.
- *
- * Super Admin diizinkan lewat Gate::before (AppServiceProvider). Role lain ditolak
- * karena tidak ada method yang didefinisikan. Policy ini tetap harus ada: tanpa policy,
- * Filament mengizinkan semua aksi pada resource.
+ * UC-23 Kelola admin: hanya Super Admin (lolos lewat Gate::before di AppServiceProvider).
+ * Lihat catatan di trait SuperAdminOnly soal method yang harus ditulis eksplisit.
  */
 class UserPolicy
 {
+    use SuperAdminOnly;
 }

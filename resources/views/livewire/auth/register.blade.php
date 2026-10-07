@@ -2,8 +2,8 @@
 
 @php
     $roleIcons = [
-        UserRole::Student->value => 'heroicon-o-academic-cap',
-        UserRole::Agent->value => 'heroicon-o-building-office-2',
+        UserRole::Student->value => 'lucide-graduation-cap',
+        UserRole::Agent->value => 'lucide-building-2',
     ];
 @endphp
 
@@ -21,20 +21,20 @@
         >
             {{-- R-3.3: ringkasan error menerima fokus, tiap butir tertaut ke field --}}
             @if ($showErrorSummary && $errors->any())
-                <div class="rounded-control bg-danger/5 px-4 py-3 ring-1 ring-inset ring-danger/40" aria-labelledby="error-summary-title">
-                    <h2 id="error-summary-title" tabindex="-1" class="sipma-focus flex items-center gap-2 rounded-chip text-small font-medium text-danger">
-                        @svg('heroicon-m-exclamation-circle', 'h-5 w-5 shrink-0', ['aria-hidden' => 'true'])
+                <div class="rounded-card bg-danger-bg px-4 py-3 ring-1 ring-inset ring-danger/30" aria-labelledby="error-summary-title">
+                    <h2 id="error-summary-title" tabindex="-1" class="sipma-focus flex items-center gap-2 rounded-md text-small font-medium text-danger-text">
+                        @svg('lucide-circle-alert', 'h-5 w-5 shrink-0', ['aria-hidden' => 'true'])
                         {{ __('portal.register.error_summary') }}
                     </h2>
 
-                    <ul class="mt-2 list-disc space-y-1 ps-8 text-small text-danger">
+                    <ul class="mt-2 list-disc space-y-1 ps-8 text-small text-danger-text">
                         @foreach ($errors->messages() as $field => $messages)
                             @php($target = str_replace('.', '-', $field))
                             <li>
                                 <a
                                     href="#{{ $target }}"
                                     x-on:click.prevent="document.getElementById(@js($target))?.focus()"
-                                    class="sipma-focus rounded-chip underline decoration-danger/40 underline-offset-4 hover:decoration-danger"
+                                    class="sipma-focus rounded-md underline decoration-danger-text/40 underline-offset-4 hover:decoration-danger-text"
                                 >{{ $messages[0] }}</a>
                             </li>
                         @endforeach
@@ -53,7 +53,7 @@
                     @foreach ($roleIcons as $roleValue => $roleIcon)
                         @php($role = UserRole::from($roleValue))
 
-                        <label class="group relative flex min-h-11 cursor-pointer items-center gap-1.5 rounded-chip px-2 text-small font-medium text-ink-muted transition-colors sm:gap-2 sm:px-3 [&:not(:has(:checked))]:hover:text-ink has-[:checked]:bg-primary has-[:checked]:text-primary-fg has-[:checked]:shadow-card has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary has-[:focus-visible]:ring-offset-2">
+                        <label class="group relative flex min-h-11 cursor-pointer items-center gap-1.5 rounded-control px-2 text-small font-medium text-ink-muted transition-colors sm:gap-2 sm:px-3 [&:not(:has(:checked))]:hover:text-ink has-[:checked]:bg-primary has-[:checked]:text-primary-fg has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary has-[:focus-visible]:ring-offset-2">
                             <input
                                 type="radio"
                                 id="{{ $role === UserRole::Student ? 'form-role' : 'form-role-'.$role->value }}"
@@ -68,7 +68,7 @@
 
                             <span class="min-w-0 truncate">{{ __('portal.register.roles.'.$role->value.'.title') }}</span>
 
-                            @svg('heroicon-m-check-circle', 'ms-auto hidden h-4 w-4 shrink-0 text-primary-fg group-has-[:checked]:block', ['aria-hidden' => 'true'])
+                            @svg('lucide-circle-check', 'ms-auto hidden h-4 w-4 shrink-0 text-primary-fg group-has-[:checked]:block', ['aria-hidden' => 'true'])
                         </label>
                     @endforeach
                 </div>
@@ -123,7 +123,13 @@
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <x-portal.field name="agency_name" :label="__('portal.register.fields.agency_name')" autocomplete="organization" />
-                        <x-portal.field name="country" :label="__('portal.register.fields.country')" autocomplete="country-name" />
+                        <x-portal.select
+                            name="country_code"
+                            :label="__('portal.register.fields.country')"
+                            :options="$countries"
+                            :placeholder="__('portal.register.fields.country_placeholder')"
+                            autocomplete="country"
+                        />
                     </div>
                 </div>
             @endif

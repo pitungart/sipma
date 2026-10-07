@@ -17,11 +17,7 @@ enum LoaStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): string
     {
-        return match ($this) {
-            self::Pending => 'Not Yet Issued',
-            self::Uploaded => 'Available',
-            self::Downloaded => 'Downloaded',
-        };
+        return __("enums.loa_status.{$this->value}");
     }
 
     public function getColor(): string
@@ -35,9 +31,9 @@ enum LoaStatus: string implements HasColor, HasIcon, HasLabel
     public function getIcon(): string
     {
         return match ($this) {
-            self::Pending => 'heroicon-m-clock',
-            self::Uploaded => 'heroicon-m-document-check',
-            self::Downloaded => 'heroicon-m-arrow-down-tray',
+            self::Pending => 'lucide-clock',
+            self::Uploaded => 'lucide-file-check',
+            self::Downloaded => 'lucide-download',
         };
     }
 

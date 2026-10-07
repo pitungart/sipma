@@ -11,8 +11,8 @@
             lang="{{ $code }}"
             @if ($isActive) aria-current="true" @endif
             @class([
-                'sipma-focus inline-flex min-h-11 min-w-11 items-center justify-center rounded-chip px-3 text-small font-medium transition-colors',
-                'bg-canvas text-ink shadow-card' => $isActive,
+                'sipma-focus inline-flex min-h-11 min-w-11 items-center justify-center rounded-control px-3 text-small font-medium transition-colors',
+                'bg-card text-ink ring-1 ring-inset ring-line' => $isActive,
                 'text-ink-muted hover:text-ink' => ! $isActive,
             ])
         >
