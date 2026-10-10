@@ -50,6 +50,8 @@ final class SipmaTheme
             ->darkMode() // tombol bulan/matahari di topbar + "Ganti tema" di menu profil
             ->defaultThemeMode(ThemeMode::Light) // template terang; gelap hanya bila dipilih
             ->brandLogo(fn (): View => view('filament.brand'))
+            ->favicon(asset('favicon.png')) // logo Udayana, bukan ikon bawaan Laravel
+            ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => '<link rel="apple-touch-icon" href="'.asset('apple-touch-icon.png').'">')
             ->sidebarWidth('16rem') // 256px, sesuai template
             ->collapsedSidebarWidth('4.5rem') // 72px: rel ikon
             ->sidebarCollapsibleOnDesktop()
