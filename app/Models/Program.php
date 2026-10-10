@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -48,6 +49,15 @@ class Program extends Model
         };
     }
 
+    /**
+     * Program aktif yang periode pendaftarannya sedang dibuka (UC-04, mahasiswa mandiri).
+     */
+    public function scopeOpenForRegistration(Builder $query): Builder
+    {
+        return $query->where('is_active', true)
+            ->whereHas('academicPeriods', fn (Builder $period) => $period->open());
+    }
+
     public function faculty(): BelongsTo
     {
         return $this->belongsTo(Faculty::class);
@@ -69,5 +79,10 @@ class Program extends Model
     public function paymentAccounts(): HasMany
     {
         return $this->hasMany(PaymentAccount::class);
+    }
+
+    public function mous(): BelongsToMany
+    {
+        return $this->belongsToMany(Mou::class);
     }
 }

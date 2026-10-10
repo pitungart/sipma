@@ -7,6 +7,7 @@ use App\Enums\LoaStatus;
 use App\Enums\MouStatus;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
+use App\Models\Payment;
 use App\Models\Student;
 use App\Models\User;
 use App\Notifications\LoaIssued;
@@ -45,7 +46,17 @@ class FoundationTest extends WorkflowTestCase
         Notification::assertSentTo($agent->user, MouReviewed::class);
 
         $second = $workflow->submit($agent->fresh(), $this->pdf());
-        $workflow->approve($second);
+        $program = $this->program();
+
+        // Program wajib dipilih; hanya program itu yang terbuka untuk agen
+        try {
+            $workflow->approve($second, []);
+            $this->fail('MOU approved without programs.');
+        } catch (WorkflowException) {
+        }
+
+        $workflow->approve($second, [$program->id]);
+        $this->assertSame([$program->id], $agent->fresh()->allowedPrograms()->pluck('id')->all());
 
         $this->assertSame(MouStatus::Approved, $second->fresh()->status);
         $this->assertTrue($agent->user->fresh()->can('create', Student::class));
@@ -137,6 +148,16 @@ class FoundationTest extends WorkflowTestCase
 
     // ── Seeder demo ──────────────────────────────────────────────────────────
 
+    public function test_fees_are_read_even_when_the_program_is_partially_loaded(): void
+    {
+        $student = $this->student($this->program(admissionFee: 500_000), StudentStatus::Approved);
+        $partial = Student::query()->with('program:id,name')->findOrFail($student->id);
+
+        $workflow = app(StudentWorkflow::class);
+        $this->assertCount(1, $workflow->requiredPaymentTypes($partial));
+        $this->assertCount(1, $workflow->outstandingPayments($partial), 'LOA stays blocked until the fee is verified');
+    }
+
     public function test_demo_seeder_builds_every_status_with_files(): void
     {
         $this->seed(DemoSeeder::class);
@@ -149,6 +170,15 @@ class FoundationTest extends WorkflowTestCase
         $this->actingAs(User::query()->where('role', UserRole::SuperAdmin)->first())
             ->get(route('files.document', $document))
             ->assertOk();
+
+        // Biaya demo hanya di BIPA: LOA terbit = semua biaya terverifikasi
+        $workflow = app(StudentWorkflow::class);
+        $bipa = Student::query()->whereHas('program', fn ($q) => $q->where('code', 'ND-BIPA'))->get();
+        $this->assertTrue($bipa->isNotEmpty());
+        foreach ($bipa->where('status', StudentStatus::LoaIssued) as $student) {
+            $this->assertTrue($workflow->outstandingPayments($student)->isEmpty());
+        }
+        $this->assertSame(0, Payment::query()->where('amount', 0)->count(), 'no payments for free programs');
 
         // Dijalankan ulang tidak menggandakan data
         $count = Student::query()->count();

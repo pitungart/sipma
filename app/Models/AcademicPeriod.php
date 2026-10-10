@@ -67,6 +67,19 @@ class AcademicPeriod extends Model
     /**
      * Kuota kosong berarti tanpa batas.
      */
+    /**
+     * Periode yang sedang dibuka untuk program ini (yang paling cepat ditutup), untuk pendaftar
+     * yang tidak memilih periode sendiri (agen, mahasiswa).
+     */
+    public static function currentFor(?string $programId): ?self
+    {
+        return $programId === null ? null : static::query()
+            ->open()
+            ->where('program_id', $programId)
+            ->orderBy('registration_closes_at')
+            ->first();
+    }
+
     public function isFull(): bool
     {
         return $this->quota !== null && $this->students()->count() >= $this->quota;

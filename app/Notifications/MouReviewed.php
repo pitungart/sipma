@@ -3,7 +3,9 @@
 namespace App\Notifications;
 
 use App\Enums\MouStatus;
+use App\Filament\Agent\Pages\ManageMou;
 use App\Models\Mou;
+use App\Models\User;
 
 class MouReviewed extends SipmaNotification
 {
@@ -34,5 +36,13 @@ class MouReviewed extends SipmaNotification
     protected function tone(): string
     {
         return $this->approved() ? 'success' : 'danger';
+    }
+
+    /**
+     * Tombol "Buka" langsung ke halaman MOU agen (status + catatan KUI).
+     */
+    protected function url(User $notifiable): string
+    {
+        return ManageMou::getUrl(panel: 'agent');
     }
 }

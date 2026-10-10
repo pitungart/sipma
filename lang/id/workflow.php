@@ -51,6 +51,8 @@ return [
         'mou_already_approved' => 'MOU Anda sudah disetujui.',
         'mou_already_pending' => 'MOU Anda masih menunggu diperiksa.',
         'mou_not_pending' => 'MOU ini sudah diproses.',
+        'profile_incomplete' => 'Lengkapi profil perusahaan sebelum mengunggah MOU.',
+        'mou_programs_required' => 'Pilih minimal satu program yang dicakup MOU ini.',
     ],
 
     'notifications' => [
@@ -94,6 +96,17 @@ return [
         'mou_rejected' => [
             'title' => 'MOU Anda perlu diperbaiki',
             'body' => 'Silakan unggah MOU yang sudah diperbaiki. Alasan: :note',
+        ],
+        'and_more' => 'dan :count lainnya',
+        'submission_reminder' => [
+            'title' => '{1} Periode :period ditutup besok|[2,*] Periode :period ditutup :days hari lagi',
+            'body_one' => 'Pendaftaran :names belum diajukan. Lengkapi dan ajukan sebelum :date.',
+            'body_many' => ':count mahasiswa belum diajukan: :names. Ajukan sebelum :date.',
+        ],
+        'payment_reminder' => [
+            'title' => 'Biaya belum dibayar',
+            'body_one' => 'Pendaftaran :name sudah disetujui, tetapi :fees belum dibayar. Nomor VA berlaku 24 jam — segera bayar lalu unggah buktinya.',
+            'body_many' => ':count mahasiswa sudah disetujui tetapi belum membayar: :names. Nomor VA berlaku 24 jam.',
         ],
     ],
 

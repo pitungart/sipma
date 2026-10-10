@@ -4,7 +4,8 @@ namespace App\Filament\Admin\Resources\StudentResource\Pages;
 
 use App\Enums\StudentStatus;
 use App\Filament\Admin\Resources\StudentResource;
-use Filament\Forms\Components\Wizard\Step;
+use App\Filament\Support\ApplicantForm;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -43,12 +44,20 @@ class CreateApplicant extends CreateRecord
 
     protected function getSteps(): array
     {
-        return [
-            Step::make('identity')->label(__('admin.applicant.steps.identity'))->description(__('admin.applicant.steps.identity_hint'))->icon('lucide-user')->columns(2)->schema(StudentResource::identityFields()),
-            Step::make('contact')->label(__('admin.applicant.steps.contact'))->description(__('admin.applicant.steps.contact_hint'))->icon('lucide-map-pin')->columns(2)->schema(StudentResource::contactFields()),
-            Step::make('passport')->label(__('admin.applicant.steps.passport'))->description(__('admin.applicant.steps.passport_hint'))->icon('lucide-book-user')->columns(2)->schema(StudentResource::passportFields()),
-            Step::make('program')->label(__('admin.applicant.steps.program'))->description(__('admin.applicant.steps.program_hint'))->icon('lucide-graduation-cap')->columns(2)->schema(StudentResource::programFields()),
-        ];
+        return ApplicantForm::steps(StudentResource::programFields());
+    }
+
+    /**
+     * Langkah bisa dilompati: draf cukup berisi isian bertanda * (keputusan 8 Oktober 2026).
+     */
+    public function hasSkippableSteps(): bool
+    {
+        return true;
+    }
+
+    protected function getCreateFormAction(): Action
+    {
+        return parent::getCreateFormAction()->label(__('admin.applicant.actions.save_draft'));
     }
 
     /**

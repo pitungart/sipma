@@ -14,11 +14,13 @@ use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Models\AcademicPeriod;
 use App\Models\Agent;
+use App\Models\PaymentAccount;
 use App\Models\Program;
 use App\Models\Student;
 use App\Models\User;
 use App\Support\Numbering;
 use App\Support\PrivateFiles;
+use App\Workflow\StudentWorkflow;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
@@ -54,6 +56,8 @@ class DemoSeeder extends Seeder
         }
 
         $this->call(DatabaseSeeder::class);
+
+        $this->demoFees();
 
         $programs = Program::query()->where('is_active', true)->get();
         $this->periods($programs);
@@ -127,15 +131,24 @@ class DemoSeeder extends Seeder
             'last_name' => 'Tan',
             'email' => $email,
             'phone' => '+61 412 000 000',
+            'address' => 'Level 5, 1 George Street, Sydney NSW 2000',
             'country_code' => $country,
         ]);
 
-        $agent->mous()->create([
+        $mou = $agent->mous()->make([
             'file_path' => $this->dummyFile(PrivateFiles::agentDirectory($agent->id, 'mou'), 'pdf'),
             'status' => $mouStatus,
             'mou_number' => $mouStatus === MouStatus::Approved ? Numbering::next(NumberType::Mou) : null,
             'verified_at' => $mouStatus === MouStatus::Approved ? now()->subMonths(6) : null,
         ]);
+        // Diunggah sebelum diperiksa
+        $mou->created_at = $mouStatus === MouStatus::Approved ? now()->subMonths(6)->subDays(3) : now()->subDays(2);
+        $mou->save();
+
+        // MOU disetujui mencakup semua program aktif (agen boleh memilih semuanya)
+        if ($mouStatus === MouStatus::Approved) {
+            $mou->programs()->sync(Program::query()->where('is_active', true)->pluck('id'));
+        }
 
         return $agent;
     }
@@ -182,7 +195,7 @@ class DemoSeeder extends Seeder
         }
 
         if (in_array($status, [StudentStatus::Approved, StudentStatus::LoaIssued], true)) {
-            $this->payment($student, $status === StudentStatus::LoaIssued ? PaymentStatus::Verified : PaymentStatus::Pending);
+            $this->payments($student, $status);
         }
 
         if ($status === StudentStatus::LoaIssued) {
@@ -221,16 +234,47 @@ class DemoSeeder extends Seeder
         }
     }
 
-    private function payment(Student $student, PaymentStatus $status): void
+    /**
+     * Biaya & rekening CONTOH agar alur pembayaran bisa dicoba; biaya resmi menunggu KUI
+     * (ProgramSeeder tetap Rp 0). Hanya program BIPA yang berbayar.
+     */
+    private function demoFees(): void
     {
-        $student->payments()->create([
-            'type' => PaymentType::AdmissionFee,
-            'amount' => $student->program->admission_fee,
-            'proof_file' => $this->dummyFile(PrivateFiles::studentDirectory($student->id, 'payments'), 'png'),
-            'status' => $status,
-            'receipt_number' => $status === PaymentStatus::Verified ? Numbering::next(NumberType::Receipt) : null,
-            'verified_at' => $status === PaymentStatus::Verified ? now() : null,
-        ]);
+        Program::query()->where('code', 'ND-BIPA')->update(['admission_fee' => 500_000, 'tuition_fee' => 4_500_000]);
+
+        PaymentAccount::query()->firstOrCreate(
+            ['va_number' => '8808 1234 5678 0001'],
+            ['bank_name' => 'Bank BPD Bali', 'account_name' => 'Universitas Udayana (DEMO)', 'is_active' => true],
+        );
+    }
+
+    /**
+     * Hanya biaya wajib program (> Rp 0). Disetujui: biaya pendaftaran menunggu verifikasi dan
+     * biaya kuliah belum dibayar (bisa dicoba diunggah); LOA terbit: semua terverifikasi.
+     */
+    private function payments(Student $student, StudentStatus $status): void
+    {
+        $workflow = app(StudentWorkflow::class);
+
+        foreach ($workflow->requiredPaymentTypes($student) as $type) {
+            if ($status === StudentStatus::Approved && $type !== PaymentType::AdmissionFee) {
+                continue;
+            }
+
+            $verified = $status === StudentStatus::LoaIssued;
+            $account = PaymentAccount::bestFor($type, $student->program_id);
+
+            $student->payments()->create([
+                'type' => $type,
+                'amount' => $workflow->feeFor($student, $type),
+                'payment_account_id' => $account?->id,
+                'va_number' => $account?->va_number,
+                'proof_file' => $this->dummyFile(PrivateFiles::studentDirectory($student->id, 'payments'), 'png'),
+                'status' => $verified ? PaymentStatus::Verified : PaymentStatus::Pending,
+                'receipt_number' => $verified ? Numbering::next(NumberType::Receipt) : null,
+                'verified_at' => $verified ? now() : null,
+            ]);
+        }
     }
 
     /**

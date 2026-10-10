@@ -28,6 +28,8 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <env name="SIPMA_SKIP_EMAIL_VERIFICATION" value="false"/>
+        <env name="SIPMA_MAIL_NOTIFICATIONS" value="true"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
     </php>
 </phpunit>

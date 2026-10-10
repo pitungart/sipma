@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Models\Student;
+use App\Models\User;
+use App\Support\ApplicantUrl;
 
 class LoaIssued extends SipmaNotification
 {
@@ -26,5 +28,13 @@ class LoaIssued extends SipmaNotification
     protected function tone(): string
     {
         return 'success';
+    }
+
+    /**
+     * Tombol "Buka" langsung ke detail pendaftar di panel penerima.
+     */
+    protected function url(User $notifiable): string
+    {
+        return ApplicantUrl::for($notifiable, $this->student);
     }
 }

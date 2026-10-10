@@ -4,14 +4,12 @@ namespace App\Filament\Admin\Resources;
 
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
-use App\Enums\Gender;
 use App\Enums\MouStatus;
-use App\Enums\Religion;
 use App\Enums\StudentStatus;
 use App\Filament\Admin\Resources\StudentResource\Pages;
+use App\Filament\Support\ApplicantForm;
 use App\Models\AcademicPeriod;
 use App\Models\Agent;
-use App\Models\Country;
 use App\Models\Program;
 use App\Models\Student;
 use Filament\Facades\Filament;
@@ -80,7 +78,7 @@ class StudentResource extends Resource
     {
         return parent::getEloquentQuery()
             ->visibleTo(Filament::auth()->user())
-            ->with(['program:id,name,faculty_id', 'nationality', 'agent:id,company_name'])
+            ->with(['program', 'nationality', 'agent:id,company_name']) // program lengkap: nominal biaya dipakai di detail & LOA
             ->withCount(['documents as approved_documents_count' => fn (Builder $q) => $q
                 ->where('status', DocumentStatus::Approved)
                 ->whereIn('type', DocumentType::required())]);
@@ -106,59 +104,11 @@ class StudentResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Section::make(__('admin.applicant.steps.identity'))->columns(2)->schema(static::identityFields()),
-            Forms\Components\Section::make(__('admin.applicant.steps.contact'))->columns(2)->schema(static::contactFields()),
-            Forms\Components\Section::make(__('admin.applicant.steps.passport'))->columns(2)->schema(static::passportFields()),
+            Forms\Components\Section::make(__('admin.applicant.steps.identity'))->columns(2)->schema(ApplicantForm::identityFields()),
+            Forms\Components\Section::make(__('admin.applicant.steps.contact'))->columns(2)->schema(ApplicantForm::contactFields()),
+            Forms\Components\Section::make(__('admin.applicant.steps.passport'))->columns(2)->schema(ApplicantForm::passportFields()),
             Forms\Components\Section::make(__('admin.applicant.steps.program'))->columns(2)->schema(static::programFields()),
         ]);
-    }
-
-    /**
-     * @return list<Forms\Components\Component>
-     */
-    public static function identityFields(): array
-    {
-        return [
-            Forms\Components\TextInput::make('full_name')->label(__('workflow.fields.full_name'))->required()->maxLength(255)->columnSpanFull(),
-            Forms\Components\Select::make('gender')->label(__('workflow.fields.gender'))->options(Gender::class)->required(),
-            Forms\Components\Select::make('nationality_code')->label(__('workflow.fields.nationality_code'))->options(fn (): array => Country::options())->searchable()->required(),
-            Forms\Components\TextInput::make('place_of_birth')->label(__('workflow.fields.place_of_birth'))->required()->maxLength(255),
-            Forms\Components\DatePicker::make('date_of_birth')->label(__('workflow.fields.date_of_birth'))->required()->native(false)->maxDate(now()),
-            Forms\Components\Select::make('religion')->label(__('admin.applicant.fields.religion'))->options(Religion::class)->helperText(__('admin.applicant.religion_hint')),
-        ];
-    }
-
-    /**
-     * @return list<Forms\Components\Component>
-     */
-    public static function contactFields(): array
-    {
-        return [
-            Forms\Components\TextInput::make('email')->label(__('workflow.fields.email'))->email()->required()->maxLength(255),
-            Forms\Components\TextInput::make('phone_number')->label(__('workflow.fields.phone_number'))->tel()->required()->maxLength(30)->helperText(__('admin.applicant.phone_hint')),
-            Forms\Components\Textarea::make('permanent_address')->label(__('workflow.fields.permanent_address'))->required()->rows(2)->columnSpanFull(),
-            Forms\Components\TextInput::make('state')->label(__('admin.applicant.fields.state'))->maxLength(100),
-            Forms\Components\TextInput::make('post_code')->label(__('admin.applicant.fields.post_code'))->maxLength(20),
-            Forms\Components\TextInput::make('home_university')->label(__('workflow.fields.home_university'))->required()->maxLength(255),
-            Forms\Components\Select::make('home_university_country_code')->label(__('workflow.fields.home_university_country_code'))->options(fn (): array => Country::options())->searchable()->required(),
-        ];
-    }
-
-    /**
-     * @return list<Forms\Components\Component>
-     */
-    public static function passportFields(): array
-    {
-        return [
-            Forms\Components\TextInput::make('passport_number')
-                ->label(__('workflow.fields.passport_number'))
-                ->required()
-                ->maxLength(50)
-                ->dehydrateStateUsing(fn (string $state): string => mb_strtoupper(trim($state)))
-                ->columnSpanFull(),
-            Forms\Components\DatePicker::make('date_of_issued_passport')->label(__('workflow.fields.date_of_issued_passport'))->required()->native(false)->maxDate(now()),
-            Forms\Components\DatePicker::make('date_of_passport_expiry')->label(__('workflow.fields.date_of_passport_expiry'))->required()->native(false)->after('date_of_issued_passport'),
-        ];
     }
 
     /**
@@ -167,11 +117,7 @@ class StudentResource extends Resource
     public static function programFields(): array
     {
         return [
-            Forms\Components\Select::make('program_id')
-                ->label(__('admin.program.label'))
-                ->options(fn (): array => Program::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
-                ->searchable()
-                ->required()
+            ApplicantForm::programSelect(fn (): array => Program::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
                 ->live()
                 ->afterStateUpdated(fn (Forms\Set $set) => $set('academic_period_id', null)),
             Forms\Components\Select::make('academic_period_id')

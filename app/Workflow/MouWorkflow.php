@@ -7,12 +7,14 @@ use App\Enums\NumberType;
 use App\Enums\UserRole;
 use App\Models\Agent;
 use App\Models\Mou;
+use App\Models\Program;
 use App\Models\User;
 use App\Notifications\MouReviewed;
 use App\Notifications\MouSubmitted;
 use App\Support\Numbering;
 use App\Support\PrivateFiles;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 
@@ -26,6 +28,10 @@ final class MouWorkflow
 
     public function submit(Agent $agent, UploadedFile $file): Mou
     {
+        if (! $agent->isProfileComplete()) {
+            throw WorkflowException::because('profile_incomplete');
+        }
+
         if ($agent->hasApprovedMou()) {
             throw WorkflowException::because('mou_already_approved');
         }
@@ -49,9 +55,25 @@ final class MouWorkflow
         return $mou;
     }
 
-    public function approve(Mou $mou): Mou
+    /**
+     * Setujui MOU beserta program yang dicakupnya (minimal satu program aktif).
+     *
+     * @param  list<string>  $programIds
+     */
+    public function approve(Mou $mou, array $programIds): Mou
     {
-        return $this->decide($mou, MouStatus::Approved);
+        $programIds = Program::query()->where('is_active', true)->whereKey($programIds)->pluck('id')->all();
+
+        if ($programIds === []) {
+            throw WorkflowException::because('mou_programs_required');
+        }
+
+        return DB::transaction(function () use ($mou, $programIds): Mou {
+            $this->decide($mou, MouStatus::Approved);
+            $mou->programs()->sync($programIds);
+
+            return $mou;
+        });
     }
 
     public function reject(Mou $mou, string $note): Mou

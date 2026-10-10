@@ -82,7 +82,7 @@ return [
         'open' => 'Buka',
         'registration_number_pending' => 'Diberikan saat diajukan',
         'create_title' => 'Pendaftaran baru',
-        'create_description' => 'Daftarkan pendaftar atas namanya. Dokumen diunggah dan pendaftaran diajukan di halaman berikutnya.',
+        'create_description' => 'Daftarkan pendaftar atas namanya. Isian bertanda * cukup untuk menyimpan draf; isian lain diperiksa saat pendaftaran diajukan.',
         'edit_title' => 'Ubah :name',
         'religion_hint' => 'Opsional. Hanya ditanyakan untuk proses visa.',
         'phone_hint' => 'Sertakan kode negara, misalnya +61 412 000 000.',
@@ -172,6 +172,7 @@ return [
             'loa_number' => 'Nomor LOA',
         ],
         'actions' => [
+            'save_draft' => 'Simpan draf',
             'new' => 'Pendaftaran baru',
             'edit' => 'Ubah data',
             'submit' => 'Ajukan pendaftaran',
@@ -239,7 +240,8 @@ return [
         'empty_description' => 'Agen muncul setelah mendaftar di portal.',
         'no_mou' => 'Belum ada MOU',
         'approve_heading' => 'Setujui MOU :name?',
-        'approve_description' => 'Agen langsung bisa mendaftarkan mahasiswa setelah ini.',
+        'approve_description' => 'Pilih program yang dicakup MOU. Agen hanya bisa mendaftarkan mahasiswa ke program ini.',
+        'programs_hint' => 'Agen tidak memilih program di luar daftar ini.',
         'reject_heading' => 'Tolak MOU :name',
         'fields' => [
             'mou_number' => 'Nomor MOU',
@@ -249,6 +251,7 @@ return [
             'students' => 'Mahasiswa',
             'mou' => 'MOU',
             'mou_uploaded_at' => 'MOU diunggah',
+            'programs' => 'Program yang dicakup',
             'reject_note' => 'Alasan (tampil ke agen)',
         ],
         'actions' => [

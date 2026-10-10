@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Notifications\ApplicationSubmitted;
 use App\Workflow\MouWorkflow;
 use App\Workflow\StudentWorkflow;
+use App\Workflow\SubmissionChecklist;
 use Filament\Facades\Filament;
 use Illuminate\Http\UploadedFile;
 use Livewire\Livewire;
@@ -289,6 +290,27 @@ class AdmissionsPanelTest extends WorkflowTestCase
         $this->actingAs($admin)->get(StudentResource::getUrl('edit', ['record' => $student]))->assertForbidden();
     }
 
+    public function test_admin_draft_needs_only_the_minimal_fields(): void
+    {
+        $program = $this->program();
+
+        Livewire::actingAs($this->superAdmin())
+            ->test(StudentResource\Pages\CreateApplicant::class)
+            ->fillForm([
+                'full_name' => 'Quick Draft',
+                'email' => 'quick@example.test',
+                'passport_number' => 'QD1234567',
+                'program_id' => $program->id,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $student = Student::query()->where('email', 'quick@example.test')->firstOrFail();
+        $this->assertSame(StudentStatus::Draft, $student->status);
+        $this->assertNull($student->date_of_birth);
+        $this->assertFalse(SubmissionChecklist::for($student)->isComplete(), 'the rest is checked on submit');
+    }
+
     public function test_only_super_admin_sees_the_new_application_button(): void
     {
         $student = $this->submitted();
@@ -325,6 +347,7 @@ class AdmissionsPanelTest extends WorkflowTestCase
 
     public function test_mou_is_approved_from_the_agency_list(): void
     {
+        $program = $this->program();
         $agent = $this->agent();
         app(MouWorkflow::class)->submit($agent, $this->pdf());
 
@@ -332,9 +355,13 @@ class AdmissionsPanelTest extends WorkflowTestCase
             ->test(AgentResource\Pages\ListAgents::class)
             ->set('activeTab', MouStatus::Pending->value)
             ->assertCanSeeTableRecords([$agent])
-            ->callTableAction('approveMou', $agent);
+            ->callTableAction('approveMou', $agent, data: ['programs' => []])
+            ->assertHasTableActionErrors(['programs' => 'required'])
+            ->callTableAction('approveMou', $agent, data: ['programs' => [$program->id]])
+            ->assertHasNoTableActionErrors();
 
         $this->assertTrue($agent->fresh()->hasApprovedMou());
+        $this->assertSame([$program->id], $agent->latestMou->programs->pluck('id')->all());
     }
 
     public function test_export_follows_the_active_tab(): void

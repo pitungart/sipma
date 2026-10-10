@@ -58,11 +58,21 @@ abstract class WorkflowTestCase extends TestCase
         return User::factory()->create(['role' => UserRole::Student]);
     }
 
+    /**
+     * Agen dengan profil lengkap (siap mengunggah MOU).
+     */
     protected function agent(): Agent
     {
         $user = User::factory()->create(['role' => UserRole::Agent]);
 
-        return $user->agent()->create(['company_name' => 'EduBridge', 'email' => $user->email, 'country_code' => 'AU']);
+        return $user->agent()->create([
+            'company_name' => 'EduBridge',
+            'first_name' => 'Kate',
+            'email' => $user->email,
+            'phone' => '+61 412 000 000',
+            'address' => '1 George St, Sydney',
+            'country_code' => 'AU',
+        ]);
     }
 
     /**

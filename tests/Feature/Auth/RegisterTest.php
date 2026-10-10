@@ -65,6 +65,22 @@ class RegisterTest extends TestCase
         );
     }
 
+    public function test_debug_mode_skips_verification_email(): void
+    {
+        Notification::fake();
+        config(['sipma.skip_email_verification' => true]);
+
+        $this->fillForm(role: 'student', email: 'dev@example.com')
+            ->call('register')
+            ->assertHasNoErrors()
+            ->assertRedirect(url('/app'));
+
+        $user = User::where('email', 'dev@example.com')->firstOrFail();
+
+        $this->assertTrue($user->hasVerifiedEmail());
+        Notification::assertNotSentTo($user, VerifyEmail::class);
+    }
+
     public function test_agent_registration_creates_agent_profile(): void
     {
         Notification::fake();

@@ -5,6 +5,8 @@ namespace App\Notifications;
 use App\Models\User;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as PanelNotification;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -13,9 +15,14 @@ use Illuminate\Notifications\Notification;
  *
  * Laravel mengirim dalam bahasa penerima (User::preferredLocale), jadi semua teks dibentuk
  * dengan __() di dalam method — bukan di constructor — agar ikut bahasa tersebut.
+ *
+ * Lonceng selalu langsung (koneksi sync); email langsung juga, kecuali SIPMA_QUEUE_MAIL=true
+ * yang mengirimnya lewat antrean agar SMTP yang gagal tidak menggagalkan aksi di panel.
  */
-abstract class SipmaNotification extends Notification
+abstract class SipmaNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     abstract protected function title(): string;
 
     abstract protected function body(): string;
@@ -28,11 +35,25 @@ abstract class SipmaNotification extends Notification
     abstract protected function tone(): string;
 
     /**
+     * Lonceng panel selalu; email hanya bila config('sipma.mail_notifications') aktif
+     * (bawaan mati saat APP_DEBUG=true). Alur tetap berjalan tanpa email.
+     *
      * @return list<string>
      */
     public function via(User $notifiable): array
     {
-        return ['database', 'mail'];
+        return config('sipma.mail_notifications') ? ['database', 'mail'] : ['database'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function viaConnections(): array
+    {
+        return [
+            'database' => 'sync',
+            'mail' => config('sipma.queue_mail') ? (string) config('queue.default') : 'sync',
+        ];
     }
 
     /**

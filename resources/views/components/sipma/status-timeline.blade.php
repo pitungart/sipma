@@ -1,9 +1,10 @@
-{{-- Garis waktu langkah pendaftaran (template "stepper"): selesai = centang, sekarang = pil lembut --}}
-@props(['status'])
+{{-- Garis waktu langkah (template "stepper"): selesai = centang, sekarang = pil lembut.
+     Bawaan: langkah pendaftaran dari :status; bisa juga diberi :steps lain (mis. onboarding agen). --}}
+@props(['status' => null, 'steps' => null, 'label' => null])
 
-@php($steps = \App\Workflow\StatusTimeline::for($status))
+@php($steps ??= \App\Workflow\StatusTimeline::for($status))
 
-<ol {{ $attributes->class('sipma-timeline-steps') }} aria-label="{{ __('workflow.timeline_label') }}">
+<ol {{ $attributes->class('sipma-timeline-steps') }} aria-label="{{ $label ?? __('workflow.timeline_label') }}">
     @foreach ($steps as $step)
         <li
             @class(['sipma-step', 'is-'.$step['state'], 'sipma-tone-'.$step['tone']])

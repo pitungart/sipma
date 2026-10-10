@@ -6,6 +6,7 @@ use App\Enums\MouStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -48,5 +49,13 @@ class Mou extends Model
     public function verifier(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    /**
+     * Program yang dicakup MOU, dipilih KUI saat menyetujui (UC-25).
+     */
+    public function programs(): BelongsToMany
+    {
+        return $this->belongsToMany(Program::class);
     }
 }

@@ -145,7 +145,7 @@ class NumberingTest extends WorkflowTestCase
         $mouFlow = app(MouWorkflow::class);
         $rejected = $mouFlow->reject($mouFlow->submit($this->agent(), $this->pdf()), 'Unsigned');
         $this->assertNull($rejected->mou_number);
-        $approved = $mouFlow->approve($mouFlow->submit($this->agent(), $this->pdf()));
+        $approved = $mouFlow->approve($mouFlow->submit($this->agent(), $this->pdf()), [$this->program()->id]);
         $this->assertSame('MOU/SIPMA/2026/0001', $approved->mou_number);
     }
 

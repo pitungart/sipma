@@ -7,7 +7,9 @@ use App\Filament\Admin\Resources\AgentResource\Pages;
 use App\Filament\Admin\Resources\Concerns\RunsWorkflow;
 use App\Filament\Support\FormModal;
 use App\Models\Agent;
+use App\Models\Program;
 use App\Workflow\MouWorkflow;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\MaxWidth;
@@ -130,20 +132,29 @@ class AgentResource extends Resource
                     'title' => 'MOU · '.$record->company_name,
                 ])->visible(fn (Agent $record): bool => $record->latestMou !== null),
 
-                Tables\Actions\Action::make('approveMou')
+                // Setujui = pilih program yang dicakup MOU (keputusan 8 Oktober 2026)
+                FormModal::apply(Tables\Actions\Action::make('approveMou'))
                     ->iconButton()
                     ->icon('lucide-check')
                     ->color('gray')
                     ->tooltip(__('admin.agent.actions.approve'))
                     ->visible($pendingMou)
-                    ->requiresConfirmation()
                     ->modalHeading(fn (Agent $record): string => __('admin.agent.approve_heading', ['name' => $record->company_name]))
                     ->modalDescription(__('admin.agent.approve_description'))
                     ->modalIcon('lucide-check')
                     ->modalIconColor('success')
+                    ->modalWidth(MaxWidth::Large)
                     ->modalSubmitActionLabel(__('admin.agent.actions.approve'))
-                    ->action(fn (Agent $record) => static::runStep(
-                        fn (MouWorkflow $w) => $w->approve($record->latestMou),
+                    ->form([
+                        CheckboxList::make('programs')
+                            ->label(__('admin.agent.fields.programs'))
+                            ->helperText(__('admin.agent.programs_hint'))
+                            ->options(fn (): array => Program::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
+                            ->bulkToggleable()
+                            ->required(),
+                    ])
+                    ->action(fn (Agent $record, array $data) => static::runStep(
+                        fn (MouWorkflow $w) => $w->approve($record->latestMou, $data['programs']),
                         __('admin.agent.done.approved'),
                     )),
 

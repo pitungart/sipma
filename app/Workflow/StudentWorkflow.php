@@ -10,6 +10,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
+use App\Models\AcademicPeriod;
 use App\Models\Document;
 use App\Models\Loa;
 use App\Models\Payment;
@@ -107,6 +108,9 @@ final class StudentWorkflow
             'submitted_at' => now(),
             // Nomor pendaftaran diberikan saat pertama kali diajukan; pengajuan ulang tetap memakainya
             'registration_number' => $student->registration_number ?? Numbering::next(NumberType::Application),
+            // Draf tanpa periode (mis. dibuat sebelum periode dibuka) memakai periode yang sedang dibuka;
+            // pengajuan tidak diblokir bila tidak ada (keputusan 8 Oktober 2026, #3 = B)
+            'academic_period_id' => $student->academic_period_id ?? AcademicPeriod::currentFor($student->program_id)?->getKey(),
         ]);
 
         Notification::send($this->kui(), new ApplicationSubmitted($student, $resubmitted));
@@ -133,10 +137,7 @@ final class StudentWorkflow
             throw WorkflowException::because('payment_already_verified', ['type' => $type->getLabel()]);
         }
 
-        $account = PaymentAccount::query()
-            ->for($type, $student->program_id)
-            ->orderByRaw('program_id is null, fee_type is null') // rekening paling spesifik dulu
-            ->first();
+        $account = PaymentAccount::bestFor($type, $student->program_id);
 
         $attributes = [
             'type' => $type,
@@ -364,9 +365,17 @@ final class StudentWorkflow
             ->values();
     }
 
-    private function feeFor(Student $student, PaymentType $type): string
+    public function feeFor(Student $student, PaymentType $type): string
     {
-        return (string) ($student->program?->{$type->value} ?? '0');
+        $program = $student->program;
+
+        // Relasi yang dimuat sebagian (mis. with('program:id,name')) tidak membawa nominal biaya;
+        // tanpa ini biaya terbaca Rp 0 dan pembayaran/LOA lolos tanpa diperiksa.
+        if ($program !== null && ! array_key_exists($type->value, $program->getAttributes())) {
+            $program = $student->program()->first();
+        }
+
+        return (string) ($program?->{$type->value} ?? '0');
     }
 
     // ── Pembantu ─────────────────────────────────────────────────────────────

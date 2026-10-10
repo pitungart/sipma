@@ -82,7 +82,7 @@ return [
         'open' => 'Open',
         'registration_number_pending' => 'Given when submitted',
         'create_title' => 'New application',
-        'create_description' => 'Register an applicant on their behalf. You can upload the documents and submit on the next page.',
+        'create_description' => 'Register an applicant on their behalf. Fields marked * are enough to save a draft; the rest is checked when the application is submitted.',
         'edit_title' => 'Edit :name',
         'religion_hint' => 'Optional. Only asked for the visa process.',
         'phone_hint' => 'Include the country code, for example +61 412 000 000.',
@@ -172,6 +172,7 @@ return [
             'loa_number' => 'LOA number',
         ],
         'actions' => [
+            'save_draft' => 'Save draft',
             'new' => 'New application',
             'edit' => 'Edit data',
             'submit' => 'Submit application',
@@ -239,7 +240,8 @@ return [
         'empty_description' => 'Agencies appear after they sign up on the portal.',
         'no_mou' => 'No MOU yet',
         'approve_heading' => 'Approve the MOU of :name?',
-        'approve_description' => 'The agency can register students right after this.',
+        'approve_description' => 'Choose the programs this MOU covers. The agent can only register students to these programs.',
+        'programs_hint' => 'The agent cannot choose programs outside this list.',
         'reject_heading' => 'Reject the MOU of :name',
         'fields' => [
             'mou_number' => 'MOU number',
@@ -249,6 +251,7 @@ return [
             'students' => 'Students',
             'mou' => 'MOU',
             'mou_uploaded_at' => 'MOU uploaded',
+            'programs' => 'Programs covered',
             'reject_note' => 'Reason (shown to the agency)',
         ],
         'actions' => [

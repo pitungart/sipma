@@ -5,7 +5,6 @@ namespace App\Filament\Admin\Resources\StudentResource\Pages;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Enums\NumberType;
-use App\Enums\PaymentStatus;
 use App\Enums\StudentStatus;
 use App\Filament\Admin\Resources\StudentResource;
 use App\Filament\Support\FormModal;
@@ -13,6 +12,7 @@ use App\Models\Document;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Support\ActivityDescriber;
+use App\Support\ApplicantDetails;
 use App\Support\Numbering;
 use App\Support\Rupiah;
 use App\Workflow\StudentWorkflow;
@@ -335,73 +335,12 @@ class ViewApplicant extends ViewRecord
             'canVerify' => $this->canVerify(),
             'canReview' => $this->canVerify() && $student->status === StudentStatus::InReview,
             'canUpload' => $this->canVerify() && $student->status->isEditable(),
-            'profile' => $this->profile($student),
-            'documents' => $this->documents($student),
-            'fees' => $this->fees($student),
+            'profile' => ApplicantDetails::profile($student),
+            'documents' => ApplicantDetails::documents($student),
+            'fees' => ApplicantDetails::fees($student),
             'payments' => $student->payments()->with('paymentAccount')->latest()->get(),
             'history' => ActivityDescriber::forStudent($student),
         ];
-    }
-
-    /**
-     * @return list<array{label: string, value: ?string, mono?: bool}>
-     */
-    private function profile(Student $s): array
-    {
-        $date = fn ($value): ?string => $value?->translatedFormat('j F Y');
-
-        return [
-            ['label' => __('admin.applicant.fields.registration_number'), 'value' => $s->registration_number ?? __('admin.applicant.registration_number_pending'), 'mono' => filled($s->registration_number)],
-            ['label' => __('workflow.fields.email'), 'value' => $s->email],
-            ['label' => __('workflow.fields.phone_number'), 'value' => $s->phone_number],
-            ['label' => __('workflow.fields.gender'), 'value' => $s->gender?->getLabel()],
-            ['label' => __('admin.applicant.fields.birth'), 'value' => collect([$s->place_of_birth, $date($s->date_of_birth)])->filter()->implode(', ') ?: null],
-            ['label' => __('workflow.fields.nationality_code'), 'value' => $s->nationality?->name],
-            ['label' => __('admin.applicant.fields.religion'), 'value' => $s->religion?->getLabel()],
-            ['label' => __('workflow.fields.permanent_address'), 'value' => collect([$s->permanent_address, $s->state, $s->post_code])->filter()->implode(', ') ?: null],
-            ['label' => __('workflow.fields.home_university'), 'value' => collect([$s->home_university, $s->homeUniversityCountry?->name])->filter()->implode(' · ') ?: null],
-            ['label' => __('workflow.fields.passport_number'), 'value' => $s->passport_number, 'mono' => true],
-            ['label' => __('admin.applicant.fields.passport_validity'), 'value' => collect([$date($s->date_of_issued_passport), $date($s->date_of_passport_expiry)])->filter()->implode(' – ') ?: null],
-            ['label' => __('admin.program.label'), 'value' => $s->program?->name],
-            ['label' => __('admin.period.label'), 'value' => $s->academicPeriod?->name],
-            ['label' => __('admin.dashboard.source'), 'value' => $s->agent?->company_name ?? __('admin.dashboard.source_self')],
-            ['label' => __('admin.applicant.fields.submitted_at'), 'value' => $s->submitted_at?->translatedFormat('j F Y, H.i')],
-        ];
-    }
-
-    /**
-     * Semua jenis wajib (termasuk yang belum diunggah) lalu dokumen tambahan yang ada.
-     *
-     * @return Collection<int, array{type: DocumentType, document: ?Document}>
-     */
-    private function documents(Student $student): Collection
-    {
-        $uploaded = $student->documents()->latest()->get();
-
-        $required = collect(DocumentType::required())->map(fn (DocumentType $type): array => [
-            'type' => $type,
-            'document' => $uploaded->first(fn (Document $d): bool => $d->type === $type),
-        ]);
-
-        $extra = $uploaded
-            ->reject(fn (Document $d): bool => $d->type->isRequired())
-            ->map(fn (Document $d): array => ['type' => $d->type, 'document' => $d]);
-
-        return $required->concat($extra)->values();
-    }
-
-    /**
-     * @return Collection<int, array{label: string, amount: string, status: ?PaymentStatus}>
-     */
-    private function fees(Student $student): Collection
-    {
-        $payments = $student->payments()->latest()->get();
-
-        return app(StudentWorkflow::class)->requiredPaymentTypes($student)->map(fn ($type): array => [
-            'label' => $type->getLabel(),
-            'amount' => Rupiah::format($student->program->{$type->value}),
-            'status' => $payments->first(fn (Payment $p): bool => $p->type === $type)?->status,
-        ]);
     }
 
     /**

@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Models\Payment;
+use App\Models\User;
+use App\Support\ApplicantUrl;
 
 class PaymentRejected extends SipmaNotification
 {
@@ -26,5 +28,13 @@ class PaymentRejected extends SipmaNotification
     protected function tone(): string
     {
         return 'danger';
+    }
+
+    /**
+     * Tombol "Buka" langsung ke detail pendaftar di panel penerima.
+     */
+    protected function url(User $notifiable): string
+    {
+        return ApplicantUrl::for($notifiable, $this->payment->student);
     }
 }

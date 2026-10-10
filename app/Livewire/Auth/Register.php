@@ -76,7 +76,13 @@ class Register extends Component
 
         $user = $this->form->store();
 
-        // Listener bawaan Laravel memanggil User::sendEmailVerificationNotification().
+        // Mode pengembangan: akun langsung terverifikasi, jadi listener di bawah tidak mengirim email.
+        if (config('sipma.skip_email_verification') && ! app()->isProduction()) {
+            $user->markEmailAsVerified();
+        }
+
+        // Listener bawaan Laravel memanggil User::sendEmailVerificationNotification()
+        // hanya bila email belum terverifikasi.
         event(new Registered($user));
 
         Auth::login($user);

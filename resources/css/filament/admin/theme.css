@@ -3555,6 +3555,499 @@ select.fi-select-input:has(option[value='']:checked) {
     }
 }
 
+/* ─────────────────────────────────────────────────────────────
+   21. Panel agen: onboarding (dashboard, MOU)
+   ───────────────────────────────────────────────────────────── */
+.sipma-page-sub {
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--sp-muted);
+}
+
+.sipma-agent-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+}
+
+@media (min-width: 1024px) {
+    .sipma-agent-grid {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    }
+}
+
+/* Panel /app: dua tombol di kartu langkah berikutnya, katalog program */
+.sipma-agent-next-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.sipma-program-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.sipma-program-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 20px;
+}
+
+.sipma-program-card.is-chosen {
+    box-shadow: 0 0 0 2px var(--sp-success), var(--sp-shadow);
+}
+
+.sipma-program-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.sipma-program-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--sp-heading);
+}
+
+.sipma-program-faculty {
+    font-size: 12.5px;
+    color: var(--sp-light);
+}
+
+.sipma-program-desc {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--sp-text);
+}
+
+.sipma-program-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 14px;
+}
+
+.sipma-program-period {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--sp-success-ink);
+}
+
+/* Dasbor kerja: perlu tindakan (lebar) + MOU (sempit) */
+@media (min-width: 1024px) {
+    .sipma-agent-grid.is-wide {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        align-items: start;
+    }
+}
+
+.sipma-stat-grid.is-five {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.sipma-card-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 20px;
+    margin-left: 6px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background-color: var(--sp-danger-l);
+    color: var(--sp-danger-ink);
+    font-size: 11.5px;
+    font-weight: 700;
+    vertical-align: 1px;
+}
+
+.sipma-todo {
+    display: flex;
+    flex-direction: column;
+}
+
+.sipma-todo-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--sp-border);
+}
+
+.sipma-todo > .sipma-todo-row:first-child {
+    border-top: 0;
+}
+
+.sipma-todo-reason {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--tone-ink);
+}
+
+.sipma-todo-icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+}
+
+.sipma-todo-more {
+    padding: 12px 20px 16px;
+    border-top: 1px solid var(--sp-border);
+    font-size: 12.5px;
+    color: var(--sp-muted);
+}
+
+.sipma-mou-programs {
+    padding: 0 20px 16px;
+}
+
+.sipma-mou-programs ul {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sipma-mou-programs li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--sp-heading);
+}
+
+.sipma-mou-program-name {
+    min-width: 0;
+}
+
+.sipma-mou-programs .sipma-pill {
+    flex: none;
+}
+
+.sipma-mou-foot {
+    padding: 12px 20px 16px;
+    border-top: 1px solid var(--sp-border);
+}
+
+@media (max-width: 639px) {
+    .sipma-todo-row {
+        flex-wrap: wrap;
+        padding: 14px 16px;
+    }
+
+    .sipma-todo-row > .sipma-row-main {
+        flex: 1 1 200px;
+    }
+}
+
+/* Langkah berikutnya & status MOU: tile ikon besar bernada tahap, isi di kanan */
+.sipma-agent-next,
+.sipma-agent-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 24px;
+}
+
+.sipma-agent-next {
+    border-left: 4px solid var(--tone);
+}
+
+.sipma-agent-status > .sipma-min-0 {
+    flex: 1;
+}
+
+.sipma-agent-next-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background-color: var(--tone-l);
+    color: var(--tone-ink);
+}
+
+.sipma-agent-next-svg {
+    width: 22px;
+    height: 22px;
+}
+
+.sipma-agent-kicker {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--tone-ink);
+}
+
+.sipma-agent-next-title {
+    margin-top: 2px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--sp-heading);
+}
+
+.sipma-agent-next-body {
+    margin-top: 4px;
+    max-width: 62ch;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--sp-text);
+}
+
+.sipma-agent-note {
+    margin-top: 12px;
+}
+
+.sipma-agent-next-cta {
+    margin-top: 16px;
+}
+
+.sipma-agent-status-note {
+    padding: 0 24px 20px;
+}
+
+/* Ringkasan isian: label kecil di atas nilai; yang belum diisi miring abu */
+.sipma-agent-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px 24px;
+    padding: 18px 20px 20px;
+}
+
+.sipma-agent-facts.is-ruled {
+    border-top: 1px solid var(--sp-border);
+    padding: 16px 24px 20px;
+}
+
+.sipma-agent-facts dt {
+    font-size: 12px;
+    color: var(--sp-light);
+}
+
+.sipma-agent-facts dd {
+    margin-top: 2px;
+    font-weight: 500;
+    color: var(--sp-heading);
+    overflow-wrap: anywhere;
+}
+
+.sipma-agent-facts dd.is-empty {
+    font-weight: 400;
+    font-style: italic;
+    color: var(--sp-light);
+}
+
+.sipma-agent-facts-wide {
+    grid-column: 1 / -1;
+}
+
+.sipma-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* Gerbang pendaftaran mahasiswa */
+.sipma-agent-gate {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 14px;
+    padding: 16px 20px;
+}
+
+.sipma-agent-gate > .sipma-min-0 {
+    flex: 1 1 240px;
+}
+
+.sipma-agent-gate.is-locked {
+    background-color: var(--sp-subtle);
+}
+
+.sipma-agent-gate-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sp-heading);
+}
+
+.sipma-agent-gate-body {
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--sp-muted);
+}
+
+/* Ketentuan berkas MOU: nomor dalam lingkaran kuning (aturan = warning) */
+.sipma-agent-rules {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 24px 22px;
+}
+
+.sipma-agent-rules li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--sp-text);
+}
+
+.sipma-agent-rule-num {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background-color: var(--sp-warning-l);
+    color: var(--sp-warning-ink);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Pembayaran agen: tiga langkah bayar, nominal tebal, VA mudah disalin */
+.sipma-pay-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background-color: var(--sp-subtle);
+}
+
+.sipma-pay-steps li {
+    display: flex;
+    flex: 1 1 220px;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--sp-text);
+}
+
+.sipma-pay-amount {
+    font-weight: 700;
+    color: var(--sp-heading);
+}
+
+.sipma-pay-va {
+    color: var(--sp-heading);
+    user-select: all;
+}
+
+/* Titik "perlu tindakan" di tab */
+.sipma-master-tab-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background-color: var(--sp-warning);
+}
+
+/* Kelengkapan pendaftaran (agen): bar progres + dua kolom butir data & dokumen */
+.sipma-check-progress {
+    height: 4px;
+    background-color: var(--sp-gray-l);
+}
+
+.sipma-check-progress > span {
+    display: block;
+    height: 100%;
+    background-color: var(--sp-success);
+    transition: width 0.2s ease;
+}
+
+.sipma-check-groups {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px 32px;
+    padding: 18px 24px 22px;
+}
+
+@media (min-width: 1024px) {
+    .sipma-check-groups {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+}
+
+.sipma-check-heading {
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--sp-light);
+}
+
+.sipma-check-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px 16px;
+}
+
+.sipma-check-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--sp-heading);
+}
+
+.sipma-check-list li.is-done {
+    color: var(--sp-muted);
+}
+
+.sipma-check-icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+    color: var(--sp-warning);
+}
+
+.sipma-check-list li.is-done .sipma-check-icon {
+    color: var(--sp-success);
+}
+
+.sipma-def-grid dd.sipma-dd-empty {
+    font-weight: 400;
+    color: var(--sp-light);
+}
+
+@media (max-width: 639px) {
+    .sipma-agent-next,
+    .sipma-agent-status {
+        flex-wrap: wrap;
+        padding: 16px;
+    }
+
+    .sipma-agent-status-note {
+        padding: 0 16px 16px;
+    }
+
+    .sipma-agent-rules {
+        padding: 16px;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .fi-sidebar-item-button,
     .fi-ta-row,

@@ -52,6 +52,8 @@ return [
         'mou_already_approved' => 'Your MOU has already been approved.',
         'mou_already_pending' => 'Your MOU is still waiting for review.',
         'mou_not_pending' => 'This MOU has already been processed.',
+        'profile_incomplete' => 'Complete your company profile before uploading the MOU.',
+        'mou_programs_required' => 'Choose at least one program covered by this MOU.',
     ],
 
     'notifications' => [
@@ -95,6 +97,17 @@ return [
         'mou_rejected' => [
             'title' => 'Your MOU needs changes',
             'body' => 'Please upload a revised MOU. Reason: :note',
+        ],
+        'and_more' => 'and :count more',
+        'submission_reminder' => [
+            'title' => '{1} :period closes tomorrow|[2,*] :period closes in :days days',
+            'body_one' => 'The application for :names has not been submitted. Complete and submit it before :date.',
+            'body_many' => ':count students have not been submitted: :names. Submit before :date.',
+        ],
+        'payment_reminder' => [
+            'title' => 'Fees not paid yet',
+            'body_one' => 'The application for :name is approved, but :fees has not been paid. The VA number is valid for 24 hours — pay soon, then upload the proof.',
+            'body_many' => ':count approved students have not paid yet: :names. The VA number is valid for 24 hours.',
         ],
     ],
 

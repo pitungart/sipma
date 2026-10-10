@@ -44,6 +44,17 @@ class PaymentAccount extends Model
             ->where(fn (Builder $q) => $q->whereNull('program_id')->orWhere('program_id', $programId));
     }
 
+    /**
+     * Rekening paling spesifik untuk jenis biaya & program (khusus program/jenis dulu, lalu umum).
+     */
+    public static function bestFor(PaymentType $type, ?string $programId): ?self
+    {
+        return static::query()
+            ->for($type, $programId)
+            ->orderByRaw('program_id is null, fee_type is null')
+            ->first();
+    }
+
     public function program(): BelongsTo
     {
         return $this->belongsTo(Program::class);
