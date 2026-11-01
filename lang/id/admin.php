@@ -213,6 +213,30 @@ return [
         ],
     ],
 
+    'academic_student' => [
+        'label' => 'Mahasiswa asing',
+        'plural' => 'Mahasiswa asing',
+        'description' => 'Mahasiswa yang sudah menerima LOA: aktifkan saat mulai program, tandai selesai di akhir program.',
+        'empty_heading' => 'Belum ada mahasiswa asing di sini',
+        'empty_description' => 'Mahasiswa muncul di sini setelah LOA-nya terbit.',
+        'tabs' => [
+            'all' => 'Semua',
+            'ready' => 'Siap diaktifkan',
+        ],
+        'fields' => [
+            'faculty' => 'Fakultas',
+            'nationality' => 'Kewarganegaraan',
+            'enrolled_at' => 'Tanggal aktif',
+            'account' => 'Akun portal',
+        ],
+        'account' => [
+            'yes' => 'Ada',
+            'no' => 'Belum ada',
+            'pending_hint' => 'Dibuat otomatis dari email pendaftaran saat mahasiswa diaktifkan.',
+            'failed_hint' => 'Tidak bisa dibuat otomatis: email pendaftaran kosong atau dipakai akun lain.',
+        ],
+    ],
+
     'payment' => [
         'label' => 'Pembayaran',
         'plural' => 'Pembayaran',

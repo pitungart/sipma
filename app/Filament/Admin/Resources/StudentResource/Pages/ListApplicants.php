@@ -18,6 +18,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Components\Tab;
 use Filament\Support\Enums\MaxWidth;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
@@ -64,6 +65,12 @@ class ListApplicants extends ListWithStatusTabs
      */
     public const BOARD_LIMIT = 30;
 
+    /**
+     * Sudah Aktif / Selesai pindah ke Mahasiswa Asing; LOA terbit tetap tampil di sini sebagai
+     * akhir penerimaan. Detail pendaftarannya tetap bisa dibuka (hanya daftarnya yang disaring).
+     */
+    public const MOVED_TO_ACADEMIC = [StudentStatus::Enrolled, StudentStatus::Completed];
+
     #[Url(as: 'view')]
     public string $display = 'table';
 
@@ -81,6 +88,7 @@ class ListApplicants extends ListWithStatusTabs
     {
         $counts = Student::query()
             ->visibleTo(Filament::auth()->user())
+            ->whereNotIn('status', self::MOVED_TO_ACADEMIC)
             ->toBase()
             ->selectRaw('status, COUNT(*) as total')
             ->groupBy('status')
@@ -95,6 +103,12 @@ class ListApplicants extends ListWithStatusTabs
                     ->modifyQueryUsing(fn (Builder $query): Builder => $query->where('status', $status)),
             ])->all(),
         ];
+    }
+
+    public function table(Table $table): Table
+    {
+        return parent::table($table)
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->whereNotIn('status', self::MOVED_TO_ACADEMIC));
     }
 
     protected function getHeaderActions(): array

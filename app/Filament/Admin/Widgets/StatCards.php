@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Widgets;
 
 use App\Enums\PaymentStatus;
 use App\Enums\StudentStatus;
+use App\Filament\Admin\Resources\AcademicStudentResource;
 use App\Filament\Admin\Resources\StudentResource;
 use App\Models\Payment;
 use Illuminate\Database\Eloquent\Builder;
@@ -119,7 +120,8 @@ class StatCards extends DashboardWidget
 
         return [
             'label' => __('admin.dashboard.loa_issued'),
-            'url' => StudentResource::getUrl('index', ['activeTab' => 'loa_issued']),
+            // Angkanya mencakup Aktif & Selesai, jadi dibuka di Mahasiswa Asing (semua tab)
+            'url' => AcademicStudentResource::getUrl('index'),
             // Termasuk yang sudah Aktif / Selesai: angka LOA tidak turun saat mahasiswa diaktifkan
             'value' => $this->students()->whereIn('status', StudentStatus::acceptedStatuses())->count(),
             'icon' => 'lucide-file-check',

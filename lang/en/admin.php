@@ -213,6 +213,30 @@ return [
         ],
     ],
 
+    'academic_student' => [
+        'label' => 'International student',
+        'plural' => 'International students',
+        'description' => 'Students whose LOA has been issued: activate them when the program starts, mark them completed at the end.',
+        'empty_heading' => 'No international students here yet',
+        'empty_description' => 'Students appear here once their LOA is issued.',
+        'tabs' => [
+            'all' => 'All',
+            'ready' => 'Ready to activate',
+        ],
+        'fields' => [
+            'faculty' => 'Faculty',
+            'nationality' => 'Nationality',
+            'enrolled_at' => 'Active since',
+            'account' => 'Portal account',
+        ],
+        'account' => [
+            'yes' => 'Yes',
+            'no' => 'Not yet',
+            'pending_hint' => 'Created automatically from the application email when the student is activated.',
+            'failed_hint' => 'Could not be created automatically: the application email is empty or used by another account.',
+        ],
+    ],
+
     'payment' => [
         'label' => 'Payment',
         'plural' => 'Payments',
