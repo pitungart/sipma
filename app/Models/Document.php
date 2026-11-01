@@ -14,12 +14,6 @@ class Document extends Model
 {
     use HasUuids, LogsActivity;
 
-    /**
-     * Batas ukuran file per dokumen dalam kilobyte (sesuai SOP KUI).
-     * Daftar dokumen wajib: DocumentType::required().
-     */
-    public const MAX_FILE_SIZE_KB = 300;
-
     protected $attributes = [
         'status' => DocumentStatus::Pending->value,
     ];

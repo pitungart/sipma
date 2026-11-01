@@ -1,4 +1,6 @@
-{{-- Garis waktu langkah (template "stepper"): selesai = centang, sekarang = pil lembut.
+{{-- Garis waktu langkah, bentuknya sama dengan kepala wizard (keputusan 26 Oktober 2026): ikon bulat,
+     judul + keterangan, pemisah chevron setinggi kartu, tanpa nomor. Selesai = solid + centang,
+     sekarang = tonal bernada langkah, berikutnya = tonal abu.
      Bawaan: langkah pendaftaran dari :status; bisa juga diberi :steps lain (mis. onboarding agen). --}}
 @props(['status' => null, 'steps' => null, 'label' => null])
 
@@ -14,13 +16,15 @@
                 <x-filament::icon :icon="$step['state'] === 'done' ? 'lucide-check' : $step['icon']" class="sipma-step-svg" />
             </span>
             <span class="sipma-step-text">
-                <span class="sipma-step-kicker">{{ str_pad((string) $step['number'], 2, '0', STR_PAD_LEFT) }}</span>
                 <span class="sipma-step-label">{{ $step['label'] }}</span>
                 <span class="sipma-step-desc">{{ $step['description'] }}</span>
             </span>
+
+            @unless ($loop->last)
+                <svg class="sipma-step-sep" aria-hidden="true" fill="none" preserveAspectRatio="none" viewBox="0 0 22 80">
+                    <path d="M0 -2L20 40L0 82" stroke="currentColor" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+                </svg>
+            @endunless
         </li>
-        @unless ($loop->last)
-            <li @class(['sipma-step-line', 'is-done' => $step['state'] === 'done']) aria-hidden="true"></li>
-        @endunless
     @endforeach
 </ol>

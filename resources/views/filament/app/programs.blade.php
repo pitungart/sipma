@@ -1,46 +1,66 @@
-{{-- UC-04: katalog program yang sedang dibuka (tanpa biaya, permintaan staf KUI) --}}
+{{-- UC-04: katalog program yang sedang dibuka (tanpa biaya, permintaan staf KUI). Layout referensi:
+     grid kartu 4 kolom yang bisa dicari; kartu sama dengan kartu program di dasbor. --}}
+@php
+    use Illuminate\Support\Js;
+@endphp
+
 <x-filament-panels::page>
     @if ($programs->isEmpty())
         <section class="sipma-card">
             <x-sipma.empty icon="lucide-graduation-cap" :title="__('student.programs.empty')" :description="__('student.programs.empty_body')" />
         </section>
     @else
-        <div class="sipma-program-grid">
-            @foreach ($programs as $item)
-                @php
-                    $program = $item['program'];
-                    $period = $item['period'];
-                    $chosen = $application?->program_id === $program->getKey();
-                @endphp
-                <article @class(['sipma-card sipma-program-card', 'is-chosen' => $chosen])>
-                    <div class="sipma-program-head">
-                        <span class="sipma-tile sipma-tone-primary"><x-filament::icon icon="lucide-graduation-cap" class="sipma-tile-icon" /></span>
-                        @if ($chosen)
-                            <span class="sipma-pill sipma-tone-success">{{ __('student.programs.chosen') }}</span>
-                        @endif
-                    </div>
-                    <h2 class="sipma-program-name">{{ $program->name }}</h2>
-                    <p class="sipma-program-faculty">{{ $program->faculty?->name }}</p>
-                    @if (filled($program->description))
-                        <p class="sipma-program-desc">{{ $program->description }}</p>
-                    @endif
-                    <div class="sipma-program-foot">
-                        @if ($period)
-                            <span class="sipma-program-period">
-                                <x-filament::icon icon="lucide-calendar" class="sipma-todo-icon" />
-                                {{ __('student.programs.period', ['period' => $period->name, 'date' => $period->registration_closes_at->translatedFormat('j M Y')]) }}
-                            </span>
-                        @endif
+        {{-- Pencarian di browser: nama + fakultas, huruf kecil --}}
+        <div
+            x-data="{
+                q: '',
+                items: {{ Js::from($programs->map(fn ($program): string => mb_strtolower($program->name.' '.$program->faculty?->name))->values()) }},
+                get none() { return this.q !== '' && ! this.items.some((item) => item.includes(this.q)) },
+            }"
+            x-on:sipma-program-search.window="q = $event.detail.trim().toLowerCase()"
+        >
+            <div class="sipma-portal-programs is-catalog">
+                @foreach ($programs as $program)
+                    @php
+                        $chosen = $application?->program_id === $program->getKey();
+                    @endphp
+                    <article
+                        x-show="! q || items[{{ $loop->index }}].includes(q)"
+                        @class(['sipma-portal-program', 'is-chosen' => $chosen])
+                    >
+                        <div class="sipma-portal-program-top">
+                            <span class="sipma-portal-program-icon"><x-filament::icon icon="lucide-graduation-cap" class="sipma-tile-icon" /></span>
+                            @if ($chosen)
+                                <span class="sipma-pill sipma-tone-success">{{ __('student.programs.chosen') }}</span>
+                            @endif
+                        </div>
+                        <div class="sipma-portal-program-body">
+                            <p class="sipma-portal-program-faculty">{{ $program->faculty?->name }}</p>
+                            <h2 class="sipma-portal-program-name">{{ $program->name }}</h2>
+                            @if (filled($program->description))
+                                <p class="sipma-portal-program-desc">{{ $program->description }}</p>
+                            @endif
+                        </div>
+
+                        {{-- Belum mendaftar → mulai pendaftaran; draf/revisi → ganti program (modal konfirmasi) --}}
                         @if ($canStart)
-                            <x-filament::button tag="a" :href="\App\Filament\App\Pages\StartApplication::getUrl(['program' => $program->getKey()])" size="sm">
+                            <a href="{{ \App\Filament\App\Pages\StartApplication::getUrl(['program' => $program->getKey()]) }}" class="sipma-portal-choose">
                                 {{ __('student.programs.choose') }}
-                            </x-filament::button>
+                                <x-filament::icon icon="lucide-arrow-right" class="sipma-portal-btn-icon" />
+                            </a>
                         @elseif ($canChange && ! $chosen)
-                            {{ ($this->chooseAction)(['program' => $program->getKey()]) }}
+                            <button type="button" class="sipma-portal-choose" wire:click="mountAction('choose', {{ Js::from(['program' => $program->getKey()]) }})">
+                                {{ __('student.programs.choose') }}
+                                <x-filament::icon icon="lucide-arrow-right" class="sipma-portal-btn-icon" />
+                            </button>
                         @endif
-                    </div>
-                </article>
-            @endforeach
+                    </article>
+                @endforeach
+            </div>
+
+            <section class="sipma-card" x-cloak x-show="none">
+                <x-sipma.empty icon="lucide-search-x" :title="__('student.programs.no_match')" />
+            </section>
         </div>
     @endif
 </x-filament-panels::page>

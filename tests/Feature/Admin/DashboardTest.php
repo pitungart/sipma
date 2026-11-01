@@ -11,8 +11,6 @@ use App\Filament\Admin\Widgets\LatestApplicants;
 use App\Filament\Admin\Widgets\ProgramBars;
 use App\Filament\Admin\Widgets\RecentActivity;
 use App\Filament\Admin\Widgets\StatCards;
-use App\Filament\Admin\Widgets\UpcomingAgenda;
-use App\Models\AcademicPeriod;
 use App\Models\Faculty;
 use App\Models\Program;
 use App\Models\Student;
@@ -42,7 +40,7 @@ class DashboardTest extends TestCase
             ->assertSee('Application trend')
             ->assertSee('Applicants per program')
             ->assertSee('Latest applicants')
-            ->assertSee('Upcoming agenda')
+            ->assertDontSee('Upcoming agenda')
             ->assertSee('Recent activity')
             ->assertSee('Applicant sources')
             ->assertSee('Export report');
@@ -121,23 +119,6 @@ class DashboardTest extends TestCase
             ->assertSet('source', 'agent')
             ->call('setSource', 'bogus')
             ->assertSet('source', 'all');
-    }
-
-    public function test_agenda_lists_upcoming_period_dates(): void
-    {
-        $program = $this->program('FIB', 'Fakultas Ilmu Budaya', 'ND-BIPA');
-
-        AcademicPeriod::create([
-            'program_id' => $program->id,
-            'name' => 'Summer 2027',
-            'code' => 'SUMMER-2027',
-            'registration_opens_at' => now()->addDays(3),
-            'registration_closes_at' => now()->addDays(30),
-        ]);
-
-        Livewire::actingAs($this->superAdmin())
-            ->test(UpcomingAgenda::class)
-            ->assertSeeInOrder(['Summer 2027', 'Registration opens', 'Summer 2027', 'Registration closes']);
     }
 
     public function test_export_downloads_a_csv(): void

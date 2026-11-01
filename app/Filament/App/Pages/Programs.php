@@ -3,16 +3,16 @@
 namespace App\Filament\App\Pages;
 
 use App\Filament\App\Concerns\InteractsWithApplication;
-use App\Models\AcademicPeriod;
 use App\Models\Program;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * UC-04 Pilih program: katalog program yang periodenya sedang dibuka. Biaya tidak ditampilkan
+ * UC-04 Pilih program: katalog program yang sedang dibuka (aktif). Biaya tidak ditampilkan
  * (permintaan staf KUI, 8 Oktober 2026). "Pilih program ini" memulai pendaftaran, atau
  * mengganti program pendaftaran yang masih draf / perlu revisi.
  */
@@ -28,6 +28,9 @@ class Programs extends Page
 
     protected static string $view = 'filament.app.programs';
 
+    /** @var Collection<int, Program>|null dipakai kepala & isi dalam satu permintaan */
+    private ?Collection $openPrograms = null;
+
     public static function getNavigationLabel(): string
     {
         return __('student.programs.title');
@@ -41,6 +44,18 @@ class Programs extends Page
     public function getSubheading(): ?string
     {
         return __('student.programs.description');
+    }
+
+    /**
+     * Kepala seperti referensi katalog: judul + deskripsi di kiri, pencarian di kanan.
+     */
+    public function getHeader(): ?View
+    {
+        return view('filament.app.programs-header', [
+            'heading' => $this->getTitle(),
+            'subheading' => $this->getSubheading(),
+            'searchable' => $this->programs()->isNotEmpty(),
+        ]);
     }
 
     /**
@@ -61,10 +76,7 @@ class Programs extends Page
                 Gate::authorize('update', $application);
 
                 $program = $this->program($arguments);
-                $application->update([
-                    'program_id' => $program->getKey(),
-                    'academic_period_id' => AcademicPeriod::currentFor($program->getKey())?->getKey(),
-                ]);
+                $application->update(['program_id' => $program->getKey()]);
 
                 Notification::make()->success()->title(__('student.programs.changed', ['program' => $program->name]))->send();
             });
@@ -86,15 +98,11 @@ class Programs extends Page
     }
 
     /**
-     * @return Collection<int, array{program: Program, period: ?AcademicPeriod}>
+     * @return Collection<int, Program>
      */
     private function programs(): Collection
     {
-        return Program::query()->openForRegistration()->with('faculty')->orderBy('name')->get()
-            ->map(fn (Program $program): array => [
-                'program' => $program,
-                'period' => AcademicPeriod::currentFor($program->getKey()),
-            ]);
+        return $this->openPrograms ??= Program::query()->openForRegistration()->with('faculty')->orderBy('name')->get();
     }
 
     /**

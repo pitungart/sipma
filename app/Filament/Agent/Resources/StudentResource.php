@@ -7,7 +7,6 @@ use App\Enums\DocumentType;
 use App\Enums\StudentStatus;
 use App\Filament\Agent\Resources\StudentResource\Pages;
 use App\Filament\Support\ApplicantForm;
-use App\Models\AcademicPeriod;
 use App\Models\Student;
 use Filament\Facades\Filament;
 use Filament\Forms;
@@ -22,7 +21,7 @@ use Illuminate\Support\Str;
 /**
  * UC-14 Kelola mahasiswa (agen): "Mahasiswa saya". Baris dibatasi Student::scopeVisibleTo
  * (hanya mahasiswa yang didaftarkan agen ini), menu terbuka setelah MOU disetujui (BPMN S3).
- * Program hanya dari MOU agen (catatan UC-04); periode dipilih otomatis.
+ * Program hanya dari MOU agen (catatan UC-04).
  */
 class StudentResource extends Resource
 {
@@ -126,36 +125,9 @@ class StudentResource extends Resource
 
                     return count($programs) === 1 ? (string) array_key_first($programs) : null;
                 })
-                ->live()
-                ->helperText(function (Forms\Get $get): string {
-                    $period = AcademicPeriod::currentFor($get('program_id'));
-
-                    return match (true) {
-                        blank($get('program_id')) => __('agent.students.program_hint'),
-                        $period === null => __('agent.students.no_open_period'),
-                        default => __('agent.students.open_period', [
-                            'period' => $period->name,
-                            'date' => $period->registration_closes_at->translatedFormat('j F Y'),
-                        ]),
-                    };
-                })
+                ->helperText(__('agent.students.program_hint'))
                 ->columnSpanFull(),
         ];
-    }
-
-    /**
-     * Periode mengikuti program: periode yang sedang dibuka (agen tidak memilih periode).
-     *
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    public static function withCurrentPeriod(array $data, ?Student $record = null): array
-    {
-        if ($record === null || $record->program_id !== ($data['program_id'] ?? null) || $record->academic_period_id === null) {
-            $data['academic_period_id'] = AcademicPeriod::currentFor($data['program_id'] ?? null)?->getKey();
-        }
-
-        return $data;
     }
 
     public static function table(Table $table): Table

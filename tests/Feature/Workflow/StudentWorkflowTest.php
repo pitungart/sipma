@@ -8,6 +8,8 @@ use App\Enums\LoaStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\StudentStatus;
+use App\Models\PaymentAccount;
+use App\Models\Program;
 use App\Models\Student;
 use App\Notifications\ApplicationApproved;
 use App\Notifications\ApplicationSubmitted;
@@ -15,6 +17,7 @@ use App\Notifications\LoaIssued;
 use App\Notifications\PaymentRejected;
 use App\Notifications\PaymentSubmitted;
 use App\Notifications\RevisionRequested;
+use App\Support\UploadLimits;
 use App\Workflow\StudentWorkflow;
 use App\Workflow\WorkflowException;
 use Illuminate\Support\Facades\Notification;
@@ -42,6 +45,31 @@ class StudentWorkflowTest extends WorkflowTestCase
         }
     }
 
+    /**
+     * Diajukan, sedang diperiksa, dan semua dokumen wajib disetujui: tinggal approve().
+     */
+    private function inReview(Program $program): Student
+    {
+        $student = $this->student($program);
+        $this->uploadRequired($student);
+        $this->workflow()->submit($student);
+        $this->actingAs($this->superAdmin());
+        $this->workflow()->startReview($student);
+        $this->approveAll($student->fresh());
+
+        return $student->fresh();
+    }
+
+    private function expectLoaRefused(Student $student, string $reason): void
+    {
+        try {
+            $this->workflow()->issueLoa($student, $this->pdf());
+            $this->fail("LOA should be refused: {$reason}.");
+        } catch (WorkflowException) {
+            $this->assertSame(StudentStatus::Approved, $student->fresh()->status);
+        }
+    }
+
     public function test_full_journey_from_draft_to_loa(): void
     {
         $admin = $this->superAdmin();
@@ -66,8 +94,11 @@ class StudentWorkflowTest extends WorkflowTestCase
         $payment = $this->workflow()->submitPayment($student->fresh(), PaymentType::AdmissionFee, $this->pdf());
         $this->assertSame('500000.00', $payment->amount);
         Notification::assertSentTo($admin, PaymentSubmitted::class);
+        $tuition = $this->workflow()->submitPayment($student->fresh(), PaymentType::TuitionFee, $this->pdf());
 
         $this->workflow()->verifyPayment($payment);
+        $this->expectLoaRefused($student->fresh(), 'tuition is not verified yet');
+        $this->workflow()->verifyPayment($tuition);
         $loa = $this->workflow()->issueLoa($student->fresh(), $this->pdf(), 'LOA/001');
 
         $this->assertSame(StudentStatus::LoaIssued, $student->fresh()->status);
@@ -116,6 +147,8 @@ class StudentWorkflowTest extends WorkflowTestCase
             $this->fail('Resubmit should wait for the re-upload.');
         } catch (WorkflowException $e) {
             $this->assertSame([DocumentType::MedicalStatement->value], $e->missing->pluck('key')->all());
+            // Ditandai "perlu diperbaiki" (berkas ada, status revisi), bukan "kosong"
+            $this->assertSame(DocumentStatus::Revision, $e->missing->sole()['status']);
         }
 
         $old = $medical->file_path;
@@ -125,6 +158,57 @@ class StudentWorkflowTest extends WorkflowTestCase
 
         $this->workflow()->submit($student->fresh());
         $this->assertSame(StudentStatus::Submitted, $student->fresh()->status);
+    }
+
+    public function test_enrollment_month_and_year_follow_the_first_submission(): void
+    {
+        $student = $this->student();
+        $this->uploadRequired($student);
+        $this->assertNull($student->fresh()->enrollment_month, 'drafts have no enrollment period yet');
+
+        $this->travelTo(now()->setDate(2026, 11, 3));
+        $this->workflow()->submit($student);
+
+        $this->assertSame([11, 2026], [$student->fresh()->enrollment_month, $student->fresh()->enrollment_year]);
+
+        // Pengajuan ulang setelah revisi di bulan lain tidak mengubah bulan masuk
+        $this->actingAs($this->superAdmin());
+        $this->workflow()->startReview($student->fresh());
+        $this->workflow()->requestRevision($student->fresh(), 'Please re-check the address');
+        $this->travelTo(now()->setDate(2027, 1, 10));
+        $this->workflow()->submit($student->fresh());
+
+        $this->assertSame([11, 2026], [$student->fresh()->enrollment_month, $student->fresh()->enrollment_year]);
+    }
+
+    public function test_enrollment_period_set_by_admin_is_kept_on_submit(): void
+    {
+        $student = $this->student();
+        $student->update(['enrollment_month' => 2, 'enrollment_year' => 2027]);
+        $this->uploadRequired($student);
+
+        $this->workflow()->submit($student->fresh());
+
+        $this->assertSame([2, 2027], [$student->fresh()->enrollment_month, $student->fresh()->enrollment_year]);
+    }
+
+    public function test_applications_created_as_submitted_get_an_enrollment_period(): void
+    {
+        $this->travelTo(now()->setDate(2026, 12, 20));
+        $student = $this->student(status: StudentStatus::Submitted);
+
+        $this->assertSame([12, 2026], [$student->fresh()->enrollment_month, $student->fresh()->enrollment_year]);
+
+        // Dibuat langsung berstatus lanjut (seeder / impor): mengikuti submitted_at, bukan hari ini
+        $approved = $this->student(status: StudentStatus::Approved);
+        $approved->update(['enrollment_month' => null, 'enrollment_year' => null]);
+        $approved->update(['submitted_at' => '2026-03-15 09:00:00']);
+        $this->assertSame([3, 2026], [$approved->fresh()->enrollment_month, $approved->fresh()->enrollment_year]);
+
+        // Draf tidak pernah diisi
+        $draft = $this->student();
+        $draft->update(['submitted_at' => '2026-03-15 09:00:00']);
+        $this->assertNull($draft->fresh()->enrollment_month);
     }
 
     public function test_illegal_transitions_are_refused(): void
@@ -159,18 +243,32 @@ class StudentWorkflowTest extends WorkflowTestCase
         $this->workflow()->reviewDocument($student->documents()->first(), DocumentStatus::Revision);
     }
 
-    public function test_upload_rejects_files_over_300_kb_and_wrong_photo_type(): void
+    public function test_upload_rejects_files_over_the_configured_limit_and_wrong_photo_type(): void
     {
         $student = $this->student();
 
-        try {
-            $this->workflow()->uploadDocument($student, DocumentType::Declaration, $this->pdf(301));
-            $this->fail('Oversized file accepted.');
-        } catch (ValidationException) {
-        }
+        // Bawaan 1 MB (Sistem → Unggahan berkas)
+        $this->workflow()->uploadDocument($student, DocumentType::Declaration, $this->pdf(1024));
+        $this->assertRejected(fn () => $this->workflow()->uploadDocument($student, DocumentType::Declaration, $this->pdf(1025)));
 
-        $this->expectException(ValidationException::class);
-        $this->workflow()->uploadDocument($student, DocumentType::Photo, $this->pdf());
+        // Batas yang diatur Super Admin langsung berlaku, per jenis dokumen; bukti bayar punya batas sendiri
+        UploadLimits::save([DocumentType::Declaration->value => 300]);
+        $this->assertRejected(fn () => $this->workflow()->uploadDocument($student, DocumentType::Declaration, $this->pdf(301)));
+        $this->workflow()->uploadDocument($student, DocumentType::MedicalStatement, $this->pdf(1024));
+        $this->assertSame(2048, UploadLimits::paymentProof());
+        $this->assertSame('300 KB', UploadLimits::label(UploadLimits::document(DocumentType::Declaration)));
+
+        $this->assertRejected(fn () => $this->workflow()->uploadDocument($student, DocumentType::Photo, $this->pdf()));
+    }
+
+    private function assertRejected(callable $upload): void
+    {
+        try {
+            $upload();
+            $this->fail('Upload accepted.');
+        } catch (ValidationException) {
+            $this->addToAssertionCount(1);
+        }
     }
 
     public function test_loa_waits_for_verified_payments_when_the_program_charges_fees(): void
@@ -178,21 +276,48 @@ class StudentWorkflowTest extends WorkflowTestCase
         $student = $this->student($this->program(admissionFee: 500000), StudentStatus::Approved);
         $this->actingAs($this->superAdmin());
 
-        $this->assertSame([PaymentType::AdmissionFee], $this->workflow()->outstandingPayments($student)->all());
+        $this->assertSame([PaymentType::AdmissionFee, PaymentType::TuitionFee], $this->workflow()->outstandingPayments($student)->all());
 
         $this->expectException(WorkflowException::class);
         $this->workflow()->issueLoa($student, $this->pdf());
     }
 
-    public function test_free_programs_need_no_payment_before_loa(): void
+    public function test_approve_needs_program_fees_above_zero(): void
     {
-        $student = $this->student($this->program(), StudentStatus::Approved);
-        $this->actingAs($this->superAdmin());
+        $student = $this->inReview($this->program(tuitionFee: 0));
 
-        $this->assertTrue($this->workflow()->requiredPaymentTypes($student)->isEmpty());
-        $this->workflow()->issueLoa($student, $this->pdf());
+        try {
+            $this->workflow()->approve($student);
+            $this->fail('Approval should be refused while a fee is Rp 0.');
+        } catch (WorkflowException $e) {
+            $this->assertStringContainsString(PaymentType::TuitionFee->getLabel(), $e->getMessage());
+        }
 
-        $this->assertSame(StudentStatus::LoaIssued, $student->fresh()->status);
+        $this->assertSame(StudentStatus::InReview, $student->fresh()->status);
+
+        $student->program->update(['tuition_fee' => 1_000_000]);
+        $this->workflow()->approve($student->fresh());
+        $this->assertSame(StudentStatus::Approved, $student->fresh()->status);
+    }
+
+    public function test_approve_needs_a_va_account_for_every_fee(): void
+    {
+        PaymentAccount::query()->delete();
+        PaymentAccount::create(['bank_name' => 'BPD Bali', 'account_name' => 'Unud', 'va_number' => '8808 1', 'fee_type' => PaymentType::AdmissionFee, 'is_active' => true]);
+        PaymentAccount::create(['bank_name' => 'BPD Bali', 'account_name' => 'Unud', 'va_number' => '8808 2', 'fee_type' => PaymentType::TuitionFee, 'is_active' => false]);
+        $student = $this->inReview($this->program());
+
+        try {
+            $this->workflow()->approve($student);
+            $this->fail('Approval should be refused without an active VA for tuition.');
+        } catch (WorkflowException $e) {
+            $this->assertStringContainsString(PaymentType::TuitionFee->getLabel(), $e->getMessage());
+            $this->assertStringNotContainsString(PaymentType::AdmissionFee->getLabel(), $e->getMessage());
+        }
+
+        PaymentAccount::query()->where('va_number', '8808 2')->update(['is_active' => true]);
+        $this->workflow()->approve($student->fresh());
+        $this->assertSame(StudentStatus::Approved, $student->fresh()->status);
     }
 
     public function test_loa_numbers_are_automatic_sequential_and_kept_on_reupload(): void
@@ -200,9 +325,9 @@ class StudentWorkflowTest extends WorkflowTestCase
         $this->actingAs($this->superAdmin());
         $year = now()->year;
 
-        $first = $this->workflow()->issueLoa($this->student(status: StudentStatus::Approved), $this->pdf());
-        $second = $this->workflow()->issueLoa($this->student(status: StudentStatus::Approved), $this->pdf());
-        $manual = $this->workflow()->issueLoa($this->student(status: StudentStatus::Approved), $this->pdf(), 'KUI/123/2026');
+        $first = $this->workflow()->issueLoa($this->paid($this->student(status: StudentStatus::Approved)), $this->pdf());
+        $second = $this->workflow()->issueLoa($this->paid($this->student(status: StudentStatus::Approved)), $this->pdf());
+        $manual = $this->workflow()->issueLoa($this->paid($this->student(status: StudentStatus::Approved)), $this->pdf(), 'KUI/123/2026');
 
         $this->assertSame("LOA/SIPMA/{$year}/0001", $first->loa_number);
         $this->assertSame("LOA/SIPMA/{$year}/0002", $second->loa_number);
@@ -216,7 +341,7 @@ class StudentWorkflowTest extends WorkflowTestCase
 
         // Tahun baru mulai dari 0001 lagi
         $this->travelTo(now()->addYear()->startOfYear());
-        $next = $this->workflow()->issueLoa($this->student(status: StudentStatus::Approved), $this->pdf());
+        $next = $this->workflow()->issueLoa($this->paid($this->student(status: StudentStatus::Approved)), $this->pdf());
         $this->assertSame('LOA/SIPMA/'.($year + 1).'/0001', $next->loa_number);
     }
 
@@ -244,14 +369,6 @@ class StudentWorkflowTest extends WorkflowTestCase
         $again = $this->workflow()->submitPayment($draft->fresh(), PaymentType::AdmissionFee, $this->pdf());
         $this->assertTrue($again->is($payment));
         $this->assertSame(PaymentStatus::Pending, $again->status);
-    }
-
-    public function test_tuition_is_not_accepted_when_the_program_does_not_charge_it(): void
-    {
-        $student = $this->student($this->program(admissionFee: 100000), StudentStatus::Approved);
-
-        $this->expectException(WorkflowException::class);
-        $this->workflow()->submitPayment($student, PaymentType::TuitionFee, $this->pdf());
     }
 
     public function test_agent_owner_receives_the_notification(): void

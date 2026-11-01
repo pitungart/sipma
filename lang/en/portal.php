@@ -37,6 +37,23 @@ return [
         'copyright' => '© :year Universitas Udayana',
     ],
 
+    'errors' => [
+        'kicker' => 'Error :code',
+        'back' => 'Go back',
+        'dashboard' => 'Go to dashboard',
+        'login' => 'Log in',
+        '404' => [
+            'title' => 'Page not found',
+            'message' => 'This address doesn’t exist or has moved. Check the address, or continue with the button below.',
+            'address' => 'Address you opened:',
+        ],
+    ],
+
+    'select' => [
+        'search' => 'Search…',
+        'empty' => 'No matches.',
+    ],
+
     'register' => [
         'title' => 'Create your SIPMA account',
         'role_legend' => 'Who are you signing up as?',

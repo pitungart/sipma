@@ -43,6 +43,17 @@ class RegisterTest extends TestCase
             ->assertSee('About your agency');
     }
 
+    public function test_country_is_a_custom_combobox_not_a_native_select(): void
+    {
+        Livewire::withQueryParams(['role' => 'agent'])
+            ->test(Register::class)
+            ->assertSeeHtml('role="combobox"')
+            ->assertSeeHtml('role="listbox"')
+            ->assertDontSeeHtml('<select')
+            ->set('form.country_code', 'AU')
+            ->assertHasNoErrors('form.country_code');
+    }
+
     public function test_student_can_register_and_receives_verification_email(): void
     {
         Notification::fake();

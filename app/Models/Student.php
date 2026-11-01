@@ -29,7 +29,6 @@ class Student extends Model
         'registration_number',
         'agent_id',
         'program_id',
-        'academic_period_id',
         'full_name',
         'gender',
         'place_of_birth',
@@ -50,6 +49,8 @@ class Student extends Model
         'status',
         'revision_note',
         'submitted_at',
+        'enrollment_month',
+        'enrollment_year',
     ];
 
     protected function casts(): array
@@ -62,7 +63,27 @@ class Student extends Model
             'date_of_passport_expiry' => 'date',
             'status' => StudentStatus::class,
             'submitted_at' => 'datetime',
+            'enrollment_month' => 'integer',
+            'enrollment_year' => 'integer',
         ];
+    }
+
+    /**
+     * Bulan & tahun masuk diisi dari waktu pengajuan saat pendaftaran pertama kali keluar dari draf:
+     * biasanya saat diajukan, tetapi juga data yang dibuat langsung berstatus lanjut (seeder / impor).
+     * Nilai yang sudah ada (pengajuan ulang, atau diubah admin) tidak ditimpa.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Student $student): void {
+            if ($student->status === StudentStatus::Draft || ! $student->isDirty(['status', 'submitted_at'])) {
+                return;
+            }
+
+            $at = $student->submitted_at ?? now();
+            $student->enrollment_month ??= $at->month;
+            $student->enrollment_year ??= $at->year;
+        });
     }
 
     public function getActivitylogOptions(): LogOptions
@@ -120,11 +141,6 @@ class Student extends Model
     public function program(): BelongsTo
     {
         return $this->belongsTo(Program::class);
-    }
-
-    public function academicPeriod(): BelongsTo
-    {
-        return $this->belongsTo(AcademicPeriod::class);
     }
 
     /**

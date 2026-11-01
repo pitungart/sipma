@@ -14,12 +14,12 @@ trait InteractsWithApplication
 {
     protected static function currentApplication(): ?Student
     {
-        return Filament::auth()->user()?->student()->with(['program', 'academicPeriod', 'loa'])->first();
+        return Filament::auth()->user()?->student()->with(['program', 'loa'])->first();
     }
 
     /**
-     * Pilihan program: yang periodenya sedang dibuka (UC-04), ditambah program pendaftaran
-     * ini sendiri bila periodenya sudah ditutup. Biaya tidak ditampilkan (permintaan staf KUI).
+     * Pilihan program: yang sedang dibuka (UC-04), ditambah program pendaftaran ini sendiri
+     * bila program itu sudah dinonaktifkan. Biaya tidak ditampilkan (permintaan staf KUI).
      *
      * @return array<string, string>
      */

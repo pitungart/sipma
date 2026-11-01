@@ -51,14 +51,15 @@ return [
     | Dijalankan penjadwal Laravel setiap hari pada `time` (zona APP_TIMEZONE); server perlu
     | cron `* * * * * php artisan schedule:run`, lokal cukup `php artisan schedule:work`.
     | - enabled: saklar utama; false = perintah berhenti tanpa mengirim apa pun.
-    | - submission_days: H-sekian sebelum periode ditutup untuk draf / perlu revisi.
+    | - submission_after: draf / perlu revisi yang tidak diubah sekian hari diingatkan (sekali per
+    |   masa diam). Tidak ada lagi tenggat periode (wawancara KUI, 25 Oktober 2026).
     | - payment_every: jeda hari pengingat "belum bayar" (VA Unud berlaku 24 jam → 1 hari).
     |
     */
 
     'reminders' => [
         'enabled' => (bool) env('SIPMA_REMINDERS', true),
-        'submission_days' => array_values(array_filter(array_map('intval', explode(',', (string) env('SIPMA_REMINDER_DAYS', '7,1'))), fn (int $d): bool => $d > 0)),
+        'submission_after' => max(1, (int) env('SIPMA_SUBMISSION_REMINDER_AFTER', 3)),
         'payment_every' => max(1, (int) env('SIPMA_PAYMENT_REMINDER_EVERY', 1)),
         'time' => (string) env('SIPMA_REMINDER_TIME', '08:00'),
     ],

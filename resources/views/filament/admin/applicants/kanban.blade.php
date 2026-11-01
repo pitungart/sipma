@@ -51,7 +51,7 @@
                             @endif
                         >
                             <a href="{{ $card['url'] }}" class="sipma-board-card-person">
-                                <span class="sipma-avatar sipma-tone-{{ $card['tone'] }}" aria-hidden="true">{{ $card['initials'] }}</span>
+                                <x-sipma.avatar :name="$card['name']" :id="$card['id']" size="sm" />
                                 <span class="sipma-min-0">
                                     <span class="sipma-board-card-name">{{ $card['name'] }}</span>
                                     <span class="sipma-board-card-meta">{{ $card['country'] ?? '—' }}</span>

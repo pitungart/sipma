@@ -1,10 +1,11 @@
-{{-- Dasbor mahasiswa mandiri: kerangka sama dengan panel lain; isi mengikuti tahap pendaftaran --}}
+{{-- Dasbor mahasiswa mandiri: layout mengikuti referensi (banner langkah berikutnya 7/12 + panel 5/12,
+     lalu kartu program), tampilan tetap gaya SIPMA — kartu putih bergaris, warna solid, tanpa gradien/kaca --}}
 @php
+    use App\Enums\DocumentType;
+    use App\Filament\App\Pages\MyApplication;
+    use App\Filament\App\Pages\Programs;
+    use App\Filament\App\Pages\StartApplication;
     use App\Support\StudentHome;
-
-    $done = $checklist->where('done', true)->count();
-    // Belum ada periode tercatat (draf lama): tampilkan periode program yang sedang dibuka
-    $period = $application ? ($application->academicPeriod ?? \App\Models\AcademicPeriod::currentFor($application->program_id)) : null;
 @endphp
 
 <x-filament-panels::page class="sipma-agent-home">
@@ -12,41 +13,41 @@
         <x-sipma.status-timeline :status="$application->status" />
     @endif
 
-    <div class="sipma-agent-grid">
-        {{-- Langkah berikutnya --}}
-        <section @class(['sipma-card sipma-agent-next', 'sipma-tone-'.$next['tone']])>
-            <span class="sipma-agent-next-icon">
-                <x-filament::icon :icon="$next['icon']" class="sipma-agent-next-svg" />
-            </span>
-            <div class="sipma-min-0">
-                <p class="sipma-agent-kicker">{{ __(in_array($stage, [StudentHome::WAITING, StudentHome::PAYMENT_REVIEW, StudentHome::LOA], true) ? 'agent.dashboard.status' : 'agent.dashboard.next_step') }}</p>
-                <h2 class="sipma-agent-next-title">{{ $next['title'] }}</h2>
-                <p class="sipma-agent-next-body">{{ $next['body'] }}</p>
+    <div class="sipma-portal-grid">
+        {{-- Langkah berikutnya: kartu primary solid; nada tahap tetap terlihat di titik label --}}
+        <section class="sipma-portal-hero">
+            {{-- Dekorasi: dua lingkaran buram (lavender & emas) di sisi kanan, jauh dari teks --}}
+            <span class="sipma-portal-orb is-1" aria-hidden="true"></span>
+            <span class="sipma-portal-orb is-2" aria-hidden="true"></span>
 
-                <div class="sipma-agent-next-ctas">
-                    <x-filament::button
-                        tag="a"
-                        :href="$cta['url']"
-                        :color="in_array($stage, [StudentHome::WAITING, StudentHome::PAYMENT_REVIEW], true) ? 'gray' : 'primary'"
-                        icon="lucide-arrow-right"
-                        icon-position="after"
-                    >
-                        {{ $cta['label'] }}
-                    </x-filament::button>
-                    @if ($stage === StudentHome::START)
-                        <x-filament::button tag="a" :href="\App\Filament\App\Pages\Programs::getUrl()" color="gray">
-                            {{ __('student.home.see_programs') }}
-                        </x-filament::button>
-                    @endif
-                </div>
+            <div class="sipma-portal-hero-body">
+                <span @class(['sipma-portal-kicker', 'sipma-tone-'.$next['tone']])>
+                    <span class="sipma-portal-kicker-dot"></span>
+                    {{ __(in_array($stage, [StudentHome::WAITING, StudentHome::PAYMENT_REVIEW, StudentHome::LOA], true) ? 'student.home.status' : 'student.home.next_step') }}
+                </span>
+                <h2 class="sipma-portal-hero-title">{{ $next['title'] }}</h2>
+                <p class="sipma-portal-hero-text">{{ $next['body'] }}</p>
+            </div>
+
+            <div class="sipma-portal-hero-ctas">
+                <a href="{{ $cta['url'] }}" class="sipma-portal-btn is-light">
+                    <span>{{ $cta['label'] }}</span>
+                    <x-filament::icon icon="lucide-arrow-right" class="sipma-portal-btn-icon" />
+                </a>
+                @if ($stage === StudentHome::START)
+                    <a href="{{ Programs::getUrl() }}" class="sipma-portal-btn is-outline">{{ __('student.home.see_programs') }}</a>
+                @endif
             </div>
         </section>
 
         {{-- Ringkasan pendaftaran / yang perlu disiapkan --}}
-        <section class="sipma-card sipma-clip">
+        <section class="sipma-card sipma-clip sipma-portal-side">
             @if ($application)
                 <header class="sipma-card-head sipma-card-head-ruled">
-                    <h2 class="sipma-card-title">{{ __('student.home.your_application') }}</h2>
+                    <div class="sipma-portal-head">
+                        <span class="sipma-tile sipma-tone-primary"><x-filament::icon icon="lucide-file-text" class="sipma-tile-icon" /></span>
+                        <h2 class="sipma-card-title">{{ __('student.home.your_application') }}</h2>
+                    </div>
                     <x-sipma.status-badge :status="$application->status" />
                 </header>
                 <dl class="sipma-agent-facts">
@@ -55,11 +56,9 @@
                         <dd>{{ $application->program?->name }}</dd>
                     </div>
                     <div>
-                        <dt>{{ __('admin.period.label') }}</dt>
-                        <dd @class(['is-empty' => ! $period])>
-                            {{ $period
-                                ? __('student.home.period_until', ['period' => $period->name, 'date' => $period->registration_closes_at->translatedFormat('j M Y')])
-                                : __('student.home.no_period') }}
+                        <dt>{{ __('admin.applicant.fields.submitted_at') }}</dt>
+                        <dd @class(['is-empty' => ! $application->submitted_at])>
+                            {{ $application->submitted_at?->translatedFormat('j M Y') ?? __('student.home.not_submitted') }}
                         </dd>
                     </div>
                     <div>
@@ -69,87 +68,95 @@
                         </dd>
                     </div>
                 </dl>
-                <footer class="sipma-mou-foot">
-                    <a href="{{ \App\Filament\App\Pages\MyApplication::getUrl() }}" class="sipma-link">{{ __('student.home.view_application') }}</a>
+                <footer class="sipma-portal-foot">
+                    <a href="{{ MyApplication::getUrl() }}" class="sipma-link sipma-portal-more is-arrow">
+                        {{ __('student.home.view_application') }}
+                        <x-filament::icon icon="lucide-arrow-right" class="sipma-portal-more-icon" />
+                    </a>
                 </footer>
             @else
                 <header class="sipma-card-head sipma-card-head-ruled">
-                    <div>
-                        <h2 class="sipma-card-title">{{ __('student.home.prepare_title') }}</h2>
-                        <p class="sipma-card-desc">{{ __('student.home.prepare_desc') }}</p>
+                    <div class="sipma-portal-head">
+                        <span class="sipma-tile sipma-tone-warning"><x-filament::icon icon="lucide-clipboard-check" class="sipma-tile-icon" /></span>
+                        <div class="sipma-min-0">
+                            <h2 class="sipma-card-title">{{ __('student.home.prepare_title') }}</h2>
+                            {{-- Batas ukuran per jenis dokumen: satu kalimat bila semuanya sama, selain itu tampil di tiap berkas --}}
+                            @php $sizes = collect($requiredDocuments)->map(fn (DocumentType $type): int => \App\Support\UploadLimits::document($type))->unique(); @endphp
+                            <p class="sipma-card-desc">{{ $sizes->count() === 1 ? __('student.home.prepare_desc', ['max' => \App\Support\UploadLimits::label($sizes->first())]) : __('student.home.prepare_desc_each') }}</p>
+                        </div>
                     </div>
+                    <span class="sipma-pill sipma-tone-primary">{{ __('student.home.prepare_count', ['count' => count($requiredDocuments)]) }}</span>
                 </header>
-                <ol class="sipma-agent-rules">
-                    <li><span class="sipma-agent-rule-num">1</span><span>{{ __('student.home.prepare_passport') }}</span></li>
-                    @foreach ($requiredDocuments as $type)
-                        @continue($type === \App\Enums\DocumentType::Passport)
-                        <li><span class="sipma-agent-rule-num">{{ $loop->iteration + 1 }}</span><span><b>{{ $type->getLabel() }}</b> — {{ $type->hint() }}</span></li>
+                <ol class="sipma-portal-prep">
+                    {{-- Paspor lebih dulu: nomornya juga diisi di formulir --}}
+                    @foreach (collect($requiredDocuments)->sortBy(fn (DocumentType $type): int => $type === DocumentType::Passport ? 0 : 1)->values() as $type)
+                        <li>
+                            <span class="sipma-portal-num">{{ $loop->iteration }}</span>
+                            <div class="sipma-min-0">
+                                <p class="sipma-portal-prep-name">{{ $type->getLabel() }}</p>
+                                {{-- Format sama untuk semua berkas (kaki kartu); ketentuan khusus dan ukuran yang berbeda di sini --}}
+                                @if ($type === DocumentType::Passport)
+                                    <p class="sipma-portal-prep-hint">{{ __('student.home.prepare_passport_hint') }}</p>
+                                @elseif ($type === DocumentType::Photo)
+                                    <p class="sipma-portal-prep-hint">{{ __('workflow.documents.photo_rules') }}</p>
+                                @endif
+                                @if ($sizes->count() > 1)
+                                    <p class="sipma-portal-prep-hint">{{ __('student.home.prepare_max', ['max' => \App\Support\UploadLimits::label(\App\Support\UploadLimits::document($type))]) }}</p>
+                                @endif
+                            </div>
+                        </li>
                     @endforeach
                 </ol>
+                <footer class="sipma-portal-foot">
+                    <span>{{ __('student.home.prepare_format') }}</span>
+                    <a href="{{ Programs::getUrl() }}" class="sipma-link">{{ __('student.home.see_programs') }}</a>
+                </footer>
             @endif
         </section>
     </div>
 
-    {{-- Kelengkapan (draf / perlu revisi) --}}
+    {{-- Kelengkapan (draf / perlu revisi): komponen yang sama dengan halaman Pendaftaran saya --}}
     @if ($checklist->isNotEmpty())
-        <section class="sipma-card sipma-clip">
-            <header class="sipma-card-head sipma-card-head-ruled">
-                <div>
-                    <h2 class="sipma-card-title">{{ __('agent.students.checklist_title') }}</h2>
-                    <p class="sipma-card-desc">{{ __('agent.students.checklist_desc') }}</p>
-                </div>
-                <span @class(['sipma-status', $done === $checklist->count() ? 'sipma-tone-success' : 'sipma-tone-warning'])>
-                    <span class="sipma-status-dot"></span>{{ $done }}/{{ $checklist->count() }}
-                </span>
-            </header>
-            <div class="sipma-check-progress" role="progressbar" aria-valuemin="0" aria-valuemax="{{ $checklist->count() }}" aria-valuenow="{{ $done }}">
-                <span style="width: {{ round($done / max(1, $checklist->count()) * 100) }}%"></span>
-            </div>
-            <div class="sipma-check-groups">
-                @foreach (['field' => __('agent.students.checklist_fields'), 'document' => __('agent.students.checklist_documents')] as $kind => $heading)
-                    <div>
-                        <h3 class="sipma-check-heading">{{ $heading }}</h3>
-                        <ul class="sipma-check-list">
-                            @foreach ($checklist->where('kind', $kind) as $item)
-                                <li @class(['is-done' => $item['done']])>
-                                    <x-filament::icon :icon="$item['done'] ? 'lucide-circle-check' : 'lucide-circle'" class="sipma-check-icon" />
-                                    <span>{{ $item['label'] }}</span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endforeach
-            </div>
-        </section>
+        <x-sipma.application-checklist :checklist="$checklist" />
     @endif
 
-    {{-- Program yang sedang dibuka (sebelum mendaftar) --}}
+    {{-- Program yang sedang dibuka (sebelum mendaftar): tiga kartu, sisanya di menu Program --}}
     @if ($stage === StudentHome::START)
-        <section class="sipma-card sipma-clip">
-            <header class="sipma-card-head sipma-card-head-ruled">
+        <section class="sipma-card sipma-portal-section">
+            <header class="sipma-portal-section-head">
                 <div>
                     <h2 class="sipma-card-title">{{ __('student.programs.open_title') }}</h2>
                     <p class="sipma-card-desc">{{ __('student.programs.description') }}</p>
                 </div>
-                <a href="{{ \App\Filament\App\Pages\Programs::getUrl() }}" class="sipma-link">{{ __('admin.dashboard.see_all') }}</a>
+                <a href="{{ Programs::getUrl() }}" class="sipma-link sipma-portal-more">
+                    {{ __('admin.dashboard.see_all') }}
+                    <x-filament::icon icon="lucide-chevron-right" class="sipma-portal-more-icon" />
+                </a>
             </header>
             @if ($openPrograms->isEmpty())
                 <x-sipma.empty icon="lucide-graduation-cap" :title="__('student.programs.empty')" :description="__('student.programs.empty_body')" />
             @else
-                <ul class="sipma-todo">
-                    @foreach ($openPrograms->take(5) as $program)
-                        <li class="sipma-todo-row">
-                            <span class="sipma-tile sipma-tone-primary"><x-filament::icon icon="lucide-graduation-cap" class="sipma-tile-icon" /></span>
-                            <div class="sipma-row-main">
-                                <div class="sipma-person-name">{{ $program->name }}</div>
-                                <div class="sipma-person-meta">{{ $program->faculty?->name }}</div>
+                <div class="sipma-portal-programs">
+                    @foreach ($openPrograms as $program)
+                        <article class="sipma-portal-program">
+                            <div class="sipma-portal-program-top">
+                                <span class="sipma-portal-program-icon"><x-filament::icon icon="lucide-graduation-cap" class="sipma-tile-icon" /></span>
+                                <span class="sipma-pill sipma-tone-success">{{ __('student.programs.open_badge') }}</span>
                             </div>
-                            <x-filament::button tag="a" :href="\App\Filament\App\Pages\StartApplication::getUrl(['program' => $program->getKey()])" color="gray" size="sm">
+                            <div class="sipma-portal-program-body">
+                                <p class="sipma-portal-program-faculty">{{ $program->faculty?->name }}</p>
+                                <h3 class="sipma-portal-program-name">{{ $program->name }}</h3>
+                                @if (filled($program->description))
+                                    <p class="sipma-portal-program-desc">{{ $program->description }}</p>
+                                @endif
+                            </div>
+                            <a href="{{ StartApplication::getUrl(['program' => $program->getKey()]) }}" class="sipma-portal-choose">
                                 {{ __('student.programs.choose') }}
-                            </x-filament::button>
-                        </li>
+                                <x-filament::icon icon="lucide-arrow-right" class="sipma-portal-btn-icon" />
+                            </a>
+                        </article>
                     @endforeach
-                </ul>
+                </div>
             @endif
         </section>
     @endif

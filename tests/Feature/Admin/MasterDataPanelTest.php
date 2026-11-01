@@ -3,7 +3,6 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\UserRole;
-use App\Filament\Admin\Resources\AcademicPeriodResource;
 use App\Filament\Admin\Resources\CountryResource;
 use App\Filament\Admin\Resources\FacultyResource;
 use App\Filament\Admin\Resources\PaymentAccountResource;
@@ -41,12 +40,11 @@ class MasterDataPanelTest extends TestCase
         }
     }
 
-    public function test_faculty_admin_only_manages_programs_and_periods(): void
+    public function test_faculty_admin_only_manages_programs(): void
     {
         $this->actingAs($this->facultyAdmin());
 
         $this->assertTrue(ProgramResource::canViewAny());
-        $this->assertTrue(AcademicPeriodResource::canViewAny());
 
         $this->assertFalse(FacultyResource::canViewAny());
         $this->assertFalse(UserResource::canViewAny());
@@ -103,23 +101,6 @@ class MasterDataPanelTest extends TestCase
         $this->assertSame('ND-BIPA', $program->code); // kode selalu huruf besar
         $this->assertSame('indonesian-language-for-foreign-speakers', $program->slug);
         $this->assertSame('500000.00', $program->admission_fee);
-    }
-
-    public function test_period_closing_date_cannot_precede_the_opening_date(): void
-    {
-        $admin = $this->facultyAdmin();
-        $program = $this->program($admin->faculty, 'ND-OWN');
-
-        Livewire::actingAs($admin)
-            ->test(AcademicPeriodResource\Pages\ManageAcademicPeriods::class)
-            ->callAction(CreateAction::class, data: [
-                'program_id' => $program->id,
-                'name' => 'Summer 2026',
-                'code' => 'summer-2026',
-                'registration_opens_at' => '2026-03-01',
-                'registration_closes_at' => '2026-02-01',
-            ])
-            ->assertHasActionErrors(['registration_closes_at']);
     }
 
     public function test_administrator_list_leaves_out_students_and_agents(): void
@@ -213,14 +194,21 @@ class MasterDataPanelTest extends TestCase
 
     public function test_master_pages_show_entity_tabs_for_what_the_role_may_open(): void
     {
-        $html = $this->actingAs($this->facultyAdmin())
+        // Admin Fakultas hanya punya Program: satu tab tidak perlu ditampilkan. Diperiksa lebih dulu
+        // karena navigasi Filament tersimpan per instance aplikasi.
+        $this->actingAs($this->facultyAdmin())
+            ->get('/admin/programs')
+            ->assertOk()
+            ->assertDontSee('sipma-master-tabs', false)
+            ->assertDontSee('/admin/faculties', false);
+
+        $html = $this->actingAs($this->superAdmin())
             ->get('/admin/programs')
             ->assertOk()
             ->getContent();
 
         $this->assertStringContainsString('sipma-master-tabs', $html);
-        $this->assertStringContainsString('/admin/academic-periods', $html);
-        $this->assertStringNotContainsString('/admin/faculties', $html);
+        $this->assertStringContainsString('/admin/faculties', $html);
     }
 
     public function test_status_switch_saves_immediately(): void
@@ -255,7 +243,6 @@ class MasterDataPanelTest extends TestCase
         $pages = [
             FacultyResource\Pages\ManageFaculties::class,
             ProgramResource\Pages\ManagePrograms::class,
-            AcademicPeriodResource\Pages\ManageAcademicPeriods::class,
             PaymentAccountResource\Pages\ManagePaymentAccounts::class,
             CountryResource\Pages\ManageCountries::class,
             UserResource\Pages\ManageUsers::class,
@@ -281,7 +268,6 @@ class MasterDataPanelTest extends TestCase
         return [
             FacultyResource::class,
             ProgramResource::class,
-            AcademicPeriodResource::class,
             PaymentAccountResource::class,
             CountryResource::class,
             UserResource::class,

@@ -6,7 +6,6 @@ use App\Enums\DocumentType;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\StudentStatus;
-use App\Models\AcademicPeriod;
 use App\Models\Program;
 use App\Models\SentReminder;
 use App\Models\Student;
@@ -24,28 +23,18 @@ class RemindersTest extends WorkflowTestCase
 {
     private Program $program;
 
-    private AcademicPeriod $period;
-
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->travelTo(now()->setTime(8, 0));
         $this->program = $this->program(admissionFee: 500_000);
-        $this->period = AcademicPeriod::create([
-            'program_id' => $this->program->id,
-            'name' => 'Batch Oktober',
-            'code' => 'OKT-26',
-            'registration_opens_at' => now()->subMonth(),
-            'registration_closes_at' => now()->addDays(7)->toDateString(),
-            'is_active' => true,
-        ]);
     }
 
     private function agentStudent($agent, StudentStatus $status = StudentStatus::Draft): Student
     {
         $student = $this->student($this->program, $status);
-        $student->update(['user_id' => null, 'agent_id' => $agent->id, 'academic_period_id' => $this->period->id]);
+        $student->update(['user_id' => null, 'agent_id' => $agent->id]);
 
         return $student->fresh();
     }
@@ -60,35 +49,74 @@ class RemindersTest extends WorkflowTestCase
         Notification::assertNothingSent();
     }
 
-    public function test_unsubmitted_applications_are_reminded_before_the_period_closes(): void
+    public function test_idle_unsubmitted_applications_are_reminded_once_per_idle_stretch(): void
     {
         $self = $this->student($this->program);
-        $self->update(['academic_period_id' => $this->period->id]);
         $agent = $this->agent();
         $this->agentStudent($agent);
         $this->agentStudent($agent, StudentStatus::Revision);
         $this->agentStudent($agent, StudentStatus::Submitted); // sudah diajukan: tidak diingatkan
 
+        // Belum 3 hari tidak diubah
+        $this->travel(2)->days();
+        $this->artisan('sipma:reminders')->assertSuccessful();
+        Notification::assertNothingSent();
+
+        $this->travel(1)->days();
         $this->artisan('sipma:reminders')->assertSuccessful();
 
-        Notification::assertSentTo($self->user, SubmissionReminder::class, fn (SubmissionReminder $n): bool => $n->days === 7 && $n->students->count() === 1);
+        Notification::assertSentTo($self->user, SubmissionReminder::class, fn (SubmissionReminder $n): bool => $n->days === 3 && $n->students->count() === 1
+            && $n->toDatabase($self->user)['title'] === trans_choice('workflow.notifications.submission_reminder.title', 1));
         Notification::assertSentTo($agent->user, SubmissionReminder::class, fn (SubmissionReminder $n): bool => $n->students->count() === 2);
         Notification::assertSentTimes(SubmissionReminder::class, 2);
 
-        // Dijalankan ulang hari yang sama: tidak ganda
+        // Dijalankan ulang hari yang sama, atau hari berikutnya tanpa perubahan: tidak ganda
+        $this->artisan('sipma:reminders');
+        $this->travel(1)->days();
         $this->artisan('sipma:reminders');
         Notification::assertSentTimes(SubmissionReminder::class, 2);
 
-        // H-3 tidak termasuk SIPMA_REMINDER_DAYS (7,1); H-1 diingatkan lagi
-        $this->travel(4)->days();
+        // Diubah lalu diam lagi 3 hari → diingatkan lagi, hanya pendaftaran itu
+        $self->fresh()->update(['phone_number' => '+61 400 111 222']);
+        $this->travel(2)->days();
         $this->artisan('sipma:reminders');
         Notification::assertSentTimes(SubmissionReminder::class, 2);
+
+        $this->travel(1)->days();
+        $this->artisan('sipma:reminders');
+        Notification::assertSentTimes(SubmissionReminder::class, 3);
+        Notification::assertSentToTimes($self->user, SubmissionReminder::class, 2);
+    }
+
+    public function test_uploading_documents_counts_as_activity(): void
+    {
+        $student = $this->student($this->program);
+
+        $this->travel(2)->days();
+        app(StudentWorkflow::class)->uploadDocument($student, DocumentType::Passport, $this->file(DocumentType::Passport));
+
+        $this->travel(1)->days();
+        $this->artisan('sipma:reminders');
+        Notification::assertNothingSent();
 
         $this->travel(2)->days();
         $this->artisan('sipma:reminders');
-        Notification::assertSentTo($self->user, SubmissionReminder::class, fn (SubmissionReminder $n): bool => $n->days === 1
-            && $n->toDatabase($self->user)['title'] === trans_choice('workflow.notifications.submission_reminder.title', 1, ['period' => 'Batch Oktober', 'days' => 1]));
-        Notification::assertSentTimes(SubmissionReminder::class, 4);
+        Notification::assertSentTo($student->user, SubmissionReminder::class);
+    }
+
+    public function test_idle_days_follow_the_configuration(): void
+    {
+        config(['sipma.reminders.submission_after' => 5]);
+        $student = $this->student($this->program);
+
+        $this->travel(3)->days();
+        $this->artisan('sipma:reminders');
+        Notification::assertNothingSent();
+
+        $this->travel(2)->days();
+        $this->artisan('sipma:reminders');
+        Notification::assertSentTo($student->user, SubmissionReminder::class, fn (SubmissionReminder $n): bool => $n->days === 5
+            && str_contains($n->toDatabase($student->user)['body'], '5'));
     }
 
     public function test_unpaid_fees_are_reminded_every_day_until_proof_is_uploaded(): void
@@ -101,7 +129,7 @@ class RemindersTest extends WorkflowTestCase
 
         $this->travel(1)->days();
         $this->artisan('sipma:reminders');
-        Notification::assertSentTo($student->user, PaymentReminder::class, fn (PaymentReminder $n): bool => $n->feeTypes === [PaymentType::AdmissionFee->value]
+        Notification::assertSentTo($student->user, PaymentReminder::class, fn (PaymentReminder $n): bool => $n->feeTypes === [PaymentType::AdmissionFee->value, PaymentType::TuitionFee->value]
             && str_contains($n->toDatabase($student->user)['body'], PaymentType::AdmissionFee->getLabel()));
 
         $this->artisan('sipma:reminders'); // hari yang sama
@@ -111,8 +139,9 @@ class RemindersTest extends WorkflowTestCase
         $this->artisan('sipma:reminders');
         Notification::assertSentTimes(PaymentReminder::class, 2);
 
-        // Bukti diunggah → berhenti; bukti ditolak → diingatkan lagi
+        // Semua bukti diunggah → berhenti; bukti ditolak → diingatkan lagi
         $payment = app(StudentWorkflow::class)->submitPayment($student, PaymentType::AdmissionFee, $this->file());
+        app(StudentWorkflow::class)->submitPayment($student, PaymentType::TuitionFee, $this->file());
         $this->travel(1)->days();
         $this->artisan('sipma:reminders');
         Notification::assertSentTimes(PaymentReminder::class, 2);
@@ -127,8 +156,8 @@ class RemindersTest extends WorkflowTestCase
 
     public function test_dry_run_sends_and_records_nothing(): void
     {
-        $student = $this->student($this->program);
-        $student->update(['academic_period_id' => $this->period->id]);
+        $this->student($this->program);
+        $this->travel(3)->days();
 
         $this->artisan('sipma:reminders --dry-run')->expectsOutputToContain('[dry-run]')->assertSuccessful();
 

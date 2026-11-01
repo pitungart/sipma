@@ -4,6 +4,7 @@ namespace App\Filament\Agent\Resources\StudentResource\Pages;
 
 use App\Enums\StudentStatus;
 use App\Filament\Agent\Resources\StudentResource;
+use App\Filament\Concerns\JumpsToInvalidWizardStep;
 use App\Filament\Support\ApplicantForm;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
@@ -17,6 +18,7 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateStudent extends CreateRecord
 {
     use CreateRecord\Concerns\HasWizard;
+    use JumpsToInvalidWizardStep;
 
     protected static string $resource = StudentResource::class;
 
@@ -65,7 +67,7 @@ class CreateStudent extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         return [
-            ...StudentResource::withCurrentPeriod($data),
+            ...$data,
             'agent_id' => Filament::auth()->user()->agent->getKey(),
             'user_id' => null,
             'status' => StudentStatus::Draft,

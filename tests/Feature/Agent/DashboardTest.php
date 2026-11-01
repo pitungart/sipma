@@ -101,13 +101,15 @@ class DashboardTest extends WorkflowTestCase
         $this->assertSame('Fix the photo background', $actions[0]['reason']);
         $this->assertStringContainsString(__('enums.payment_type.admission_fee'), $actions[1]['reason']);
 
-        // Setelah bukti diunggah, pembayaran hilang dari daftar
+        // Setelah semua bukti diunggah, pembayaran hilang dari daftar
         $workflow->submitPayment($approved, PaymentType::AdmissionFee, $this->file());
+        $this->assertContains('Bayar Dua', (new AgentDashboard($agent))->actions()->pluck('name'), 'tuition is still unpaid');
+        $workflow->submitPayment($approved, PaymentType::TuitionFee, $this->file());
         $this->assertNotContains('Bayar Dua', (new AgentDashboard($agent))->actions()->pluck('name'));
 
         // LOA terbit & belum diunduh muncul; setelah diunduh hilang
         $this->actingAs($this->superAdmin());
-        $workflow->verifyPayment($approved->payments()->first());
+        $approved->payments()->get()->each(fn ($payment) => $workflow->verifyPayment($payment));
         $loa = $workflow->issueLoa($approved->fresh(), $this->pdf());
         $this->assertContains('Bayar Dua', (new AgentDashboard($agent))->actions()->pluck('name'));
         $this->actingAs($agent->user)->get(route('files.loa', $loa))->assertOk();

@@ -84,7 +84,7 @@
                 </div>
             </header>
             <ol class="sipma-agent-rules">
-                @foreach (__('agent.mou.rules.items') as $rule)
+                @foreach (\App\Support\UploadLimits::mouRules() as $rule)
                     <li>
                         <span class="sipma-agent-rule-num">{{ $loop->iteration }}</span>
                         <span>{{ $rule }}</span>

@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Dashboard /admin mengikuti template: tanggal + sapaan di atas, lalu grid enam kolom
- * (kartu angka, tren 4/6 + program 2/6, tabel 4/6 + agenda 2/6, aktivitas 3/6 + sumber 3/6).
+ * (kartu angka, tren 4/6 + program 2/6, tabel penuh, aktivitas 3/6 + sumber 3/6).
  */
 class Dashboard extends BaseDashboard
 {

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Catatan pengingat terjadwal yang sudah terkirim (sipma:reminders) agar tidak ganda:
- * "belum diajukan" sekali per penerima × periode × H-sekian, "belum bayar" berjeda per mahasiswa.
+ * "belum diajukan" sekali per penerima × mahasiswa × masa diam, "belum bayar" berjeda per mahasiswa.
  */
 return new class extends Migration
 {
@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('sent_reminders', function (Blueprint $table) {
             $table->id();
             $table->string('kind', 20); // submission | payment
-            $table->string('key'); // mis. "{user}:{periode}:{hari}" atau "{mahasiswa}"
+            $table->string('key'); // mis. "{user}:{mahasiswa}:{tanggal terakhir diubah}" atau "{mahasiswa}"
             $table->foreignUuid('user_id')->nullable()->constrained()->nullOnDelete(); // penerima
             $table->timestamp('sent_at');
             $table->index(['kind', 'key']);

@@ -4,8 +4,8 @@ namespace App\Filament\App\Pages;
 
 use App\Enums\StudentStatus;
 use App\Filament\App\Concerns\InteractsWithApplication;
+use App\Filament\Concerns\JumpsToInvalidWizardStep;
 use App\Filament\Support\ApplicantForm;
-use App\Models\AcademicPeriod;
 use App\Models\Student;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Wizard;
@@ -29,7 +29,9 @@ use Livewire\Attributes\Url;
 class StartApplication extends Page implements HasForms
 {
     use InteractsWithApplication;
-    use InteractsWithForms;
+    use InteractsWithForms, JumpsToInvalidWizardStep {
+        JumpsToInvalidWizardStep::onValidationError insteadof InteractsWithForms;
+    }
 
     protected static ?string $slug = 'application/start';
 
@@ -111,7 +113,6 @@ class StartApplication extends Page implements HasForms
             ...$data,
             'user_id' => Filament::auth()->id(),
             'agent_id' => null,
-            'academic_period_id' => AcademicPeriod::currentFor($data['program_id'] ?? null)?->getKey(),
             'status' => StudentStatus::Draft,
         ]);
 

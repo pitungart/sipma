@@ -17,7 +17,7 @@
                             <span class="sipma-bar-name">{{ $bar['name'] }}</span>
                             <span class="sipma-bar-value">{{ $bar['value'] }}</span>
                         </div>
-                        <div class="sipma-progress"><div class="sipma-progress-fill" style="width: {{ $bar['width'] }}%"></div></div>
+                        <div class="sipma-progress"><div class="sipma-progress-fill" style="width: {{ $bar['width'] }}%; --i: {{ $loop->index }}"></div></div>
                     </li>
                 @endforeach
             </ul>

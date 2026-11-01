@@ -40,7 +40,7 @@
             <ul class="sipma-todo">
                 @foreach ($actions as $item)
                     <li class="sipma-todo-row">
-                        <span class="sipma-avatar sipma-tone-{{ $item['avatarTone'] }}" aria-hidden="true">{{ $item['initials'] }}</span>
+                        <x-sipma.avatar :name="$item['name']" :id="$item['id']" />
                         <div class="sipma-row-main">
                             <a href="{{ $item['url'] }}" class="sipma-person-name sipma-row-link">{{ $item['name'] }}</a>
                             <div class="sipma-person-meta">{{ $item['program'] }}</div>
@@ -79,12 +79,7 @@
             <ul>
                 @foreach ($programs as $program)
                     <li>
-                        <span class="sipma-mou-program-name">{{ $program['name'] }}</span>
-                        @if ($program['period'])
-                            <span class="sipma-pill sipma-tone-success">{{ __('agent.home.mou.open_until', ['date' => $program['period']->registration_closes_at->translatedFormat('j M')]) }}</span>
-                        @else
-                            <span class="sipma-pill sipma-tone-gray">{{ __('agent.home.mou.closed') }}</span>
-                        @endif
+                        <span class="sipma-mou-program-name">{{ $program }}</span>
                     </li>
                 @endforeach
             </ul>

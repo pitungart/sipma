@@ -15,19 +15,16 @@ use Illuminate\Database\Eloquent\Model;
  */
 class InitialsAvatarProvider implements AvatarProvider
 {
-    /**
-     * Lima pasangan latar + teks avatar dari template; dipilih stabil berdasarkan nama.
-     */
-    public const TONES = ['primary', 'info', 'success', 'warning', 'danger'];
-
     public function get(Model $record): string
     {
         $initials = self::initialsOf(Filament::getNameForDefaultAvatar($record));
+        $hue = self::hueOf($record->getKey());
 
+        // Tonal seperti x-sipma.avatar (mode terang): latar lembut + teks pekat dari hue yang sama
         $svg = <<<SVG
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-                <rect width="64" height="64" rx="32" fill="#EFEFFD"/>
-                <text x="32" y="33" fill="#4B4DD6" font-family="'DM Sans', system-ui, sans-serif"
+                <rect width="64" height="64" rx="32" fill="hsl({$hue} 70% 94%)"/>
+                <text x="32" y="33" fill="hsl({$hue} 50% 36%)" font-family="'DM Sans', system-ui, sans-serif"
                       font-size="24" font-weight="700" text-anchor="middle"
                       dominant-baseline="central">{$initials}</text>
             </svg>
@@ -47,10 +44,11 @@ class InitialsAvatarProvider implements AvatarProvider
     }
 
     /**
-     * Nada warna avatar untuk sebuah nama — sama di setiap muat ulang halaman.
+     * Hue warna avatar (0–359) dari ID record: tiap orang dapat warna sendiri yang tetap sama
+     * di setiap halaman dan tidak berubah walau namanya diganti.
      */
-    public static function toneOf(string $name): string
+    public static function hueOf(int|string|null $id): int
     {
-        return self::TONES[crc32($name) % count(self::TONES)];
+        return crc32((string) $id) % 360;
     }
 }

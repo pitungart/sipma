@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\User;
+use App\Support\NotificationPreferences;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as PanelNotification;
 use Illuminate\Bus\Queueable;
@@ -36,13 +37,16 @@ abstract class SipmaNotification extends Notification implements ShouldQueue
 
     /**
      * Lonceng panel selalu; email hanya bila config('sipma.mail_notifications') aktif
-     * (bawaan mati saat APP_DEBUG=true). Alur tetap berjalan tanpa email.
+     * (bawaan mati saat APP_DEBUG=true) dan penerima tidak mematikan jenis ini di Profil saya.
+     * Alur tetap berjalan tanpa email.
      *
      * @return list<string>
      */
     public function via(User $notifiable): array
     {
-        return config('sipma.mail_notifications') ? ['database', 'mail'] : ['database'];
+        return NotificationPreferences::mailEnabled() && NotificationPreferences::wantsMail($notifiable, static::class)
+            ? ['database', 'mail']
+            : ['database'];
     }
 
     /**

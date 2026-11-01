@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
-use App\Models\AcademicPeriod;
 use App\Models\Program;
 use App\Models\Student;
 use App\Models\User;
@@ -75,10 +74,7 @@ class StudentAccountSeeder extends Seeder
         // Disetujui + program berbiaya (BIPA di DemoSeeder) agar pembayaran bisa dicoba
         // (program tanpa biaya tidak punya data pembayaran demo, jadi tidak ada yang perlu dibersihkan)
         if ($program !== null && ($target = Program::query()->where('code', $program)->first())) {
-            $student->update([
-                'program_id' => $target->id,
-                'academic_period_id' => AcademicPeriod::currentFor($target->id)?->getKey(),
-            ]);
+            $student->update(['program_id' => $target->id]);
         }
     }
 

@@ -42,6 +42,24 @@
         background-size: 1.25rem 1.25rem;
     }
 
+    /* Panel dropdown x-portal.select (combobox kustom) */
+    .sipma-select-panel {
+        @apply absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-control border border-line bg-card;
+        box-shadow: 0 8px 24px rgb(0 0 0 / 0.08), 0 2px 6px rgb(0 0 0 / 0.04);
+    }
+
+    .sipma-select-option {
+        @apply flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-2 text-small text-ink;
+    }
+
+    .sipma-select-option[data-active] {
+        @apply bg-primary-50;
+    }
+
+    .sipma-select-option[aria-selected='true'] {
+        @apply font-medium text-primary-dark;
+    }
+
     .sipma-checkbox {
         @apply sipma-focus h-5 w-5 shrink-0 cursor-pointer rounded-md accent-primary;
     }
@@ -49,6 +67,17 @@
     /* R-2.11: tombol solid tanpa bayangan; R-3.10: tinggi 44px */
     .sipma-button {
         @apply sipma-focus inline-flex h-11 items-center justify-center gap-2 rounded-control bg-primary px-6 text-body font-medium text-primary-fg transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    /* Tombol sekunder: putih bergaris, pasangan .sipma-button (mis. "Kembali" di halaman error) */
+    .sipma-button-secondary {
+        @apply sipma-focus inline-flex h-11 items-center justify-center gap-2 rounded-control bg-card px-6 text-body font-medium text-ink ring-1 ring-inset ring-line-interactive transition-colors hover:bg-muted;
+    }
+
+    /* Angka kode error besar di halaman error (dekoratif, aria-hidden) */
+    .sipma-error-code {
+        @apply block font-semibold leading-none tracking-tighter text-primary-dark;
+        font-size: clamp(6rem, 22vw, 10rem);
     }
 
     .sipma-link {

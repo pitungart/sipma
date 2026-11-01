@@ -12,7 +12,6 @@ use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
-use App\Models\AcademicPeriod;
 use App\Models\Agent;
 use App\Models\PaymentAccount;
 use App\Models\Program;
@@ -60,7 +59,6 @@ class DemoSeeder extends Seeder
         $this->demoFees();
 
         $programs = Program::query()->where('is_active', true)->get();
-        $this->periods($programs);
 
         $agent = $this->agent('agent@sipma.test', 'EduBridge Australia', 'AU', MouStatus::Approved);
         $this->agent('agent2@sipma.test', 'Nusantara Study Link', 'MY', MouStatus::Pending);
@@ -97,22 +95,6 @@ class DemoSeeder extends Seeder
         }
 
         $this->command?->info('Data demo dibuat: 2 agen, '.Student::query()->count().' pendaftar. Password semua akun: "password".');
-    }
-
-    private function periods($programs): void
-    {
-        foreach ($programs->take(3) as $i => $program) {
-            AcademicPeriod::create([
-                'program_id' => $program->id,
-                'name' => ['BIPA Februari 2027', 'Summer Course 2027', 'Exchange Spring 2027'][$i],
-                'code' => ['BIPA-FEB-27', 'SUMMER-27', 'EXCH-SPR-27'][$i],
-                'registration_opens_at' => now()->addDays([-10, 5, 20][$i]),
-                'registration_closes_at' => now()->addDays([25, 40, 60][$i]),
-                'starts_on' => now()->addDays([70, 90, 120][$i]),
-                'ends_on' => now()->addDays([160, 120, 240][$i]),
-                'quota' => [30, null, 15][$i],
-            ]);
-        }
     }
 
     private function agent(string $email, string $company, string $country, MouStatus $mouStatus): Agent
@@ -236,11 +218,12 @@ class DemoSeeder extends Seeder
 
     /**
      * Biaya & rekening CONTOH agar alur pembayaran bisa dicoba; biaya resmi menunggu KUI
-     * (ProgramSeeder tetap Rp 0). Hanya program BIPA yang berbayar.
+     * (ProgramSeeder tetap Rp 0). Biaya tidak boleh Rp 0, jadi semua program diberi biaya contoh
+     * yang sama; tanpa ini pendaftar demo berstatus Disetujui/LOA terbit tidak punya tagihan.
      */
     private function demoFees(): void
     {
-        Program::query()->where('code', 'ND-BIPA')->update(['admission_fee' => 500_000, 'tuition_fee' => 4_500_000]);
+        Program::query()->update(['admission_fee' => 500_000, 'tuition_fee' => 4_500_000]);
 
         PaymentAccount::query()->firstOrCreate(
             ['va_number' => '8808 1234 5678 0001'],
@@ -249,7 +232,7 @@ class DemoSeeder extends Seeder
     }
 
     /**
-     * Hanya biaya wajib program (> Rp 0). Disetujui: biaya pendaftaran menunggu verifikasi dan
+     * Semua jenis biaya. Disetujui: biaya pendaftaran menunggu verifikasi dan
      * biaya kuliah belum dibayar (bisa dicoba diunggah); LOA terbit: semua terverifikasi.
      */
     private function payments(Student $student, StudentStatus $status): void

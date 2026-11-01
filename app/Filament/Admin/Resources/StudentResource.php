@@ -8,10 +8,10 @@ use App\Enums\MouStatus;
 use App\Enums\StudentStatus;
 use App\Filament\Admin\Resources\StudentResource\Pages;
 use App\Filament\Support\ApplicantForm;
-use App\Models\AcademicPeriod;
 use App\Models\Agent;
 use App\Models\Program;
 use App\Models\Student;
+use App\Support\EnrollmentPeriod;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -118,17 +118,8 @@ class StudentResource extends Resource
     {
         return [
             ApplicantForm::programSelect(fn (): array => Program::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
-                ->live()
-                ->afterStateUpdated(fn (Forms\Set $set) => $set('academic_period_id', null)),
-            Forms\Components\Select::make('academic_period_id')
-                ->label(__('admin.period.label'))
-                ->options(fn (Forms\Get $get): array => AcademicPeriod::query()
-                    ->where('program_id', $get('program_id'))
-                    ->where('is_active', true)
-                    ->orderByDesc('registration_opens_at')
-                    ->pluck('name', 'id')
-                    ->all())
-                ->helperText(__('admin.applicant.period_hint')),
+                ->columnSpanFull(),
+            ...static::enrollmentFields(),
             Forms\Components\Select::make('agent_id')
                 ->label(__('admin.dashboard.source'))
                 ->options(fn (): array => Agent::query()
@@ -140,6 +131,33 @@ class StudentResource extends Resource
                 ->helperText(__('admin.applicant.source_hint'))
                 ->searchable()
                 ->columnSpanFull(),
+        ];
+    }
+
+    /**
+     * Bulan & tahun masuk: kosong berarti diisi otomatis saat diajukan (Student::booted). Dipakai
+     * juga oleh aksi "Ubah periode masuk" di detail ($beforeSubmit false), karena form ubah terkunci
+     * setelah diajukan.
+     *
+     * @return list<Forms\Components\Component>
+     */
+    public static function enrollmentFields(bool $beforeSubmit = true): array
+    {
+        $placeholder = $beforeSubmit ? __('admin.applicant.enrollment_auto') : __('filament-forms::components.select.placeholder');
+
+        return [
+            Forms\Components\Select::make('enrollment_month')
+                ->label(__('admin.applicant.fields.enrollment_month'))
+                ->options(EnrollmentPeriod::months())
+                ->searchable()
+                ->placeholder($placeholder)
+                ->requiredWith('enrollment_year')
+                ->helperText($beforeSubmit ? __('admin.applicant.enrollment_hint') : null),
+            Forms\Components\Select::make('enrollment_year')
+                ->label(__('admin.applicant.fields.enrollment_year'))
+                ->options(EnrollmentPeriod::years())
+                ->placeholder($placeholder)
+                ->requiredWith('enrollment_month'),
         ];
     }
 
@@ -185,6 +203,15 @@ class StudentResource extends Resource
                     ->label(__('admin.dashboard.status'))
                     ->badge(),
 
+                Tables\Columns\TextColumn::make('enrollment_period')
+                    ->label(__('admin.applicant.fields.enrollment_period'))
+                    ->state(fn (Student $record): ?string => EnrollmentPeriod::label($record))
+                    ->placeholder('—')
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query
+                        ->orderBy('enrollment_year', $direction)
+                        ->orderBy('enrollment_month', $direction))
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('submitted_at')
                     ->label(__('admin.applicant.fields.submitted_at'))
                     ->date('j M Y')
@@ -203,9 +230,13 @@ class StudentResource extends Resource
                     ->options(fn (): array => Program::query()->visibleTo(Filament::auth()->user())->orderBy('name')->pluck('name', 'id')->all())
                     ->searchable(),
 
-                Tables\Filters\SelectFilter::make('academic_period_id')
-                    ->label(__('admin.period.label'))
-                    ->options(fn (): array => AcademicPeriod::query()->visibleTo(Filament::auth()->user())->orderByDesc('registration_opens_at')->pluck('name', 'id')->all())
+                Tables\Filters\SelectFilter::make('enrollment_year')
+                    ->label(__('admin.applicant.fields.enrollment_year'))
+                    ->options(fn (): array => EnrollmentPeriod::years()),
+
+                Tables\Filters\SelectFilter::make('enrollment_month')
+                    ->label(__('admin.applicant.fields.enrollment_month'))
+                    ->options(fn (): array => EnrollmentPeriod::months())
                     ->searchable(),
 
                 Tables\Filters\SelectFilter::make('source')

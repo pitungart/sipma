@@ -128,7 +128,6 @@
                             :label="__('portal.register.fields.country')"
                             :options="$countries"
                             :placeholder="__('portal.register.fields.country_placeholder')"
-                            autocomplete="country"
                         />
                     </div>
                 </div>

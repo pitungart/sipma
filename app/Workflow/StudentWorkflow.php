@@ -10,7 +10,6 @@ use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
-use App\Models\AcademicPeriod;
 use App\Models\Document;
 use App\Models\Loa;
 use App\Models\Payment;
@@ -25,6 +24,7 @@ use App\Notifications\PaymentSubmitted;
 use App\Notifications\RevisionRequested;
 use App\Support\Numbering;
 use App\Support\PrivateFiles;
+use App\Support\UploadLimits;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -108,9 +108,7 @@ final class StudentWorkflow
             'submitted_at' => now(),
             // Nomor pendaftaran diberikan saat pertama kali diajukan; pengajuan ulang tetap memakainya
             'registration_number' => $student->registration_number ?? Numbering::next(NumberType::Application),
-            // Draf tanpa periode (mis. dibuat sebelum periode dibuka) memakai periode yang sedang dibuka;
-            // pengajuan tidak diblokir bila tidak ada (keputusan 8 Oktober 2026, #3 = B)
-            'academic_period_id' => $student->academic_period_id ?? AcademicPeriod::currentFor($student->program_id)?->getKey(),
+            // Bulan & tahun masuk diisi Student::booted dari submitted_at
         ]);
 
         Notification::send($this->kui(), new ApplicationSubmitted($student, $resubmitted));
@@ -129,7 +127,7 @@ final class StudentWorkflow
             throw WorkflowException::because('payment_not_required', ['type' => $type->getLabel()]);
         }
 
-        Validator::validate(['file' => $proof], ['file' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:'.Document::MAX_FILE_SIZE_KB]]);
+        Validator::validate(['file' => $proof], ['file' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:'.UploadLimits::paymentProof()]]);
 
         $existing = $student->payments()->where('type', $type)->latest()->first();
 
@@ -247,6 +245,11 @@ final class StudentWorkflow
             ]);
         }
 
+        // Setelah disetujui pendaftar langsung diminta membayar: biaya & VA harus sudah siap
+        if ($problem = $this->paymentSetupProblem($student)) {
+            throw WorkflowException::because(...$problem);
+        }
+
         $student->update(['status' => StudentStatus::Approved, 'revision_note' => null]);
 
         $student->owner()?->notify(new ApplicationApproved($student));
@@ -338,16 +341,42 @@ final class StudentWorkflow
     // ── Pembayaran: aturan bersama ───────────────────────────────────────────
 
     /**
-     * Jenis biaya yang wajib dibayar: biaya program yang nominalnya lebih dari Rp 0.
-     * Selama biaya resmi belum ditetapkan KUI (seeder Rp 0), tidak ada yang wajib dibayar.
+     * Jenis biaya yang wajib dibayar: selalu semua jenis (biaya pendaftaran & biaya kuliah).
+     * Biaya program tidak boleh Rp 0; approve() menolak bila belum ditetapkan.
      *
      * @return Collection<int, PaymentType>
      */
     public function requiredPaymentTypes(Student $student): Collection
     {
-        return collect(PaymentType::cases())
-            ->filter(fn (PaymentType $type): bool => (float) $this->feeFor($student, $type) > 0)
-            ->values();
+        return collect(PaymentType::cases());
+    }
+
+    /**
+     * Alasan pendaftar belum bisa disetujui dari sisi pembayaran: biaya program masih Rp 0, atau
+     * belum ada rekening VA aktif untuk salah satu jenis biaya. Null bila siap ditagih.
+     *
+     * @return array{0: string, 1: array<string, string>}|null
+     */
+    public function paymentSetupProblem(Student $student): ?array
+    {
+        $types = $this->requiredPaymentTypes($student);
+
+        $unpriced = $types->filter(fn (PaymentType $type): bool => (float) $this->feeFor($student, $type) <= 0);
+
+        if ($unpriced->isNotEmpty()) {
+            return ['fees_not_set', [
+                'types' => $unpriced->map->getLabel()->implode(', '),
+                'program' => (string) $student->program?->name,
+            ]];
+        }
+
+        $noAccount = $types->reject(fn (PaymentType $type): bool => PaymentAccount::bestFor($type, $student->program_id) !== null);
+
+        if ($noAccount->isNotEmpty()) {
+            return ['va_not_set', ['types' => $noAccount->map->getLabel()->implode(', ')]];
+        }
+
+        return null;
     }
 
     /**

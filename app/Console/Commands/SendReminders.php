@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Enums\PaymentStatus;
 use App\Enums\StudentStatus;
-use App\Models\AcademicPeriod;
 use App\Models\SentReminder;
 use App\Models\Student;
 use App\Models\User;
@@ -12,11 +11,13 @@ use App\Notifications\PaymentReminder;
 use App\Notifications\SubmissionReminder;
 use App\Support\ApplicantDetails;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
  * §5 Penjadwal: pengingat otomatis (lonceng + email bila SIPMA_MAIL_NOTIFICATIONS aktif).
- * - Belum diajukan (draf / perlu revisi) H-sekian sebelum periode ditutup (SIPMA_REMINDER_DAYS).
+ * - Belum diajukan (draf / perlu revisi) dan tidak diubah sekian hari (SIPMA_SUBMISSION_REMINDER_AFTER),
+ *   sekali per masa diam: diubah lalu diam lagi → diingatkan lagi.
  * - Belum bayar setelah disetujui, berjeda SIPMA_PAYMENT_REMINDER_EVERY hari (VA Unud 24 jam).
  * Agen menerima satu ringkasan per jenis, mahasiswa mandiri satu per pendaftaran. Setiap kiriman
  * dicatat di sent_reminders sehingga perintah aman dijalankan ulang. Dijalankan tanpa pengguna
@@ -26,7 +27,7 @@ class SendReminders extends Command
 {
     protected $signature = 'sipma:reminders {--dry-run : Tampilkan siapa yang akan dikirimi tanpa mengirim}';
 
-    protected $description = 'Kirim pengingat pendaftaran yang belum diajukan menjelang periode ditutup dan biaya yang belum dibayar';
+    protected $description = 'Kirim pengingat pendaftaran yang belum diajukan dan lama tidak diubah, serta biaya yang belum dibayar';
 
     /** @var list<array{string, string, int, string}> */
     private array $rows = [];
@@ -55,39 +56,44 @@ class SendReminders extends Command
     }
 
     /**
-     * Draf / perlu revisi pada periode yang ditutup tepat H-sekian dari hari ini.
+     * Draf / perlu revisi yang tidak diubah sedikitnya N hari. Perubahan terakhir = data pendaftar
+     * atau dokumennya (unggah dokumen tidak menyentuh students.updated_at). Kunci memuat tanggal
+     * perubahan terakhir, jadi satu masa diam hanya diingatkan sekali.
      */
     private function submissions(): void
     {
-        foreach (config('sipma.reminders.submission_days') as $days) {
-            $periods = AcademicPeriod::query()
-                ->where('is_active', true)
-                ->whereDate('registration_closes_at', today()->addDays($days))
-                ->get();
+        $days = (int) config('sipma.reminders.submission_after');
+        $cutoff = today()->subDays($days);
 
-            foreach ($periods as $period) {
-                $students = Student::query()
-                    ->whereIn('status', [StudentStatus::Draft, StudentStatus::Revision])
-                    ->where(fn ($q) => $q->where('academic_period_id', $period->getKey())
-                        // draf lama tanpa periode ikut periode program yang sedang dibuka
-                        ->orWhere(fn ($q) => $q->whereNull('academic_period_id')->where('program_id', $period->program_id)))
-                    ->with(['user', 'agent.user'])
-                    ->orderBy('full_name')
-                    ->get();
+        $idle = Student::query()
+            ->whereIn('status', [StudentStatus::Draft, StudentStatus::Revision])
+            ->withMax('documents', 'updated_at')
+            ->with(['user', 'agent.user'])
+            ->orderBy('full_name')
+            ->get()
+            ->filter(fn (Student $student): bool => $this->lastChanged($student)->copy()->startOfDay()->lte($cutoff));
 
-                $this->byOwner($students)->each(function (Collection $group, string $userId) use ($period, $days): void {
-                    $key = "{$userId}:{$period->getKey()}:{$days}";
+        $this->byOwner($idle)->each(function (Collection $group, string $userId) use ($days): void {
+            $keys = $group->mapWithKeys(fn (Student $student): array => [
+                $student->getKey() => "{$userId}:{$student->getKey()}:{$this->lastChanged($student)->toDateString()}",
+            ]);
+            $due = $group->filter(fn (Student $student): bool => ! SentReminder::lastSent(SentReminder::SUBMISSION, $keys[$student->getKey()]))->values();
 
-                    if (SentReminder::lastSent(SentReminder::SUBMISSION, $key)) {
-                        return;
-                    }
-
-                    $owner = $group->first()->owner();
-                    $this->deliver($owner, new SubmissionReminder($group->values(), $period, $days), SentReminder::SUBMISSION, [$key]);
-                    $this->rows[] = ['Belum diajukan', $owner->email, $group->count(), "{$period->name} · H-{$days}"];
-                });
+            if ($due->isEmpty()) {
+                return;
             }
-        }
+
+            $owner = $due->first()->owner();
+            $this->deliver($owner, new SubmissionReminder($due, $days), SentReminder::SUBMISSION, $due->map(fn (Student $s): string => $keys[$s->getKey()])->all());
+            $this->rows[] = ['Belum diajukan', $owner->email, $due->count(), $due->pluck('full_name')->implode(', ')." · {$days}+ hari"];
+        });
+    }
+
+    private function lastChanged(Student $student): Carbon
+    {
+        $document = $student->documents_max_updated_at ? Carbon::parse($student->documents_max_updated_at) : null;
+
+        return $document?->greaterThan($student->updated_at) ? $document : $student->updated_at;
     }
 
     /**

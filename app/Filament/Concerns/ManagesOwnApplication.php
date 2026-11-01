@@ -7,10 +7,13 @@ use App\Enums\DocumentType;
 use App\Enums\PaymentType;
 use App\Enums\StudentStatus;
 use App\Filament\Support\FormModal;
+use App\Filament\Support\TemplateDownload;
 use App\Models\Document;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Support\ApplicantDetails;
+use App\Support\FileTemplates;
+use App\Support\UploadLimits;
 use App\Workflow\StudentWorkflow;
 use App\Workflow\SubmissionChecklist;
 use App\Workflow\WorkflowException;
@@ -20,8 +23,11 @@ use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\MaxWidth;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\HtmlString;
 
 /**
  * Detail pendaftaran dari sisi PEMILIK (agen untuk mahasiswanya, mahasiswa mandiri untuk
@@ -32,19 +38,24 @@ use Illuminate\Support\Facades\Gate;
  */
 trait ManagesOwnApplication
 {
-    /**
-     * Dokumen opsional yang selalu ditawarkan (selain 6 dokumen wajib).
-     *
-     * @var list<DocumentType>
-     */
-    protected static array $optionalDocuments = [DocumentType::Transcript, DocumentType::Recommendation];
-
     abstract protected function applicant(): Student;
 
     /**
      * Teks persetujuan data saat mengajukan (UU PDP); berbeda untuk agen dan mahasiswa.
      */
     abstract protected function consentLabel(): string;
+
+    /**
+     * Judul halaman diikuti badge status, agar status terbaca tanpa menggulir.
+     */
+    public function getHeading(): string|Htmlable
+    {
+        return new HtmlString(
+            '<span class="sipma-heading-status">'.e($this->getTitle())
+            .Blade::render('<x-sipma.status-badge :status="$status" />', ['status' => $this->applicant()->status])
+            .'</span>'
+        );
+    }
 
     public function canChange(): bool
     {
@@ -105,11 +116,12 @@ trait ManagesOwnApplication
             ->label(fn (array $arguments): string => $this->applicant()->documents()->where('type', $type($arguments))->exists()
                 ? __('admin.applicant.actions.replace_document')
                 : __('admin.applicant.actions.upload_document'))
-            ->icon('lucide-upload')
-            ->color('gray')
+            // "Unggah" dan "Ganti" sama-sama primary solid; ganti berikon panah memutar
+            ->icon(fn (array $arguments): string => $this->applicant()->documents()->where('type', $type($arguments))->exists() ? 'lucide-refresh-cw' : 'lucide-upload')
+            ->color('primary')
             ->size('sm')
             ->modalHeading(fn (array $arguments): string => __('admin.applicant.actions.upload_document').' · '.$type($arguments)->getLabel())
-            ->modalDescription(fn (array $arguments): string => $type($arguments)->hint())
+            ->modalDescription(fn (array $arguments): string|Htmlable => TemplateDownload::uploadHint($type($arguments)))
             ->modalIcon('lucide-upload')
             ->modalWidth(MaxWidth::Large)
             ->modalSubmitActionLabel(__('admin.master.save'))
@@ -119,7 +131,7 @@ trait ManagesOwnApplication
                     ->acceptedFileTypes(collect($type($arguments)->extensions())
                         ->map(fn (string $ext): string => $ext === 'pdf' ? 'application/pdf' : 'image/'.($ext === 'jpg' ? 'jpeg' : $ext))
                         ->unique()->values()->all())
-                    ->maxSize(Document::MAX_FILE_SIZE_KB)
+                    ->maxSize(UploadLimits::document($type($arguments)))
                     ->storeFiles(false) // StudentWorkflow menyimpannya di disk privat
                     ->required(),
             ])
@@ -141,11 +153,11 @@ trait ManagesOwnApplication
             ->label(fn (array $arguments): string => $this->applicant()->payments()->where('type', $type($arguments))->exists()
                 ? __('agent.students.payments.replace')
                 : __('agent.students.payments.upload'))
-            ->icon('lucide-upload')
-            ->color(fn (array $arguments): string => $this->applicant()->payments()->where('type', $type($arguments))->exists() ? 'gray' : 'primary')
+            ->icon(fn (array $arguments): string => $this->applicant()->payments()->where('type', $type($arguments))->exists() ? 'lucide-refresh-cw' : 'lucide-upload')
+            ->color('primary')
             ->size('sm')
             ->modalHeading(fn (array $arguments): string => __('agent.students.payments.upload').' · '.$type($arguments)->getLabel())
-            ->modalDescription(__('agent.students.payments.proof_hint', ['max' => Document::MAX_FILE_SIZE_KB]))
+            ->modalDescription(fn (): string => __('agent.students.payments.proof_hint', ['max' => UploadLimits::label(UploadLimits::paymentProof())]))
             ->modalIcon('lucide-receipt')
             ->modalWidth(MaxWidth::Large)
             ->modalSubmitActionLabel(__('agent.students.payments.send'))
@@ -153,7 +165,7 @@ trait ManagesOwnApplication
                 FileUpload::make('file')
                     ->label(__('agent.students.payments.proof'))
                     ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
-                    ->maxSize(Document::MAX_FILE_SIZE_KB)
+                    ->maxSize(fn (): int => UploadLimits::paymentProof())
                     ->storeFiles(false) // StudentWorkflow menyimpannya di disk privat
                     ->required(),
             ])
@@ -182,6 +194,14 @@ trait ManagesOwnApplication
             ->modalCancelActionLabel(__('admin.applicant.actions.close'));
     }
 
+    /**
+     * Unduh template dokumen (hanya unduh; dikelola Super Admin di Sistem → Unggahan berkas).
+     */
+    public function downloadTemplateAction(): Action
+    {
+        return TemplateDownload::action();
+    }
+
     public function previewDocumentAction(): Action
     {
         return Action::make('previewDocument')
@@ -207,14 +227,15 @@ trait ManagesOwnApplication
      */
     protected function applicationViewData(bool $withSource = false): array
     {
-        $student = $this->applicant()->loadMissing(['program', 'academicPeriod', 'nationality', 'homeUniversityCountry', 'loa']);
-        $documents = ApplicantDetails::documents($student, static::$optionalDocuments);
+        $student = $this->applicant()->loadMissing(['program', 'nationality', 'homeUniversityCountry', 'loa']);
+        $documents = ApplicantDetails::documents($student);
 
         return [
             'applicant' => $student,
             'canChange' => $this->canChange(),
             'profile' => ApplicantDetails::profile($student, withSource: $withSource),
             'documents' => $documents,
+            'templates' => FileTemplates::uploaded(),
             'requiredDone' => $documents->filter(fn (array $item): bool => $item['type']->isRequired()
                 && in_array($item['document']?->status, [DocumentStatus::Pending, DocumentStatus::Approved], true))->count(),
             'checklist' => $this->canChange() ? $this->checklist()->items() : new Collection,

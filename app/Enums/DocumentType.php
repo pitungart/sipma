@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-use App\Models\Document;
+use App\Support\UploadLimits;
 use Filament\Support\Contracts\HasLabel;
 
 enum DocumentType: string implements HasLabel
@@ -40,6 +40,16 @@ enum DocumentType: string implements HasLabel
         ];
     }
 
+    /**
+     * Dokumen opsional yang selalu ditawarkan di daftar unggah (boleh dibiarkan kosong).
+     *
+     * @return list<self>
+     */
+    public static function optional(): array
+    {
+        return [self::Transcript, self::Recommendation];
+    }
+
     public function isRequired(): bool
     {
         return in_array($this, self::required(), true);
@@ -62,7 +72,7 @@ enum DocumentType: string implements HasLabel
      */
     public function uploadRules(): array
     {
-        return ['file', 'mimes:'.implode(',', $this->extensions()), 'max:'.Document::MAX_FILE_SIZE_KB];
+        return ['file', 'mimes:'.implode(',', $this->extensions()), 'max:'.UploadLimits::document($this)];
     }
 
     /**
@@ -75,7 +85,7 @@ enum DocumentType: string implements HasLabel
                 fn (string $ext): string => $ext === 'jpeg' ? 'jpg' : $ext,
                 $this->extensions(),
             )))),
-            'max' => Document::MAX_FILE_SIZE_KB,
+            'max' => UploadLimits::label(UploadLimits::document($this)),
         ]);
 
         return $this === self::Photo ? __('workflow.documents.photo_rules').' '.$base : $base;

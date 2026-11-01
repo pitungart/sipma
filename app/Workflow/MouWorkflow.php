@@ -13,6 +13,7 @@ use App\Notifications\MouReviewed;
 use App\Notifications\MouSubmitted;
 use App\Support\Numbering;
 use App\Support\PrivateFiles;
+use App\Support\UploadLimits;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -24,8 +25,6 @@ use Illuminate\Support\Facades\Validator;
  */
 final class MouWorkflow
 {
-    public const MAX_FILE_SIZE_KB = 5120;
-
     public function submit(Agent $agent, UploadedFile $file): Mou
     {
         if (! $agent->isProfileComplete()) {
@@ -40,7 +39,7 @@ final class MouWorkflow
             throw WorkflowException::because('mou_already_pending');
         }
 
-        Validator::validate(['file' => $file], ['file' => ['file', 'mimes:pdf', 'max:'.self::MAX_FILE_SIZE_KB]]);
+        Validator::validate(['file' => $file], ['file' => ['file', 'mimes:pdf', 'max:'.UploadLimits::mou()]]);
 
         $mou = $agent->mous()->create([
             'file_path' => PrivateFiles::store($file, PrivateFiles::agentDirectory($agent->getKey(), 'mou'))['file_path'],

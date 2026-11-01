@@ -7,6 +7,7 @@ use App\Support\Locale;
 use Database\Factories\UserFactory;
 use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasAvatar;
 use Filament\Notifications\Auth\VerifyEmail;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements FilamentUser, HasLocalePreference, MustVerifyEmail
+class User extends Authenticatable implements FilamentUser, HasAvatar, HasLocalePreference, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasUuids, Notifiable, SoftDeletes;
@@ -48,6 +49,9 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference,
         'locale',
         'faculty_id',
         'is_active',
+        'avatar_path',
+        'avatar_focus',
+        'notification_preferences',
     ];
 
     /**
@@ -72,6 +76,8 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference,
             'password' => 'hashed',
             'role' => UserRole::class,
             'is_active' => 'boolean',
+            'avatar_focus' => 'array',
+            'notification_preferences' => 'array',
         ];
     }
 
@@ -134,6 +140,24 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference,
         $notification->locale(app()->getLocale());
 
         $this->notify($notification);
+    }
+
+    /**
+     * Foto profil: unggahan sendiri (lewat route privat, ?v= agar foto baru tidak tertahan cache).
+     * null = avatar inisial tonal (InitialsAvatarProvider / x-sipma.avatar).
+     */
+    public function avatarUrl(): ?string
+    {
+        if (blank($this->avatar_path)) {
+            return null;
+        }
+
+        return route('files.avatar', ['user' => $this, 'v' => substr(md5((string) $this->avatar_path), 0, 8)]);
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        return $this->avatarUrl();
     }
 
     public function hasRole(UserRole ...$roles): bool

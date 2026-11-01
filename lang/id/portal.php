@@ -37,6 +37,23 @@ return [
         'copyright' => '© :year Universitas Udayana',
     ],
 
+    'errors' => [
+        'kicker' => 'Kesalahan :code',
+        'back' => 'Kembali',
+        'dashboard' => 'Ke dasbor',
+        'login' => 'Masuk',
+        '404' => [
+            'title' => 'Halaman tidak ditemukan',
+            'message' => 'Alamat ini tidak ada atau sudah dipindahkan. Periksa kembali alamatnya, atau lanjutkan lewat tombol di bawah.',
+            'address' => 'Alamat yang dibuka:',
+        ],
+    ],
+
+    'select' => [
+        'search' => 'Cari…',
+        'empty' => 'Tidak ada yang cocok.',
+    ],
+
     'register' => [
         'title' => 'Buat akun SIPMA',
         'role_legend' => 'Anda mendaftar sebagai?',

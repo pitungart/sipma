@@ -5,9 +5,11 @@ namespace Tests\Feature\Workflow;
 use App\Enums\DocumentType;
 use App\Enums\LoaStatus;
 use App\Enums\MouStatus;
+use App\Enums\PaymentType;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Models\Payment;
+use App\Models\Program;
 use App\Models\Student;
 use App\Models\User;
 use App\Notifications\LoaIssued;
@@ -83,7 +85,7 @@ class FoundationTest extends WorkflowTestCase
     public function test_loa_download_is_recorded_for_the_owner_only(): void
     {
         $owner = $this->studentUser();
-        $student = $this->student(owner: $owner, status: StudentStatus::Approved);
+        $student = $this->paid($this->student(owner: $owner, status: StudentStatus::Approved));
         $this->actingAs($admin = $this->superAdmin());
         $loa = app(StudentWorkflow::class)->issueLoa($student, $this->pdf());
 
@@ -154,8 +156,8 @@ class FoundationTest extends WorkflowTestCase
         $partial = Student::query()->with('program:id,name')->findOrFail($student->id);
 
         $workflow = app(StudentWorkflow::class);
-        $this->assertCount(1, $workflow->requiredPaymentTypes($partial));
-        $this->assertCount(1, $workflow->outstandingPayments($partial), 'LOA stays blocked until the fee is verified');
+        $this->assertSame('500000.00', $workflow->feeFor($partial, PaymentType::AdmissionFee));
+        $this->assertCount(2, $workflow->outstandingPayments($partial), 'LOA stays blocked until every fee is verified');
     }
 
     public function test_demo_seeder_builds_every_status_with_files(): void
@@ -171,14 +173,13 @@ class FoundationTest extends WorkflowTestCase
             ->get(route('files.document', $document))
             ->assertOk();
 
-        // Biaya demo hanya di BIPA: LOA terbit = semua biaya terverifikasi
+        // Biaya tidak boleh Rp 0: semua program demo berbayar; LOA terbit = semua biaya terverifikasi
         $workflow = app(StudentWorkflow::class);
-        $bipa = Student::query()->whereHas('program', fn ($q) => $q->where('code', 'ND-BIPA'))->get();
-        $this->assertTrue($bipa->isNotEmpty());
-        foreach ($bipa->where('status', StudentStatus::LoaIssued) as $student) {
+        $this->assertSame(0, Program::query()->where('admission_fee', '<=', 0)->orWhere('tuition_fee', '<=', 0)->count());
+        foreach (Student::query()->where('status', StudentStatus::LoaIssued)->get() as $student) {
             $this->assertTrue($workflow->outstandingPayments($student)->isEmpty());
         }
-        $this->assertSame(0, Payment::query()->where('amount', 0)->count(), 'no payments for free programs');
+        $this->assertSame(0, Payment::query()->where('amount', '<=', 0)->count());
 
         // Dijalankan ulang tidak menggandakan data
         $count = Student::query()->count();

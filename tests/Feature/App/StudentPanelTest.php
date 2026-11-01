@@ -7,22 +7,25 @@ use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
+use App\Filament\Admin\Pages\UploadSettings;
 use App\Filament\App\Pages\Dashboard;
 use App\Filament\App\Pages\EditApplication;
 use App\Filament\App\Pages\MyApplication;
 use App\Filament\App\Pages\Programs;
 use App\Filament\App\Pages\StartApplication;
-use App\Models\AcademicPeriod;
+use App\Filament\Support\ApplicantForm;
 use App\Models\Program;
 use App\Models\Student;
 use App\Models\User;
 use App\Notifications\ApplicationSubmitted;
 use App\Notifications\RevisionRequested;
+use App\Support\FileTemplates;
 use App\Support\Rupiah;
 use App\Workflow\StudentWorkflow;
 use Database\Seeders\DemoSeeder;
 use Database\Seeders\StudentAccountSeeder;
 use Filament\Facades\Filament;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\Feature\Workflow\WorkflowTestCase;
@@ -44,15 +47,9 @@ class StudentPanelTest extends WorkflowTestCase
         Filament::setCurrentPanel(Filament::getPanel('app'));
 
         $this->open = $this->program(admissionFee: 750_000);
+        // Tanpa periode akademik: program "tertutup" = dinonaktifkan KUI
         $this->closed = $this->program();
-        AcademicPeriod::create([
-            'program_id' => $this->open->id,
-            'name' => 'Batch Oktober',
-            'code' => 'OKT-26',
-            'registration_opens_at' => now()->subWeek(),
-            'registration_closes_at' => now()->addMonth(),
-            'is_active' => true,
-        ]);
+        $this->closed->update(['is_active' => false]);
     }
 
     private function account(): User
@@ -101,11 +98,28 @@ class StudentPanelTest extends WorkflowTestCase
         $this->assertSame(StudentStatus::Draft, $student->status);
         $this->assertSame('XA1234567', $student->passport_number);
         $this->assertNull($student->agent_id);
-        $this->assertNotNull($student->academic_period_id);
+        $this->assertNull($student->enrollment_month, 'filled in on submit');
 
         // Satu akun = satu pendaftaran
         $this->assertFalse(StartApplication::canAccess());
         $this->get(StartApplication::getUrl())->assertForbidden();
+    }
+
+    public function test_student_downloads_templates_but_cannot_manage_them(): void
+    {
+        FileTemplates::store(DocumentType::Declaration->value, UploadedFile::fake()->create('Surat pernyataan.pdf', 40, 'application/pdf'));
+        $user = $this->account();
+        $this->student($this->open, owner: $user);
+
+        // Tombol unduh hanya untuk jenis dokumen yang punya template; tautannya juga ada di modal unggah
+        Livewire::test(MyApplication::class)
+            ->assertSeeHtml(FileTemplates::url(DocumentType::Declaration->value))
+            ->assertDontSeeHtml(FileTemplates::url(DocumentType::Passport->value))
+            ->mountAction('uploadDocument', ['type' => DocumentType::Declaration->value])
+            ->assertSee(__('workflow.documents.template_link'));
+
+        $this->get(FileTemplates::url(DocumentType::Declaration->value))->assertDownload('surat-pernyataan.pdf');
+        $this->get(UploadSettings::getUrl(panel: 'admin'))->assertForbidden();
     }
 
     public function test_student_completes_documents_and_submits(): void
@@ -127,7 +141,7 @@ class StudentPanelTest extends WorkflowTestCase
             ->assertHasNoActionErrors();
 
         $this->assertSame(StudentStatus::Submitted, $student->fresh()->status);
-        $this->assertNotNull($student->fresh()->academic_period_id, 'missing period is filled with the open one on submit');
+        $this->assertSame([now()->month, now()->year], [$student->fresh()->enrollment_month, $student->fresh()->enrollment_year]);
         Notification::assertSentTo($admin, ApplicationSubmitted::class);
 
         // Setelah diajukan: data terkunci
@@ -148,14 +162,44 @@ class StudentPanelTest extends WorkflowTestCase
         $this->assertSame('+44 7700 900000', $student->fresh()->phone_number);
     }
 
+    public function test_edit_wizard_jumps_to_the_step_with_an_error(): void
+    {
+        $user = $this->account();
+        $student = $this->student($this->open, owner: $user);
+
+        // Simpan dari langkah mana pun: nama kosong (langkah 1) → wizard dipindah ke langkah 1
+        Livewire::test(EditApplication::class)
+            ->fillForm(['full_name' => ''])
+            ->call('save')
+            ->assertHasFormErrors(['full_name' => 'required']);
+
+        $this->assertNotSame('', $student->fresh()->full_name);
+        $this->assertSame(0, ApplicantForm::firstStepWithError(['data.full_name', 'data.program_id']));
+        $this->assertSame(2, ApplicantForm::firstStepWithError(['data.passport_number']));
+        $this->assertSame(3, ApplicantForm::firstStepWithError(['data.program_id']));
+    }
+
+    public function test_dashboard_shows_submission_date_but_not_the_enrollment_period(): void
+    {
+        // Kicker tanggal hari ini di dasbor tidak boleh ikut berisi "November 2026"
+        $this->travelTo('2026-12-15 09:00:00');
+        $user = $this->account();
+        $student = $this->student($this->open, owner: $user);
+
+        $this->get(Dashboard::getUrl())->assertOk()->assertSee(__('student.home.not_submitted'));
+
+        $student->update(['status' => StudentStatus::Submitted, 'submitted_at' => '2026-11-03 10:00:00']);
+        $this->assertSame(11, $student->fresh()->enrollment_month);
+
+        // Periode masuk hanya untuk pelaporan KUI
+        $this->get(Dashboard::getUrl())->assertOk()->assertSee('3 Nov 2026')->assertDontSee('November 2026');
+        $this->get(MyApplication::getUrl())->assertOk()->assertDontSee(__('admin.applicant.fields.enrollment_period'));
+    }
+
     public function test_catalog_shows_open_programs_without_fees_and_switches_draft_program(): void
     {
         $user = $this->account();
         $other = $this->program(tuitionFee: 2_000_000);
-        AcademicPeriod::create([
-            'program_id' => $other->id, 'name' => 'Batch B', 'code' => 'B-26',
-            'registration_opens_at' => now()->subDay(), 'registration_closes_at' => now()->addWeek(), 'is_active' => true,
-        ]);
         $student = $this->student($this->open, owner: $user);
 
         Livewire::test(Programs::class)

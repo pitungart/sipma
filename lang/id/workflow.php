@@ -4,8 +4,11 @@
 return [
 
     'documents' => [
-        'format' => ':types · maks. :max KB',
+        'format' => ':types · maks. :max',
         'photo_rules' => 'Foto formal 3×4 berlatar biru.',
+        'template' => 'Template',
+        'template_tooltip' => 'Unduh template :name',
+        'template_link' => 'Unduh template dokumen ini.',
     ],
 
     'fields' => [
@@ -46,6 +49,8 @@ return [
         'note_required' => 'Tulis alasannya agar pendaftar tahu apa yang perlu diperbaiki.',
         'revision_reason_required' => 'Tandai minimal satu dokumen untuk direvisi atau tulis catatan umum.',
         'documents_not_approved' => 'Setujui dulu dokumen berikut: :documents.',
+        'fees_not_set' => 'Belum bisa disetujui: :types program :program masih Rp 0. Tetapkan biayanya di Data master → Program.',
+        'va_not_set' => 'Belum bisa disetujui: rekening VA untuk :types belum disiapkan. Tambahkan di Data master → Rekening pembayaran.',
         'payment_not_pending' => 'Pembayaran ini sudah diproses.',
         'payments_outstanding' => 'LOA bisa diterbitkan setelah pembayaran berikut terverifikasi: :types.',
         'mou_already_approved' => 'MOU Anda sudah disetujui.',
@@ -99,9 +104,9 @@ return [
         ],
         'and_more' => 'dan :count lainnya',
         'submission_reminder' => [
-            'title' => '{1} Periode :period ditutup besok|[2,*] Periode :period ditutup :days hari lagi',
-            'body_one' => 'Pendaftaran :names belum diajukan. Lengkapi dan ajukan sebelum :date.',
-            'body_many' => ':count mahasiswa belum diajukan: :names. Ajukan sebelum :date.',
+            'title' => '{1} Pendaftaran belum diajukan|[2,*] Pendaftaran mahasiswa belum diajukan',
+            'body_one' => 'Pendaftaran :names belum diajukan dan tidak diubah selama :days hari. Lengkapi lalu ajukan agar KUI bisa segera memeriksanya.',
+            'body_many' => ':count mahasiswa belum diajukan dan tidak diubah selama :days hari: :names. Lengkapi lalu ajukan agar KUI bisa segera memeriksanya.',
         ],
         'payment_reminder' => [
             'title' => 'Biaya belum dibayar',

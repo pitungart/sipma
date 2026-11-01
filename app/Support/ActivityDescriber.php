@@ -2,18 +2,25 @@
 
 namespace App\Support;
 
+use App\Enums\DocumentStatus;
+use App\Enums\MouStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\StudentStatus;
+use App\Models\Agent;
 use App\Models\Document;
+use App\Models\FileTemplate;
 use App\Models\Loa;
+use App\Models\Mou;
 use App\Models\Payment;
 use App\Models\Student;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Activity;
 
 /**
  * Mengubah baris activity log menjadi kalimat (R-2.12) — dipakai widget "Aktivitas terbaru"
- * di dashboard dan tab "Riwayat" di detail pendaftar.
+ * di dashboard, tab "Riwayat" di detail pendaftar, dan tab "Aktivitas" di Profil saya.
  */
 final class ActivityDescriber
 {
@@ -29,7 +36,7 @@ final class ActivityDescriber
     /**
      * Riwayat satu pendaftar: perubahan pada dirinya, dokumennya, pembayarannya, dan LOA-nya.
      *
-     * @return Collection<int, array{text: string, time: string, at: string, tone: string}>
+     * @return Collection<int, array{text: string, time: string, at: string, tone: string, icon: string}>
      */
     public static function forStudent(Student $student): Collection
     {
@@ -45,15 +52,34 @@ final class ActivityDescriber
     }
 
     /**
-     * @return array{text: string, time: string, at: string, tone: string}
+     * Tindakan yang dilakukan satu pengguna (Profil saya → Aktivitas), dengan kalimat tanpa
+     * subjek pelaku ("Menyetujui dokumen …") karena pelakunya pembaca sendiri.
+     *
+     * @return Collection<int, array{text: string, time: string, at: string, tone: string, icon: string}>
      */
-    public static function describe(Activity $activity): array
+    public static function forCauser(User $user, int $limit = 50): Collection
+    {
+        return Activity::query()
+            ->whereMorphedTo('causer', $user)
+            ->with('subject')
+            ->latest()
+            ->latest('id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (Activity $activity): array => self::describe($activity, own: true));
+    }
+
+    /**
+     * @return array{text: string, time: string, at: string, tone: string, icon: string}
+     */
+    public static function describe(Activity $activity, bool $own = false): array
     {
         return [
-            'text' => self::sentence($activity),
+            'text' => $own ? self::ownSentence($activity) : self::sentence($activity),
             'time' => $activity->created_at->diffForHumans(),
             'at' => $activity->created_at->translatedFormat('j M Y, H.i'),
             'tone' => self::tone($activity),
+            'icon' => self::icon($activity),
         ];
     }
 
@@ -78,14 +104,91 @@ final class ActivityDescriber
         ]);
     }
 
-    public static function tone(Activity $activity): string
+    /**
+     * Kalimat untuk aktivitas milik pembaca sendiri: kata kerja di depan, tanpa nama pelaku.
+     * Perubahan status dokumen, pembayaran, dan MOU disebut sebagai keputusannya.
+     */
+    public static function ownSentence(Activity $activity): string
+    {
+        $subject = $activity->subject;
+        $status = (string) ($activity->properties['attributes']['status'] ?? '');
+        $name = self::subjectName($subject);
+
+        $decision = match (true) {
+            $activity->event === 'deleted' => null,
+            $subject instanceof Student && ($state = StudentStatus::tryFrom($status)) !== null => ['status', ['name' => $name, 'status' => $state->getLabel()]],
+            $subject instanceof Document && ($state = DocumentStatus::tryFrom($status)) !== null && $state !== DocumentStatus::Pending => ["document_{$state->value}", ['document' => $subject->type?->getLabel(), 'name' => $name]],
+            $subject instanceof Payment && ($state = PaymentStatus::tryFrom($status)) !== null && $state !== PaymentStatus::Pending => ["payment_{$state->value}", ['name' => $name]],
+            $subject instanceof Mou && ($state = MouStatus::tryFrom($status)) !== null && $state !== MouStatus::Pending => ["mou_{$state->value}", ['name' => $name]],
+            $subject instanceof Loa && $activity->event === 'created' => ['loa_issued', ['name' => $name]],
+            default => null,
+        };
+
+        if ($decision !== null) {
+            return __("profile.activity.{$decision[0]}", $decision[1]);
+        }
+
+        $event = in_array($activity->event, ['created', 'updated', 'deleted'], true) ? $activity->event : 'updated';
+
+        return __("profile.activity.{$event}", [
+            'subject' => __('profile.activity.subject_'.self::subjectKind($subject), ['name' => $name]),
+        ]);
+    }
+
+    private static function subjectKind(mixed $subject): string
     {
         return match (true) {
+            $subject instanceof Agent => 'agent',
+            $subject instanceof Mou => 'mou',
+            $subject instanceof FileTemplate => 'template',
+            $subject !== null && isset(self::CHILD_SUBJECTS[$subject::class]) => self::CHILD_SUBJECTS[$subject::class],
+            default => 'student',
+        };
+    }
+
+    private static function subjectName(mixed $subject): string
+    {
+        return match (true) {
+            $subject instanceof Student => $subject->full_name,
+            $subject instanceof Agent => $subject->company_name,
+            $subject instanceof Mou => $subject->agent?->company_name ?? '—',
+            $subject instanceof FileTemplate => $subject->original_name ?? $subject->name,
+            $subject !== null && isset(self::CHILD_SUBJECTS[$subject::class]) => $subject->student?->full_name ?? '—',
+            default => '—',
+        } ?? '—';
+    }
+
+    public static function tone(Activity $activity): string
+    {
+        $status = StudentStatus::tryFrom((string) ($activity->properties['attributes']['status'] ?? ''));
+
+        return match (true) {
             $activity->event === 'deleted' => 'danger',
+            $activity->subject instanceof Student && $status !== null => $status->getColor(),
             $activity->subject instanceof Payment => 'warning',
             $activity->subject instanceof Loa => 'success',
             $activity->subject instanceof Document => 'info',
+            $activity->subject instanceof Mou => 'warning',
             default => 'primary',
+        };
+    }
+
+    public static function icon(Activity $activity): string
+    {
+        $subject = $activity->subject;
+        $status = StudentStatus::tryFrom((string) ($activity->properties['attributes']['status'] ?? ''));
+
+        return match (true) {
+            $activity->event === 'deleted' => 'lucide-trash-2',
+            $subject instanceof Payment => 'lucide-receipt',
+            $subject instanceof Loa => 'lucide-file-check',
+            $subject instanceof Document => 'lucide-file-text',
+            $subject instanceof Mou => 'lucide-handshake',
+            $subject instanceof Agent => 'lucide-building-2',
+            $subject instanceof FileTemplate => 'lucide-file-down',
+            $subject instanceof Student && $status !== null => $status->getIcon(),
+            $activity->event === 'created' => 'lucide-user-plus',
+            default => 'lucide-user-pen',
         };
     }
 }

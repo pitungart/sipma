@@ -9,7 +9,10 @@ use App\Models\Student;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Pages\Page;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\HtmlString;
 
 /**
  * "Pendaftaran saya": detail pendaftaran mahasiswa mandiri — isi & aturan sama dengan detail
@@ -77,9 +80,19 @@ class MyApplication extends Page
         return __('student.application.title');
     }
 
-    public function getSubheading(): ?string
+    /**
+     * Program dengan ikon, lalu nomor pendaftaran bila sudah ada.
+     */
+    public function getSubheading(): string|Htmlable|null
     {
-        return collect([$this->application?->registration_number, $this->application?->program?->name])->filter()->implode(' · ') ?: null;
+        if ($this->application === null) {
+            return null;
+        }
+
+        return new HtmlString(Blade::render(
+            '<span class="sipma-heading-sub"><x-filament::icon icon="lucide-graduation-cap" class="sipma-heading-sub-icon" />{{ $program }}@if ($number)<span class="sipma-heading-sub-sep">·</span><span class="sipma-mono">{{ $number }}</span>@endif</span>',
+            ['program' => $this->application->program?->name ?? '—', 'number' => $this->application->registration_number],
+        ));
     }
 
     protected function getHeaderActions(): array

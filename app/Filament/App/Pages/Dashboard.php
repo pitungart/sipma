@@ -28,9 +28,9 @@ class Dashboard extends BaseDashboard
     {
         $home = new StudentHome(static::currentApplication());
 
-        return view('filament.admin.dashboard-header', [
+        return view('filament.app.dashboard-header', [
             'date' => now()->translatedFormat('l, j F Y'),
-            'greeting' => __('student.home.greeting', ['name' => Filament::getUserName(Filament::auth()->user())]),
+            'name' => Filament::getUserName(Filament::auth()->user()),
             'subheading' => __($home->stage() === StudentHome::START ? 'student.home.subheading_new' : 'student.home.subheading'),
             'actions' => $this->getCachedHeaderActions(),
         ]);
@@ -72,7 +72,7 @@ class Dashboard extends BaseDashboard
             'checklist' => $application?->status->isEditable() ? $home->checklist()->items() : collect(),
             'requiredDocuments' => DocumentType::required(),
             'openPrograms' => $stage === StudentHome::START
-                ? Program::query()->openForRegistration()->with('faculty')->orderBy('name')->get()
+                ? Program::query()->openForRegistration()->with('faculty')->orderBy('name')->limit(3)->get()
                 : collect(),
         ];
     }

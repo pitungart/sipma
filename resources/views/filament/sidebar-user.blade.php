@@ -1,13 +1,10 @@
 {{-- Kaki sidebar: kartu pengguna yang sedang masuk (template: avatar inisial, nama, email) --}}
-@use('App\Filament\Support\InitialsAvatarProvider')
 
 @php($user = filament()->auth()->user())
 
 @if ($user)
     <div class="sipma-sidebar-user">
-        <span class="sipma-avatar sipma-avatar-soft" aria-hidden="true">
-            {{ InitialsAvatarProvider::initialsOf(filament()->getUserName($user)) }}
-        </span>
+        <x-sipma.avatar :name="filament()->getUserName($user)" :id="$user->getKey()" :src="$user->avatarUrl()" :focus="$user->avatar_focus" size="lg" />
 
         <span class="sipma-sidebar-user-identity">
             <span class="sipma-sidebar-user-name">{{ filament()->getUserName($user) }}</span>

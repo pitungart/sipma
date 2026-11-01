@@ -146,24 +146,24 @@ class ProgramResource extends Resource
 
                 Tables\Columns\TextColumn::make('faculty.code')
                     ->label(__('admin.program.fields.faculty'))
-                    ->tooltip(fn (Program $record): ?string => $record->faculty?->name)
+                    ->description(fn (Program $record): ?string => $record->faculty?->name)
+                    // Nama fakultas bisa panjang (FMIPA); dibungkus agar kolom tidak melebar
+                    ->wrap()
+                    ->extraAttributes(['class' => 'max-w-56'])
                     ->sortable()
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('admission_fee')
                     ->label(__('admin.program.fields.admission_fee'))
                     ->formatStateUsing(fn (string $state): string => Rupiah::format($state))
+                    ->color(fn (string $state): ?string => (float) $state > 0 ? null : 'danger')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('tuition_fee')
                     ->label(__('admin.program.fields.tuition_fee'))
                     ->formatStateUsing(fn (string $state): string => Rupiah::format($state))
+                    ->color(fn (string $state): ?string => (float) $state > 0 ? null : 'danger')
                     ->sortable(),
-
-                Tables\Columns\TextColumn::make('academic_periods_count')
-                    ->label(__('admin.program.fields.periods_count'))
-                    ->counts('academicPeriods')
-                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('students_count')
                     ->label(__('admin.program.fields.students_count'))
@@ -176,6 +176,7 @@ class ProgramResource extends Resource
                 Tables\Filters\SelectFilter::make('faculty_id')
                     ->label(__('admin.program.fields.faculty'))
                     ->options(fn (): array => self::facultyOptions(Filament::auth()->user()))
+                    ->searchable()
                     ->visible(fn (): bool => Filament::auth()->user()?->hasRole(UserRole::SuperAdmin) ?? false),
 
                 Tables\Filters\TernaryFilter::make('is_active')
@@ -207,9 +208,8 @@ class ProgramResource extends Resource
             ->label($label)
             ->prefix('Rp')
             ->numeric()
-            ->minValue(0)
+            ->minValue(1) // biaya tidak boleh Rp 0: pendaftar tidak bisa disetujui tanpa tagihan
             ->step(1000)
-            ->default(0)
             ->required();
     }
 

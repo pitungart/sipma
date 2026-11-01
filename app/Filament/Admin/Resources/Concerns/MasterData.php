@@ -54,12 +54,13 @@ trait MasterData
     }
 
     /**
-     * Pengaturan bersama tabel: tab entitas di kepala kartu dan tombol tambah di empty state.
+     * Pengaturan bersama tabel: tab entitas di kepala kartu (bila lebih dari satu yang boleh dibuka,
+     * mis. Admin Fakultas hanya punya Program) dan tombol tambah di empty state.
      */
     public static function masterTable(Table $table): Table
     {
         return $table
-            ->header(fn () => view('filament.admin.master-tabs', ['tabs' => static::masterTabs()]))
+            ->header(fn () => ($tabs = static::masterTabs())->count() > 1 ? view('filament.admin.master-tabs', ['tabs' => $tabs]) : null)
             ->emptyStateIcon('lucide-database')
             ->emptyStateHeading(__('admin.master.empty_heading'))
             ->emptyStateDescription(static::canCreate() ? __('admin.master.empty_description') : __('admin.master.empty_description_readonly'))

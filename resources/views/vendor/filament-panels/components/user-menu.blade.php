@@ -2,7 +2,6 @@
     Menu profil SIPMA (menimpa view bawaan Filament agar sama dengan template):
     pemicu avatar inisial + chevron; isi: nama & peran, Profil saya, Ganti tema, Keluar.
 --}}
-@use('App\Filament\Support\InitialsAvatarProvider')
 
 @php
     $user = filament()->auth()->user();
@@ -34,7 +33,7 @@
             type="button"
             class="sipma-user-trigger"
         >
-            <span class="sipma-avatar sipma-avatar-solid" aria-hidden="true">{{ InitialsAvatarProvider::initialsOf($name) }}</span>
+            <x-sipma.avatar :name="$name" :id="$user->getKey()" :src="$user->avatarUrl()" :focus="$user->avatar_focus" size="sm" />
             <x-filament::icon icon="lucide-chevron-down" class="sipma-user-trigger-chevron" />
         </button>
     </x-slot>

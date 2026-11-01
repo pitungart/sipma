@@ -13,6 +13,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms\Get;
+use Illuminate\Support\Str;
 
 /**
  * Isian data pendaftar (UC-07) yang dipakai bersama panel admin, agen, dan nanti mahasiswa.
@@ -36,6 +37,34 @@ final class ApplicantForm
             Step::make('passport')->label(__('admin.applicant.steps.passport'))->description(__('admin.applicant.steps.passport_hint'))->icon('lucide-book-user')->columns(2)->schema(self::passportFields()),
             Step::make('program')->label(__('admin.applicant.steps.program'))->description($programHint ?? __('admin.applicant.steps.program_hint'))->icon('lucide-graduation-cap')->columns(2)->schema($programFields),
         ];
+    }
+
+    /**
+     * Indeks langkah (0–3) pertama yang memuat salah satu isian bergalat. Isian di luar tiga langkah
+     * pertama dianggap milik langkah program (isinya berbeda per panel).
+     *
+     * @param  list<string>  $errorKeys  mis. "data.full_name"
+     */
+    public static function firstStepWithError(array $errorKeys): int
+    {
+        $steps = array_map(
+            fn (array $fields): array => array_map(fn (Component $field): string => $field->getName(), $fields),
+            [self::identityFields(), self::contactFields(), self::passportFields()],
+        );
+
+        $indexes = array_map(function (string $key) use ($steps): int {
+            $name = Str::before(Str::after($key, 'data.'), '.');
+
+            foreach ($steps as $index => $names) {
+                if (in_array($name, $names, true)) {
+                    return $index;
+                }
+            }
+
+            return count($steps);
+        }, $errorKeys);
+
+        return $indexes === [] ? 0 : min($indexes);
     }
 
     /**

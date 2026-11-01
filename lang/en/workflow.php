@@ -5,8 +5,11 @@
 return [
 
     'documents' => [
-        'format' => ':types · max :max KB',
+        'format' => ':types · max :max',
         'photo_rules' => 'Formal 3×4 photo with a blue background.',
+        'template' => 'Template',
+        'template_tooltip' => 'Download the :name template',
+        'template_link' => 'Download this document\'s template.',
     ],
 
     'fields' => [
@@ -47,6 +50,8 @@ return [
         'note_required' => 'Write the reason so the applicant knows what to fix.',
         'revision_reason_required' => 'Mark at least one document for revision or write a general note.',
         'documents_not_approved' => 'Approve these documents first: :documents.',
+        'fees_not_set' => 'Cannot approve yet: the :types of :program is still Rp 0. Set the fees in Master data → Programs.',
+        'va_not_set' => 'Cannot approve yet: no VA account is set up for :types. Add one in Master data → Payment accounts.',
         'payment_not_pending' => 'This payment has already been processed.',
         'payments_outstanding' => 'The LOA can be issued after these payments are verified: :types.',
         'mou_already_approved' => 'Your MOU has already been approved.',
@@ -100,9 +105,9 @@ return [
         ],
         'and_more' => 'and :count more',
         'submission_reminder' => [
-            'title' => '{1} :period closes tomorrow|[2,*] :period closes in :days days',
-            'body_one' => 'The application for :names has not been submitted. Complete and submit it before :date.',
-            'body_many' => ':count students have not been submitted: :names. Submit before :date.',
+            'title' => '{1} Application not submitted yet|[2,*] Applications not submitted yet',
+            'body_one' => 'The application for :names has not been submitted and has not changed for :days days. Complete and submit it so KUI can review it.',
+            'body_many' => ':count students have not been submitted and have not changed for :days days: :names. Complete and submit them so KUI can review them.',
         ],
         'payment_reminder' => [
             'title' => 'Fees not paid yet',

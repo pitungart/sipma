@@ -7,16 +7,20 @@ use App\Models\Document;
 use App\Models\Loa;
 use App\Models\Mou;
 use App\Models\Payment;
+use App\Models\User;
+use App\Support\FileTemplates;
 use App\Support\PrivateFiles;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Satu pintu untuk membuka berkas privat. Setiap berkas diperiksa Policy pemiliknya;
  * Super Admin lolos lewat Gate::before. Tanpa `?download=1` berkas dibuka di browser (pratinjau).
+ * Template berkas tidak memakai Policy: isinya bukan data pribadi, cukup wajib login.
  */
 class PrivateFileController extends Controller
 {
@@ -53,6 +57,35 @@ class PrivateFileController extends Controller
         }
 
         return $this->respond($request, $loa->file_path, 'LOA-'.Str::slug($loa->student->full_name), forceDownload: true);
+    }
+
+    /**
+     * Template berkas (Sistem → Unggahan berkas): semua pengguna yang login boleh mengunduh;
+     * MOU tanpa template unggahan memakai berkas bawaan.
+     */
+    public function template(Request $request, string $name): StreamedResponse|BinaryFileResponse
+    {
+        abort_unless(FileTemplates::isValidName($name), 404);
+
+        $template = FileTemplates::find($name);
+
+        if ($template === null && $name === FileTemplates::MOU) {
+            return response()->download(resource_path(FileTemplates::MOU_FALLBACK), 'MOU-template-KUI-Udayana.pdf');
+        }
+
+        abort_if($template === null, 404);
+
+        return $this->respond($request, $template->file_path, $template->original_name, forceDownload: true);
+    }
+
+    /**
+     * Foto profil: pemiliknya sendiri dan staf panel admin (daftar pengguna) boleh melihat.
+     */
+    public function avatar(Request $request, User $user): StreamedResponse
+    {
+        abort_unless($request->user()->is($user) || $request->user()->panelId() === 'admin', 403);
+
+        return $this->respond($request, $user->avatar_path, 'avatar');
     }
 
     private function respond(Request $request, ?string $path, ?string $name, bool $forceDownload = false): StreamedResponse

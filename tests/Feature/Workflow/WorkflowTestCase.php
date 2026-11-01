@@ -4,14 +4,17 @@ namespace Tests\Feature\Workflow;
 
 use App\Enums\DocumentType;
 use App\Enums\Gender;
+use App\Enums\PaymentStatus;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Models\Agent;
 use App\Models\Country;
 use App\Models\Faculty;
+use App\Models\PaymentAccount;
 use App\Models\Program;
 use App\Models\Student;
 use App\Models\User;
+use App\Workflow\StudentWorkflow;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
@@ -33,6 +36,9 @@ abstract class WorkflowTestCase extends TestCase
         Notification::fake();
 
         Country::create(['code' => 'AU', 'name_en' => 'Australia', 'name_id' => 'Australia']);
+
+        // Rekening VA umum: tanpa ini pendaftar tidak bisa disetujui (StudentWorkflow::approve)
+        PaymentAccount::create(['bank_name' => 'Bank BPD Bali', 'account_name' => 'Universitas Udayana', 'va_number' => '8808 0000 0001', 'is_active' => true]);
     }
 
     protected function superAdmin(): User
@@ -40,7 +46,10 @@ abstract class WorkflowTestCase extends TestCase
         return User::factory()->create(['role' => UserRole::SuperAdmin]);
     }
 
-    protected function program(int $admissionFee = 0, int $tuitionFee = 0): Program
+    /**
+     * Biaya program tidak boleh Rp 0, jadi bawaannya biaya contoh.
+     */
+    protected function program(int $admissionFee = 500_000, int $tuitionFee = 4_500_000): Program
     {
         $faculty = Faculty::firstOrCreate(['code' => 'FIB'], ['name' => 'Fakultas Ilmu Budaya']);
 
@@ -51,6 +60,25 @@ abstract class WorkflowTestCase extends TestCase
             'admission_fee' => $admissionFee,
             'tuition_fee' => $tuitionFee,
         ]);
+    }
+
+    /**
+     * Semua biaya pendaftar sudah terverifikasi, jadi LOA boleh diterbitkan.
+     */
+    protected function paid(Student $student): Student
+    {
+        $workflow = app(StudentWorkflow::class);
+
+        foreach ($workflow->requiredPaymentTypes($student) as $type) {
+            $student->payments()->create([
+                'type' => $type,
+                'amount' => $workflow->feeFor($student, $type),
+                'status' => PaymentStatus::Verified,
+                'verified_at' => now(),
+            ]);
+        }
+
+        return $student;
     }
 
     protected function studentUser(): User

@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignUuid('user_id')->nullable()->unique()->constrained()->nullOnDelete(); // pendaftar mandiri
             $table->foreignUuid('agent_id')->nullable()->constrained()->nullOnDelete(); // pendaftar via agen
             $table->foreignUuid('program_id')->constrained();
-            $table->foreignUuid('academic_period_id')->nullable()->constrained()->nullOnDelete(); // periode pendaftaran
             $table->string('full_name');
             $table->string('gender', 10)->nullable(); // App\Enums\Gender
             $table->string('place_of_birth')->nullable();

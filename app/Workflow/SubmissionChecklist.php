@@ -43,7 +43,10 @@ final class SubmissionChecklist
     }
 
     /**
-     * @return Collection<int, array{key: string, kind: string, label: string, done: bool}>
+     * Butir dokumen juga membawa status versi terbarunya (null = belum diunggah), agar tampilan
+     * bisa membedakan "kosong" dari "perlu diperbaiki".
+     *
+     * @return Collection<int, array{key: string, kind: string, label: string, done: bool, status?: DocumentStatus|null}>
      */
     public function items(): Collection
     {
@@ -57,12 +60,17 @@ final class SubmissionChecklist
         ]);
 
         // Dokumen wajib dianggap ada bila versi terbarunya belum ditandai revisi/ditolak.
-        $required = collect(DocumentType::required())->map(fn (DocumentType $type): array => [
-            'key' => $type->value,
-            'kind' => 'document',
-            'label' => $type->getLabel(),
-            'done' => in_array($documents->get($type->value)?->first()?->status, [DocumentStatus::Pending, DocumentStatus::Approved], true),
-        ]);
+        $required = collect(DocumentType::required())->map(function (DocumentType $type) use ($documents): array {
+            $status = $documents->get($type->value)?->first()?->status;
+
+            return [
+                'key' => $type->value,
+                'kind' => 'document',
+                'label' => $type->getLabel(),
+                'done' => in_array($status, [DocumentStatus::Pending, DocumentStatus::Approved], true),
+                'status' => $status,
+            ];
+        });
 
         // Dokumen opsional yang diminta revisi tetap harus diunggah ulang sebelum diajukan lagi.
         $optional = $documents
@@ -73,6 +81,7 @@ final class SubmissionChecklist
                 'kind' => 'document',
                 'label' => DocumentType::from($type)->getLabel(),
                 'done' => false,
+                'status' => $versions->first()->status,
             ])
             ->values();
 

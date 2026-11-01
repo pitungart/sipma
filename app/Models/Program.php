@@ -50,12 +50,12 @@ class Program extends Model
     }
 
     /**
-     * Program aktif yang periode pendaftarannya sedang dibuka (UC-04, mahasiswa mandiri).
+     * Program yang bisa dipilih mahasiswa mandiri (UC-04): semua program aktif. Tidak ada periode
+     * pendaftaran; program dibuka di bulan yang berbeda-beda (wawancara KUI, 25 Oktober 2026).
      */
     public function scopeOpenForRegistration(Builder $query): Builder
     {
-        return $query->where('is_active', true)
-            ->whereHas('academicPeriods', fn (Builder $period) => $period->open());
+        return $query->where('is_active', true);
     }
 
     public function faculty(): BelongsTo
@@ -66,11 +66,6 @@ class Program extends Model
     public function students(): HasMany
     {
         return $this->hasMany(Student::class);
-    }
-
-    public function academicPeriods(): HasMany
-    {
-        return $this->hasMany(AcademicPeriod::class);
     }
 
     /**

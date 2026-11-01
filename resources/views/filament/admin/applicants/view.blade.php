@@ -2,7 +2,6 @@
     use App\Enums\DocumentStatus;
     use App\Enums\PaymentStatus;
     use App\Enums\StudentStatus;
-    use App\Support\Rupiah;
 
     $record = $this->record;
     $tabs = $canVerify
@@ -23,6 +22,11 @@
         </div>
     @endif
 
+    {{-- Biaya program / VA belum siap: tombol Setujui nonaktif, beri tahu sebabnya di muka --}}
+    @if ($paymentSetupProblem)
+        <x-sipma.notice tone="warning" icon="lucide-triangle-alert">{{ $paymentSetupProblem }}</x-sipma.notice>
+    @endif
+
     <div class="sipma-card sipma-clip" x-data="{ tab: 'profile' }">
         <nav class="sipma-master-tabs" role="tablist">
             @foreach ($tabs as $key => $label)
@@ -36,9 +40,9 @@
                 >
                     <span>{{ $label }}</span>
                     @if ($key === 'documents')
-                        <span class="sipma-master-tab-count">{{ $documents->filter(fn ($d) => $d['document']?->status === DocumentStatus::Approved)->count() }}/{{ $documents->count() }}</span>
-                    @elseif ($key === 'payments' && $payments->isNotEmpty())
-                        <span class="sipma-master-tab-count">{{ $payments->count() }}</span>
+                        <span class="sipma-master-tab-count">{{ $documents->filter(fn ($d) => $d['type']->isRequired() && $d['document']?->status === DocumentStatus::Approved)->count() }}/{{ count(\App\Enums\DocumentType::required()) }}</span>
+                    @elseif ($key === 'payments' && $paymentsOpen)
+                        <span class="sipma-master-tab-count">{{ $fees->where('status', PaymentStatus::Verified)->count() }}/{{ $fees->count() }}</span>
                     @endif
                 </button>
             @endforeach
@@ -60,134 +64,66 @@
             {{-- Dokumen --}}
             <section x-show="tab === 'documents'" x-cloak class="sipma-section">
                 @if ($canUpload)
-                    <p class="sipma-section-hint">{{ __('admin.applicant.upload_on_behalf') }}</p>
+                    <x-sipma.notice>{{ __('admin.applicant.upload_on_behalf') }}</x-sipma.notice>
                 @elseif (! $canReview)
-                    <p class="sipma-section-hint">{{ __('admin.applicant.review_locked', ['status' => $record->status->getLabel()]) }}</p>
+                    <x-sipma.notice tone="warning" icon="lucide-lock">{{ __('admin.applicant.review_locked', ['status' => $record->status->getLabel()]) }}</x-sipma.notice>
                 @endif
 
                 <ul class="sipma-rows">
                     @foreach ($documents as $item)
-                        @php($doc = $item['document'])
-                        <li class="sipma-row">
-                            <span @class(['sipma-tile', 'sipma-tone-'.($doc?->status->getColor() ?? 'gray')])>
-                                <x-filament::icon icon="lucide-file-text" class="sipma-tile-icon" />
-                            </span>
-                            <div class="sipma-row-main">
-                                <div class="sipma-row-title">
-                                    {{ $item['type']->getLabel() }}
-                                    @if ($item['type']->isRequired())
-                                        <span class="sipma-row-tag">{{ __('admin.applicant.required') }}</span>
-                                    @endif
-                                </div>
-                                <div class="sipma-row-meta">
-                                    @if ($doc)
-                                        {{ $doc->original_name }} · {{ \Illuminate\Support\Number::fileSize($doc->file_size ?? 0) }} · {{ $doc->updated_at->translatedFormat('j M Y') }}
-                                    @else
-                                        {{ __('admin.applicant.not_uploaded') }}
-                                    @endif
-                                </div>
-                                @if ($doc && filled($doc->revision_note) && $doc->status !== DocumentStatus::Approved)
-                                    <div class="sipma-row-note">{{ $doc->revision_note }}</div>
-                                @endif
-                            </div>
+                        @php
+                            $doc = $item['document'];
+                        @endphp
+                        <x-sipma.document-row :item="$item" wire:key="doc-{{ $item['type']->value }}-{{ $doc?->getKey() }}">
+                            {{-- Template dari KUI: hanya unduh; dikelola di Sistem → Unggahan berkas --}}
+                            @if (in_array($item['type']->value, $templates, true))
+                                {{ ($this->downloadTemplateAction)(['type' => $item['type']->value]) }}
+                            @endif
                             @if ($doc)
-                                <x-sipma.status-badge :status="$doc->status" />
-                                <div class="sipma-row-actions">
-                                    {{ ($this->previewDocumentAction)(['document' => $doc->getKey()]) }}
-                                    @if ($canUpload && $doc->status !== DocumentStatus::Approved)
-                                        {{ ($this->uploadDocumentAction)(['type' => $item['type']->value]) }}
-                                    @endif
-                                    @if ($canReview)
-                                        @if ($doc->status !== DocumentStatus::Approved)
-                                            {{ ($this->approveDocumentAction)(['document' => $doc->getKey()]) }}
-                                        @endif
-                                        @if ($doc->status !== DocumentStatus::Revision)
-                                            {{ ($this->reviseDocumentAction)(['document' => $doc->getKey()]) }}
-                                        @endif
-                                        @if ($doc->status !== DocumentStatus::Rejected)
-                                            {{ ($this->rejectDocumentAction)(['document' => $doc->getKey()]) }}
-                                        @endif
-                                    @endif
-                                </div>
-                            @else
-                                <span class="sipma-status sipma-tone-gray"><span class="sipma-status-dot"></span>{{ __('admin.applicant.missing') }}</span>
-                                @if ($canUpload)
-                                    <div class="sipma-row-actions">
-                                        {{ ($this->uploadDocumentAction)(['type' => $item['type']->value]) }}
-                                    </div>
+                                {{ ($this->previewDocumentAction)(['document' => $doc->getKey()]) }}
+                            @endif
+                            @if ($canUpload && $doc?->status !== DocumentStatus::Approved)
+                                {{ ($this->uploadDocumentAction)(['type' => $item['type']->value]) }}
+                            @endif
+                            @if ($doc && $canReview)
+                                @if ($doc->status !== DocumentStatus::Approved)
+                                    {{ ($this->approveDocumentAction)(['document' => $doc->getKey()]) }}
+                                @endif
+                                @if ($doc->status !== DocumentStatus::Revision)
+                                    {{ ($this->reviseDocumentAction)(['document' => $doc->getKey()]) }}
+                                @endif
+                                @if ($doc->status !== DocumentStatus::Rejected)
+                                    {{ ($this->rejectDocumentAction)(['document' => $doc->getKey()]) }}
                                 @endif
                             @endif
-                        </li>
+                        </x-sipma.document-row>
                     @endforeach
                 </ul>
             </section>
 
             {{-- Pembayaran --}}
             <section x-show="tab === 'payments'" x-cloak class="sipma-section">
-                @if (! in_array($record->status, [StudentStatus::Approved, StudentStatus::LoaIssued], true))
-                    <p class="sipma-section-hint">{{ __('admin.applicant.payment_after_approval') }}</p>
-                @elseif ($fees->isEmpty())
-                    <p class="sipma-section-hint">{{ __('admin.applicant.no_fees') }}</p>
-                @endif
-
-                @if ($fees->isNotEmpty())
-                    <ul class="sipma-fees">
+                @if (! $paymentsOpen)
+                    <x-sipma.payments-locked :buttons="false" />
+                @else
+                    <ul class="sipma-rows">
                         @foreach ($fees as $fee)
-                            <li>
-                                <span>{{ $fee['label'] }}</span>
-                                <b>{{ $fee['amount'] }}</b>
-                                @if ($fee['status'])
-                                    <x-sipma.status-badge :status="$fee['status']" />
-                                @else
-                                    <span class="sipma-status sipma-tone-gray"><span class="sipma-status-dot"></span>{{ __('admin.payment.unpaid') }}</span>
+                            @php
+                                $payment = $fee['payment'];
+                            @endphp
+                            <x-sipma.fee-row :fee="$fee" wire:key="fee-{{ $fee['type']->value }}-{{ $payment?->getKey() }}">
+                                @if ($payment)
+                                    {{ ($this->previewPaymentAction)(['payment' => $payment->getKey()]) }}
                                 @endif
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
-
-                <ul class="sipma-rows">
-                    @foreach ($payments as $payment)
-                        <li class="sipma-row">
-                            <span class="sipma-tile sipma-tone-{{ $payment->status->getColor() }}">
-                                <x-filament::icon icon="lucide-receipt" class="sipma-tile-icon" />
-                            </span>
-                            <div class="sipma-row-main">
-                                <div class="sipma-row-title">
-                                    {{ $payment->type->getLabel() }} · {{ Rupiah::format($payment->amount) }}
-                                    @if ($payment->receipt_number)
-                                        <span class="sipma-row-tag">{{ __('admin.payment.fields.receipt_number') }} {{ $payment->receipt_number }}</span>
-                                    @endif
-                                </div>
-                                <div class="sipma-row-meta">
-                                    {{ collect([$payment->paymentAccount?->bank_name, $payment->va_number ? 'VA '.$payment->va_number : null])->filter()->implode(' · ') ?: __('admin.payment.no_account') }}
-                                    · {{ $payment->created_at->translatedFormat('j M Y, H.i') }}
-                                </div>
-                                @if ($payment->status === PaymentStatus::Rejected && filled($payment->rejection_note))
-                                    <div class="sipma-row-note">{{ $payment->rejection_note }}</div>
-                                @endif
-                            </div>
-                            <x-sipma.status-badge :status="$payment->status" />
-                            <div class="sipma-row-actions">
-                                {{ ($this->previewPaymentAction)(['payment' => $payment->getKey()]) }}
-                                @if ($payment->status === PaymentStatus::Pending)
+                                @if ($payment?->status === PaymentStatus::Pending)
                                     {{ ($this->verifyPaymentAction)(['payment' => $payment->getKey()]) }}
                                     {{ ($this->rejectPaymentAction)(['payment' => $payment->getKey()]) }}
                                 @endif
-                            </div>
-                        </li>
-                    @endforeach
-                </ul>
+                            </x-sipma.fee-row>
+                        @endforeach
+                    </ul>
 
-                @if ($record->loa)
-                    <div class="sipma-row sipma-row-loa">
-                        <span class="sipma-tile sipma-tone-success"><x-filament::icon icon="lucide-file-check" class="sipma-tile-icon" /></span>
-                        <div class="sipma-row-main">
-                            <div class="sipma-row-title">{{ __('admin.applicant.loa') }} {{ $record->loa->loa_number }}</div>
-                            <div class="sipma-row-meta">{{ $record->loa->status->getLabel() }} · {{ $record->loa->issued_at?->translatedFormat('j M Y') }}</div>
-                        </div>
-                        <a href="{{ route('files.loa', $record->loa) }}" class="sipma-link">{{ __('admin.applicant.actions.download') }}</a>
-                    </div>
+                    <x-sipma.loa-row :loa="$record->loa" />
                 @endif
             </section>
         @endif
@@ -197,17 +133,7 @@
             @if ($history->isEmpty())
                 <x-sipma.empty icon="lucide-history" :title="__('admin.dashboard.activity_empty')" />
             @else
-                <ul class="sipma-timeline">
-                    @foreach ($history as $item)
-                        <li class="sipma-timeline-item">
-                            <span class="sipma-timeline-dot sipma-tone-{{ $item['tone'] }}"></span>
-                            <div>
-                                <div class="sipma-timeline-text">{{ $item['text'] }}</div>
-                                <div class="sipma-timeline-time">{{ $item['at'] }} · {{ $item['time'] }}</div>
-                            </div>
-                        </li>
-                    @endforeach
-                </ul>
+                <x-sipma.activity-timeline :items="$history" with-date />
             @endif
         </section>
     </div>

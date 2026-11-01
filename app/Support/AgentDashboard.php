@@ -6,8 +6,6 @@ use App\Enums\DocumentStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StudentStatus;
 use App\Filament\Agent\Resources\StudentResource;
-use App\Filament\Support\InitialsAvatarProvider;
-use App\Models\AcademicPeriod;
 use App\Models\Agent;
 use App\Models\Student;
 use App\Workflow\SubmissionChecklist;
@@ -16,7 +14,7 @@ use Illuminate\Support\Collection;
 
 /**
  * Isi dasbor kerja agen setelah MOU disetujui (§3 Dashboard agen): kartu angka per tahap,
- * daftar "perlu tindakan", dan program MOU beserta periode yang sedang dibuka.
+ * daftar "perlu tindakan", dan program yang dicakup MOU.
  */
 final class AgentDashboard
 {
@@ -92,16 +90,13 @@ final class AgentDashboard
     }
 
     /**
-     * Program yang dicakup MOU, dengan periode pendaftaran yang sedang dibuka (bila ada).
+     * Nama program aktif yang dicakup MOU.
      *
-     * @return Collection<int, array{name: string, period: ?AcademicPeriod}>
+     * @return Collection<int, string>
      */
     public function programs(): Collection
     {
-        return $this->agent->allowedPrograms()->get()->map(fn ($program): array => [
-            'name' => $program->name,
-            'period' => AcademicPeriod::currentFor($program->getKey()),
-        ]);
+        return $this->agent->allowedPrograms()->pluck('name');
     }
 
     /**
@@ -169,8 +164,7 @@ final class AgentDashboard
     {
         return [
             'name' => $student->full_name,
-            'initials' => InitialsAvatarProvider::initialsOf($student->full_name),
-            'avatarTone' => InitialsAvatarProvider::toneOf($student->full_name),
+            'id' => $student->getKey(),
             'program' => $student->program?->name,
             'reason' => $reason,
             'tone' => $tone,

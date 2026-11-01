@@ -126,9 +126,10 @@ class UserResource extends Resource
             ->defaultSort('name')
             ->searchPlaceholder(__('admin.common.search', ['label' => Str::lower(__('admin.user.plural'))]))
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                // Avatar inisial + nama + email (template: sipma-person).
+                Tables\Columns\ViewColumn::make('name')
                     ->label(__('admin.user.fields.name'))
-                    ->description(fn (User $record): string => $record->email)
+                    ->view('filament.admin.columns.user-identity')
                     ->searchable(['name', 'email'])
                     ->sortable(),
 

@@ -3,7 +3,6 @@
 namespace Tests\Feature\MasterData;
 
 use App\Enums\PaymentType;
-use App\Models\AcademicPeriod;
 use App\Models\Country;
 use App\Models\Faculty;
 use App\Models\PaymentAccount;
@@ -64,16 +63,12 @@ class MasterDataTest extends TestCase
         $this->assertNotNull(Program::where('code', 'ND-BIPA')->first()->faculty_id);
     }
 
-    public function test_only_periods_open_today_are_scoped_as_open(): void
+    public function test_every_active_program_is_open_for_registration(): void
     {
-        $program = $this->program();
+        $open = $this->program('ND-OPEN');
+        $this->program('ND-OFF')->update(['is_active' => false]);
 
-        $open = $this->period($program, 'OPEN', now()->subDay(), now()->addDay());
-        $this->period($program, 'CLOSED', now()->subMonth(), now()->subDay());
-        $this->period($program, 'SOON', now()->addWeek(), now()->addMonth());
-        $this->period($program, 'INACTIVE', now()->subDay(), now()->addDay(), isActive: false);
-
-        $this->assertSame([$open->id], AcademicPeriod::open()->pluck('id')->all());
+        $this->assertSame([$open->id], Program::openForRegistration()->pluck('id')->all());
     }
 
     public function test_payment_account_scope_matches_specific_and_general_accounts(): void
@@ -116,18 +111,6 @@ class MasterDataTest extends TestCase
             'faculty_id' => $faculty->id,
             'name' => 'Program '.$code,
             'code' => $code,
-        ]);
-    }
-
-    private function period(Program $program, string $code, $opens, $closes, bool $isActive = true): AcademicPeriod
-    {
-        return AcademicPeriod::create([
-            'program_id' => $program->id,
-            'name' => $code,
-            'code' => $code,
-            'registration_opens_at' => $opens,
-            'registration_closes_at' => $closes,
-            'is_active' => $isActive,
         ]);
     }
 }

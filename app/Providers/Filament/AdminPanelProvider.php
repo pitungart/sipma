@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Admin\Pages\Dashboard;
 use App\Filament\Auth\RedirectToLogin;
+use App\Filament\Pages\Profile;
 use App\Filament\Support\SipmaTheme;
 use App\Http\Middleware\SetLocale;
 use Filament\Http\Middleware\Authenticate;
@@ -30,6 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login(RedirectToLogin::class) // login terpadu di /login
             ->passwordReset()
+            ->profile(Profile::class, isSimple: false) // Profil saya (fase 1: admin)
             // Grup tampil sebagai label bagian kecil (template); ikon ada di tiap item, jadi
             // grup tidak boleh berikon (Filament menolak ikon di grup dan item sekaligus).
             ->navigationGroups([

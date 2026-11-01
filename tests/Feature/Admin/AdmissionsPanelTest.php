@@ -11,18 +11,25 @@ use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Filament\Admin\Resources\AgentResource;
 use App\Filament\Admin\Resources\PaymentResource;
+use App\Filament\Admin\Resources\ProgramResource;
 use App\Filament\Admin\Resources\StudentResource;
 use App\Filament\Admin\Resources\StudentResource\Pages\ListApplicants;
 use App\Filament\Admin\Resources\StudentResource\Pages\ViewApplicant;
 use App\Models\Faculty;
+use App\Models\PaymentAccount;
 use App\Models\Student;
 use App\Models\User;
 use App\Notifications\ApplicationSubmitted;
+use App\Support\FileTemplates;
 use App\Workflow\MouWorkflow;
 use App\Workflow\StudentWorkflow;
 use App\Workflow\SubmissionChecklist;
+use Filament\Actions\CreateAction;
 use Filament\Facades\Filament;
+use Filament\Livewire\DatabaseNotifications;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Notifications\Channels\DatabaseChannel;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\Feature\Workflow\WorkflowTestCase;
 
@@ -35,9 +42,9 @@ class AdmissionsPanelTest extends WorkflowTestCase
         Filament::setCurrentPanel(Filament::getPanel('admin'));
     }
 
-    private function submitted(?User $owner = null, int $admissionFee = 0): Student
+    private function submitted(?User $owner = null): Student
     {
-        $student = $this->student($this->program(admissionFee: $admissionFee), owner: $owner);
+        $student = $this->student($this->program(), owner: $owner);
 
         foreach (DocumentType::required() as $type) {
             app(StudentWorkflow::class)->uploadDocument($student, $type, $this->file($type));
@@ -91,6 +98,29 @@ class AdmissionsPanelTest extends WorkflowTestCase
             ->assertSee('sipma-master-tabs', false);
     }
 
+    public function test_detail_page_offers_document_templates_for_download(): void
+    {
+        FileTemplates::store(DocumentType::GuarantorFinancial->value, UploadedFile::fake()->create('Penjamin.pdf', 40, 'application/pdf'));
+        $student = $this->submitted($this->studentUser());
+
+        Livewire::actingAs($this->superAdmin())
+            ->test(ViewApplicant::class, ['record' => $student->getRouteKey()])
+            ->assertSeeHtml(FileTemplates::url(DocumentType::GuarantorFinancial->value))
+            ->assertDontSeeHtml(FileTemplates::url(DocumentType::Transcript->value));
+    }
+
+    public function test_detail_page_lists_optional_documents_even_when_empty(): void
+    {
+        $student = $this->submitted();
+        $this->assertFalse($student->documents()->where('type', DocumentType::Transcript)->exists());
+
+        Livewire::actingAs($this->superAdmin())
+            ->test(ViewApplicant::class, ['record' => $student->getRouteKey()])
+            ->assertSee(DocumentType::Transcript->getLabel())
+            ->assertSee(DocumentType::Recommendation->getLabel())
+            ->assertSee(__('agent.students.optional'));
+    }
+
     public function test_full_review_from_the_detail_page(): void
     {
         $owner = $this->studentUser();
@@ -112,6 +142,7 @@ class AdmissionsPanelTest extends WorkflowTestCase
         $page->assertActionEnabled('approve')->callAction('approve');
         $this->assertSame(StudentStatus::Approved, $student->fresh()->status);
 
+        $this->paid($student->fresh());
         $page->callAction('issueLoa', data: [
             'file' => UploadedFile::fake()->create('loa.pdf', 200, 'application/pdf'),
             'loa_number' => 'LOA/KUI/001',
@@ -157,6 +188,50 @@ class AdmissionsPanelTest extends WorkflowTestCase
             ->assertForbidden();
 
         $this->assertSame(DocumentStatus::Pending, $student->documents()->first()->status);
+    }
+
+    public function test_enrollment_period_is_shown_and_corrected_after_submit(): void
+    {
+        $this->travelTo(now()->setDate(2026, 11, 3));
+        $student = $this->submitted();
+
+        $page = Livewire::actingAs($this->superAdmin())->test(ViewApplicant::class, ['record' => $student->getRouteKey()]);
+        $page->assertSee('November 2026')
+            ->assertActionVisible('editEnrollment')
+            ->assertActionHidden('editApplicant') // data lain tetap terkunci
+            ->callAction('editEnrollment', data: ['enrollment_month' => 1, 'enrollment_year' => null])
+            ->assertHasActionErrors(['enrollment_year' => 'required_with'])
+            ->callAction('editEnrollment', data: ['enrollment_month' => 1, 'enrollment_year' => 2027])
+            ->assertHasNoActionErrors();
+
+        $this->assertSame([1, 2027], [$student->fresh()->enrollment_month, $student->fresh()->enrollment_year]);
+
+        // Admin Fakultas hanya membaca
+        $own = $this->facultyAdmin($student->program->faculty);
+        Livewire::actingAs($own)->test(ViewApplicant::class, ['record' => $student->getRouteKey()])
+            ->assertActionHidden('editEnrollment');
+    }
+
+    public function test_list_filters_and_sorts_by_enrollment_period(): void
+    {
+        $november = $this->submitted();
+        $november->update(['enrollment_month' => 11, 'enrollment_year' => 2026]);
+        $february = $this->submitted();
+        $february->update(['enrollment_month' => 2, 'enrollment_year' => 2027]);
+        $draft = $this->student();
+
+        Livewire::actingAs($this->superAdmin())
+            ->test(ListApplicants::class)
+            ->assertTableColumnFormattedStateSet('enrollment_period', 'November 2026', $november)
+            ->sortTable('enrollment_period')
+            ->assertCanSeeTableRecords([$draft, $november, $february], inOrder: true)
+            ->filterTable('enrollment_year', 2027)
+            ->assertCanSeeTableRecords([$february])
+            ->assertCanNotSeeTableRecords([$november, $draft])
+            ->resetTableFilters()
+            ->filterTable('enrollment_month', 11)
+            ->assertCanSeeTableRecords([$november])
+            ->assertCanNotSeeTableRecords([$february, $draft]);
     }
 
     public function test_faculty_admin_cannot_open_another_faculty_applicant(): void
@@ -308,6 +383,7 @@ class AdmissionsPanelTest extends WorkflowTestCase
         $student = Student::query()->where('email', 'quick@example.test')->firstOrFail();
         $this->assertSame(StudentStatus::Draft, $student->status);
         $this->assertNull($student->date_of_birth);
+        $this->assertNull($student->enrollment_month, 'left empty, filled in on submit');
         $this->assertFalse(SubmissionChecklist::for($student)->isComplete(), 'the rest is checked on submit');
     }
 
@@ -343,6 +419,27 @@ class AdmissionsPanelTest extends WorkflowTestCase
             ->callTableAction('verify', $again);
 
         $this->assertSame(PaymentStatus::Verified, $again->fresh()->status);
+    }
+
+    public function test_detail_page_payments_tab_matches_the_owner_view(): void
+    {
+        $locked = $this->submitted();
+
+        Livewire::actingAs($this->superAdmin())
+            ->test(ViewApplicant::class, ['record' => $locked->getRouteKey()])
+            ->assertSee(__('agent.students.payments.fees_locked_body'))
+            ->assertDontSee(__('agent.students.payments.pay_now'));
+
+        $student = $this->student($this->program(admissionFee: 250000), StudentStatus::Approved);
+        $payment = app(StudentWorkflow::class)->submitPayment($student, PaymentType::AdmissionFee, $this->pdf());
+
+        Livewire::actingAs($this->superAdmin())
+            ->test(ViewApplicant::class, ['record' => $student->getRouteKey()])
+            ->assertSee(PaymentType::AdmissionFee->getLabel())
+            ->assertSee(__('agent.students.payments.loa_waiting'))
+            ->callAction('verifyPayment', arguments: ['payment' => $payment->getKey()]);
+
+        $this->assertSame(PaymentStatus::Verified, $payment->fresh()->status);
     }
 
     public function test_mou_is_approved_from_the_agency_list(): void
@@ -387,5 +484,70 @@ class AdmissionsPanelTest extends WorkflowTestCase
             StudentResource::getUrl('view', ['record' => $student], panel: 'admin'),
             $notification->toMail($admin)->actionUrl,
         );
+    }
+
+    public function test_notification_bell_lists_and_marks_notifications(): void
+    {
+        $admin = $this->superAdmin();
+        $student = $this->submitted();
+        // Notification::fake() aktif di test dasar: simpan lewat channel database secara langsung
+        $notification = new ApplicationSubmitted($student);
+        $notification->id = (string) Str::uuid();
+        app(DatabaseChannel::class)->send($admin, $notification);
+
+        Livewire::actingAs($admin)
+            ->test(DatabaseNotifications::class)
+            ->assertSee(__('admin.shell.notifications.unread', ['count' => 1]))
+            ->assertSee($student->full_name)
+            ->assertSeeHtml(StudentResource::getUrl('view', ['record' => $student], panel: 'admin'))
+            ->call('markNotificationAsRead', $admin->notifications()->value('id'))
+            ->assertDontSee(__('admin.shell.notifications.unread', ['count' => 1]))
+            ->call('clearNotifications')
+            ->assertSee(__('admin.shell.notifications.empty'));
+
+        $this->assertSame(0, $admin->notifications()->count());
+    }
+
+    public function test_approve_is_disabled_until_fees_and_va_are_set(): void
+    {
+        $student = $this->submitted();
+        $student->program->update(['admission_fee' => 0]);
+        $page = Livewire::actingAs($this->superAdmin())->test(ViewApplicant::class, ['record' => $student->getRouteKey()]);
+        $page->callAction('startReview');
+
+        foreach ($student->documents as $document) {
+            $page->callAction('approveDocument', arguments: ['document' => $document->getKey()]);
+        }
+
+        $message = __('workflow.errors.fees_not_set', ['types' => PaymentType::AdmissionFee->getLabel(), 'program' => $student->program->name]);
+        $page->assertActionDisabled('approve')->assertSee($message);
+
+        // Kanban memakai aturan yang sama
+        Livewire::test(ListApplicants::class)
+            ->call('moveCard', $student->getKey(), StudentStatus::Approved->value)
+            ->assertNotified($message);
+        $this->assertSame(StudentStatus::InReview, $student->fresh()->status);
+
+        $student->program->update(['admission_fee' => 250_000]);
+        PaymentAccount::query()->delete();
+        Livewire::test(ViewApplicant::class, ['record' => $student->getRouteKey()])
+            ->assertActionDisabled('approve')
+            ->assertSee(__('workflow.errors.va_not_set', ['types' => PaymentType::AdmissionFee->getLabel().', '.PaymentType::TuitionFee->getLabel()]));
+    }
+
+    public function test_program_fees_must_be_above_zero(): void
+    {
+        Livewire::actingAs($this->superAdmin())
+            ->test(ProgramResource\Pages\ManagePrograms::class)
+            ->callAction(CreateAction::class, data: [
+                'faculty_id' => Faculty::create(['name' => 'Fakultas Teknik', 'code' => 'FT'])->id,
+                'name' => 'Gratis',
+                'code' => 'ND-FREE',
+                'admission_fee' => 0,
+                'tuition_fee' => 0,
+            ])
+            ->assertHasActionErrors(['admission_fee' => 'min', 'tuition_fee' => 'min']);
+
+        $this->assertDatabaseMissing('programs', ['code' => 'ND-FREE']);
     }
 }

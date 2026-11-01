@@ -29,6 +29,8 @@ final class ApplicantExport
                 __('admin.program.label'),
                 __('admin.dashboard.source'),
                 __('admin.dashboard.status'),
+                __('admin.applicant.fields.enrollment_month'),
+                __('admin.applicant.fields.enrollment_year'),
                 __('admin.applicant.fields.submitted_at'),
                 __('admin.dashboard.registered_at'),
             ]);
@@ -47,6 +49,8 @@ final class ApplicantExport
                     $student->program?->name,
                     $student->agent?->company_name ?? __('admin.dashboard.source_self'),
                     $student->status->getLabel(),
+                    $student->enrollment_month,
+                    $student->enrollment_year,
                     $student->submitted_at?->toDateTimeString(),
                     $student->created_at?->toDateTimeString(),
                 ]));

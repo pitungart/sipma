@@ -8,13 +8,16 @@ use App\Enums\NumberType;
 use App\Enums\StudentStatus;
 use App\Filament\Admin\Resources\StudentResource;
 use App\Filament\Support\FormModal;
+use App\Filament\Support\TemplateDownload;
 use App\Models\Document;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Support\ActivityDescriber;
 use App\Support\ApplicantDetails;
+use App\Support\FileTemplates;
 use App\Support\Numbering;
 use App\Support\Rupiah;
+use App\Support\UploadLimits;
 use App\Workflow\StudentWorkflow;
 use App\Workflow\WorkflowException;
 use Closure;
@@ -87,6 +90,21 @@ class ViewApplicant extends ViewRecord
                 ->visible(fn (): bool => StudentResource::canEdit($this->record))
                 ->url(fn (): string => StudentResource::getUrl('edit', ['record' => $this->record])),
 
+            // Setelah diajukan form ubah terkunci; periode masuk tetap bisa dikoreksi untuk pelaporan
+            FormModal::apply(Action::make('editEnrollment'))
+                ->label(__('admin.applicant.actions.edit_enrollment'))
+                ->icon('lucide-calendar-days')
+                ->color('gray')
+                ->visible(fn (): bool => $this->canVerify() && ! $this->record->status->isEditable())
+                ->modalHeading(__('admin.applicant.actions.edit_enrollment'))
+                ->modalDescription(__('admin.applicant.enrollment_modal'))
+                ->modalIcon('lucide-calendar-days')
+                ->modalWidth(MaxWidth::Large)
+                ->modalSubmitActionLabel(__('admin.master.save'))
+                ->fillForm(fn (): array => $this->record->only(['enrollment_month', 'enrollment_year']))
+                ->form(StudentResource::enrollmentFields(beforeSubmit: false))
+                ->action(fn (array $data) => $this->run(fn () => $this->record->update($data), 'enrollment_updated')),
+
             Action::make('submit')
                 ->label(__('admin.applicant.actions.submit'))
                 ->icon('lucide-send')
@@ -127,10 +145,8 @@ class ViewApplicant extends ViewRecord
                 ->label(__('admin.applicant.actions.approve'))
                 ->icon('lucide-circle-check')
                 ->visible($visibleWhen(StudentStatus::InReview))
-                ->disabled(fn (): bool => $this->unapprovedRequired()->isNotEmpty())
-                ->tooltip(fn (): ?string => $this->unapprovedRequired()->isNotEmpty()
-                    ? __('workflow.errors.documents_not_approved', ['documents' => $this->unapprovedRequired()->map->getLabel()->implode(', ')])
-                    : null)
+                ->disabled(fn (): bool => $this->approvalBlocker() !== null)
+                ->tooltip(fn (): ?string => $this->approvalBlocker())
                 ->requiresConfirmation()
                 ->modalHeading(__('admin.applicant.approve_heading', ['name' => $this->record->full_name]))
                 ->modalDescription(__('admin.applicant.approve_description'))
@@ -188,11 +204,12 @@ class ViewApplicant extends ViewRecord
             ->label(fn (array $arguments): string => $this->record->documents()->where('type', $type($arguments))->exists()
                 ? __('admin.applicant.actions.replace_document')
                 : __('admin.applicant.actions.upload_document'))
-            ->icon('lucide-upload')
-            ->color('gray')
+            // "Unggah" dan "Ganti" sama-sama primary solid; ganti berikon panah memutar
+            ->icon(fn (array $arguments): string => $this->record->documents()->where('type', $type($arguments))->exists() ? 'lucide-refresh-cw' : 'lucide-upload')
+            ->color('primary')
             ->size('sm')
             ->modalHeading(fn (array $arguments): string => __('admin.applicant.actions.upload_document').' · '.$type($arguments)->getLabel())
-            ->modalDescription(fn (array $arguments): string => $type($arguments)->hint())
+            ->modalDescription(fn (array $arguments): string|Htmlable => TemplateDownload::uploadHint($type($arguments)))
             ->modalIcon('lucide-upload')
             ->modalWidth(MaxWidth::Large)
             ->modalSubmitActionLabel(__('admin.master.save'))
@@ -202,7 +219,7 @@ class ViewApplicant extends ViewRecord
                     ->acceptedFileTypes(collect($type($arguments)->extensions())
                         ->map(fn (string $ext): string => $ext === 'pdf' ? 'application/pdf' : 'image/'.($ext === 'jpg' ? 'jpeg' : $ext))
                         ->unique()->values()->all())
-                    ->maxSize(Document::MAX_FILE_SIZE_KB)
+                    ->maxSize(UploadLimits::document($type($arguments)))
                     ->storeFiles(false) // StudentWorkflow menyimpannya di disk privat
                     ->required(),
             ])
@@ -211,6 +228,15 @@ class ViewApplicant extends ViewRecord
 
                 $this->run(fn (StudentWorkflow $w) => $w->uploadDocument($this->record, $type($arguments), $data['file']), 'document_uploaded');
             });
+    }
+
+    /**
+     * Unduh template dokumen (hanya unduh; dikelola Super Admin di Sistem → Unggahan berkas).
+     */
+    public function downloadTemplateAction(): Action
+    {
+        // Ikon saja: baris dokumen admin sudah memuat tombol pratinjau dan review
+        return TemplateDownload::action()->iconButton();
     }
 
     public function previewDocumentAction(): Action
@@ -329,18 +355,40 @@ class ViewApplicant extends ViewRecord
      */
     protected function getViewData(): array
     {
-        $student = $this->record->loadMissing(['program', 'academicPeriod', 'nationality', 'homeUniversityCountry', 'agent', 'loa']);
+        $student = $this->record->loadMissing(['program', 'nationality', 'homeUniversityCountry', 'agent', 'loa']);
 
         return [
             'canVerify' => $this->canVerify(),
             'canReview' => $this->canVerify() && $student->status === StudentStatus::InReview,
             'canUpload' => $this->canVerify() && $student->status->isEditable(),
-            'profile' => ApplicantDetails::profile($student),
+            'profile' => ApplicantDetails::profile($student, withEnrollment: true),
             'documents' => ApplicantDetails::documents($student),
+            'templates' => FileTemplates::uploaded(),
             'fees' => ApplicantDetails::fees($student),
-            'payments' => $student->payments()->with('paymentAccount')->latest()->get(),
+            'paymentsOpen' => in_array($student->status, [StudentStatus::Approved, StudentStatus::LoaIssued], true),
+            'paymentSetupProblem' => $this->canVerify() && $student->status === StudentStatus::InReview ? $this->paymentSetupMessage() : null,
             'history' => ActivityDescriber::forStudent($student),
         ];
+    }
+
+    /**
+     * Alasan tombol Setujui dinonaktifkan: dokumen wajib belum disetujui, atau biaya/VA program
+     * belum siap (aturan yang sama dengan StudentWorkflow::approve()).
+     */
+    private function approvalBlocker(): ?string
+    {
+        if ($this->unapprovedRequired()->isNotEmpty()) {
+            return __('workflow.errors.documents_not_approved', ['documents' => $this->unapprovedRequired()->map->getLabel()->implode(', ')]);
+        }
+
+        return $this->paymentSetupMessage();
+    }
+
+    private function paymentSetupMessage(): ?string
+    {
+        $problem = app(StudentWorkflow::class)->paymentSetupProblem($this->record);
+
+        return $problem ? __("workflow.errors.{$problem[0]}", $problem[1]) : null;
     }
 
     /**

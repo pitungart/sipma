@@ -8,7 +8,6 @@ use App\Enums\StudentStatus;
 use App\Filament\Admin\Resources\Pages\ListWithStatusTabs;
 use App\Filament\Admin\Resources\StudentResource;
 use App\Filament\Support\FormModal;
-use App\Filament\Support\InitialsAvatarProvider;
 use App\Models\Student;
 use App\Support\ApplicantExport;
 use App\Workflow\StudentWorkflow;
@@ -176,8 +175,6 @@ class ListApplicants extends ListWithStatusTabs
             'id' => $student->getKey(),
             'url' => StudentResource::getUrl('view', ['record' => $student]),
             'name' => $student->full_name,
-            'initials' => InitialsAvatarProvider::initialsOf($student->full_name),
-            'tone' => InitialsAvatarProvider::toneOf($student->full_name),
             'country' => collect([$student->registration_number, $student->nationality?->name])->filter()->implode(' · ') ?: null,
             'program' => $student->program?->name,
             'agent' => $student->agent?->company_name ?? __('admin.dashboard.source_self'),

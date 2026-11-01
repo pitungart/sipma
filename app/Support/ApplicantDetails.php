@@ -19,9 +19,11 @@ use Illuminate\Support\Collection;
 final class ApplicantDetails
 {
     /**
+     * Periode masuk hanya untuk staf (pelaporan); agen & mahasiswa tidak melihatnya.
+     *
      * @return list<array{label: string, value: ?string, mono?: bool}>
      */
-    public static function profile(Student $s, bool $withSource = true): array
+    public static function profile(Student $s, bool $withSource = true, bool $withEnrollment = false): array
     {
         $date = fn ($value): ?string => $value?->translatedFormat('j F Y');
 
@@ -38,14 +40,14 @@ final class ApplicantDetails
             ['label' => __('workflow.fields.passport_number'), 'value' => $s->passport_number, 'mono' => true],
             ['label' => __('admin.applicant.fields.passport_validity'), 'value' => collect([$date($s->date_of_issued_passport), $date($s->date_of_passport_expiry)])->filter()->implode(' – ') ?: null],
             ['label' => __('admin.program.label'), 'value' => $s->program?->name],
-            ['label' => __('admin.period.label'), 'value' => $s->academicPeriod?->name],
+            $withEnrollment ? ['label' => __('admin.applicant.fields.enrollment_period'), 'value' => EnrollmentPeriod::label($s) ?? ($s->status->isEditable() ? __('admin.applicant.enrollment_auto') : null)] : null,
             $withSource ? ['label' => __('admin.dashboard.source'), 'value' => $s->agent?->company_name ?? __('admin.dashboard.source_self')] : null,
             ['label' => __('admin.applicant.fields.submitted_at'), 'value' => $s->submitted_at?->translatedFormat('j F Y, H.i')],
         ]));
     }
 
     /**
-     * Biaya wajib program (> Rp 0) beserta rekening tujuan dan bukti bayar terbarunya.
+     * Semua biaya program beserta rekening tujuan dan bukti bayar terbarunya.
      *
      * @return Collection<int, array{type: PaymentType, label: string, amount: string, account: ?PaymentAccount, payment: ?Payment, status: ?PaymentStatus}>
      */
@@ -69,16 +71,15 @@ final class ApplicantDetails
     }
 
     /**
-     * Semua jenis wajib (termasuk yang belum diunggah), lalu jenis opsional: yang diminta
-     * ($optional) selalu tampil, sisanya hanya bila sudah diunggah.
+     * Semua jenis wajib dan opsional yang ditawarkan (termasuk yang belum diunggah), lalu jenis
+     * lain hanya bila sudah diunggah. Sama untuk admin, agen, dan mahasiswa.
      *
-     * @param  list<DocumentType>  $optional
      * @return Collection<int, array{type: DocumentType, document: ?Document}>
      */
-    public static function documents(Student $student, array $optional = []): Collection
+    public static function documents(Student $student): Collection
     {
         $uploaded = $student->documents()->latest()->get();
-        $shown = [...DocumentType::required(), ...$optional];
+        $shown = [...DocumentType::required(), ...DocumentType::optional()];
 
         $listed = collect($shown)->map(fn (DocumentType $type): array => [
             'type' => $type,

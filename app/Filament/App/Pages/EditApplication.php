@@ -3,11 +3,11 @@
 namespace App\Filament\App\Pages;
 
 use App\Filament\App\Concerns\InteractsWithApplication;
+use App\Filament\Concerns\JumpsToInvalidWizardStep;
 use App\Filament\Support\ApplicantForm;
-use App\Models\AcademicPeriod;
 use App\Models\Student;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Wizard;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -17,13 +17,17 @@ use Illuminate\Support\Facades\Gate;
 
 /**
  * Ubah data pendaftaran sendiri selama draf / perlu revisi (StudentPolicy::update).
+ * Wizard empat langkah yang sama dengan Mulai pendaftaran (keputusan 26 Oktober 2026) agar terasa familier;
+ * semua langkah bisa dilompati dan Simpan/Batal tetap di bawah wizard sehingga bisa disimpan dari langkah mana pun.
  *
  * @property Form $form
  */
 class EditApplication extends Page implements HasForms
 {
     use InteractsWithApplication;
-    use InteractsWithForms;
+    use InteractsWithForms, JumpsToInvalidWizardStep {
+        JumpsToInvalidWizardStep::onValidationError insteadof InteractsWithForms;
+    }
 
     protected static ?string $slug = 'application/edit';
 
@@ -63,13 +67,12 @@ class EditApplication extends Page implements HasForms
         return $form
             ->statePath('data')
             ->schema([
-                Section::make(__('admin.applicant.steps.identity'))->columns(2)->schema(ApplicantForm::identityFields()),
-                Section::make(__('admin.applicant.steps.contact'))->columns(2)->schema(ApplicantForm::contactFields()),
-                Section::make(__('admin.applicant.steps.passport'))->columns(2)->schema(ApplicantForm::passportFields()),
-                Section::make(__('admin.applicant.steps.program'))->schema([
+                Wizard::make(ApplicantForm::steps([
                     ApplicantForm::programSelect(fn (): array => static::programOptions($this->application))
-                        ->helperText(__('student.application.program_hint')),
-                ]),
+                        ->helperText(__('student.application.program_hint'))
+                        ->columnSpanFull(),
+                ], __('student.application.program_step_hint')))
+                    ->skippable(),
             ]);
     }
 
@@ -88,13 +91,7 @@ class EditApplication extends Page implements HasForms
     {
         Gate::authorize('update', $this->application);
 
-        $data = $this->form->getState();
-
-        if ($data['program_id'] !== $this->application->program_id || $this->application->academic_period_id === null) {
-            $data['academic_period_id'] = AcademicPeriod::currentFor($data['program_id'])?->getKey();
-        }
-
-        $this->application->update($data);
+        $this->application->update($this->form->getState());
 
         Notification::make()->success()->title(__('student.application.saved'))->send();
 

@@ -5,6 +5,8 @@ namespace App\Filament\Agent\Pages;
 use App\Filament\Agent\Concerns\InteractsWithAgent;
 use App\Filament\Support\FormModal;
 use App\Models\Mou;
+use App\Support\FileTemplates;
+use App\Support\UploadLimits;
 use App\Workflow\AgentOnboarding;
 use App\Workflow\MouWorkflow;
 use App\Workflow\WorkflowException;
@@ -16,7 +18,6 @@ use Filament\Pages\Page;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * UC-13 Upload MOU (BPMN A4/A5): status MOU terbaru, unduh template, unggah / unggah ulang
@@ -25,11 +26,6 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class ManageMou extends Page
 {
     use InteractsWithAgent;
-
-    /**
-     * Template sementara (dummy) — ganti berkas ini dengan template resmi dari KUI.
-     */
-    public const TEMPLATE_PATH = 'templates/mou-template.pdf';
 
     protected static ?string $navigationIcon = 'lucide-file-signature';
 
@@ -80,10 +76,8 @@ class ManageMou extends Page
                 ->icon('lucide-download')
                 ->color('gray')
                 ->visible(fn (): bool => ! $this->onboarding()->agent?->hasApprovedMou())
-                ->action(fn (): BinaryFileResponse => response()->download(
-                    resource_path(self::TEMPLATE_PATH),
-                    'MOU-template-KUI-Udayana.pdf',
-                )),
+                // Template dari Sistem → Unggahan berkas; berkas bawaan selama KUI belum mengunggah
+                ->url(fn (): string => FileTemplates::url(FileTemplates::MOU)),
 
             Action::make('completeProfile')
                 ->label(__('agent.mou.actions.complete_profile'))
@@ -107,9 +101,9 @@ class ManageMou extends Page
                 ->form([
                     FileUpload::make('file')
                         ->label(__('agent.mou.file'))
-                        ->helperText(implode(' ', __('agent.mou.rules.items')))
+                        ->helperText(fn (): string => implode(' ', UploadLimits::mouRules()))
                         ->acceptedFileTypes(['application/pdf'])
-                        ->maxSize(MouWorkflow::MAX_FILE_SIZE_KB)
+                        ->maxSize(fn (): int => UploadLimits::mou())
                         ->storeFiles(false) // MouWorkflow menyimpannya di disk privat
                         ->required(),
                 ])

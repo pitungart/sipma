@@ -23,7 +23,7 @@
                             <tr>
                                 <td>
                                     <div class="sipma-person">
-                                        <span class="sipma-avatar sipma-tone-{{ $row['tone'] }}" aria-hidden="true">{{ $row['initials'] }}</span>
+                                        <x-sipma.avatar :name="$row['name']" :id="$row['id']" />
                                         <div>
                                             <a href="{{ $row['url'] }}" class="sipma-person-name sipma-row-link">{{ $row['name'] }}</a>
                                             <div class="sipma-person-meta">{{ $row['country'] }}</div>

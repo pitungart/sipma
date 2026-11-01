@@ -12,6 +12,7 @@ use App\Models\Country;
 use App\Models\User;
 use App\Notifications\MouReviewed;
 use App\Notifications\MouSubmitted;
+use App\Support\FileTemplates;
 use App\Workflow\AgentOnboarding;
 use App\Workflow\MouWorkflow;
 use App\Workflow\WorkflowException;
@@ -224,8 +225,8 @@ class OnboardingTest extends WorkflowTestCase
         $this->actingAs($this->newAgent()->user);
 
         Livewire::test(ManageMou::class)
-            ->callAction('template')
-            ->assertFileDownloaded('MOU-template-KUI-Udayana.pdf');
+            ->assertActionHasUrl('template', FileTemplates::url(FileTemplates::MOU));
+        $this->get(FileTemplates::url(FileTemplates::MOU))->assertDownload('MOU-template-KUI-Udayana.pdf');
     }
 
     public function test_other_roles_cannot_open_agent_pages(): void

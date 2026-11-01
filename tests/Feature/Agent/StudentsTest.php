@@ -12,7 +12,6 @@ use App\Filament\Agent\Resources\StudentResource\Pages\CreateStudent;
 use App\Filament\Agent\Resources\StudentResource\Pages\EditStudent;
 use App\Filament\Agent\Resources\StudentResource\Pages\ListStudents;
 use App\Filament\Agent\Resources\StudentResource\Pages\ViewStudent;
-use App\Models\AcademicPeriod;
 use App\Models\Agent;
 use App\Models\PaymentAccount;
 use App\Models\Program;
@@ -20,10 +19,12 @@ use App\Models\Student;
 use App\Notifications\ApplicationSubmitted;
 use App\Notifications\PaymentSubmitted;
 use App\Notifications\RevisionRequested;
+use App\Support\FileTemplates;
 use App\Support\Rupiah;
 use App\Workflow\MouWorkflow;
 use App\Workflow\StudentWorkflow;
 use Filament\Facades\Filament;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\Feature\Workflow\WorkflowTestCase;
@@ -94,14 +95,6 @@ class StudentsTest extends WorkflowTestCase
     public function test_draft_needs_only_name_email_passport_and_program(): void
     {
         $agent = $this->partner();
-        $period = AcademicPeriod::create([
-            'program_id' => $this->covered->id,
-            'name' => 'Batch Oktober',
-            'code' => 'OKT-26',
-            'registration_opens_at' => now()->subWeek(),
-            'registration_closes_at' => now()->addMonth(),
-            'is_active' => true,
-        ]);
 
         Livewire::test(CreateStudent::class)
             // Program satu-satunya di MOU terisi otomatis
@@ -119,7 +112,6 @@ class StudentsTest extends WorkflowTestCase
         $this->assertNull($student->user_id);
         $this->assertSame(StudentStatus::Draft, $student->status);
         $this->assertSame('TK1234567', $student->passport_number);
-        $this->assertSame($period->id, $student->academic_period_id, 'open period is picked automatically');
     }
 
     public function test_program_outside_the_mou_is_rejected(): void
@@ -141,6 +133,18 @@ class StudentsTest extends WorkflowTestCase
             ->fillForm(['full_name' => '', 'email' => '', 'passport_number' => ''])
             ->call('create')
             ->assertHasFormErrors(['full_name' => 'required', 'email' => 'required', 'passport_number' => 'required']);
+    }
+
+    public function test_agent_downloads_document_templates(): void
+    {
+        FileTemplates::store(DocumentType::MedicalStatement->value, UploadedFile::fake()->create('Surat sehat.docx', 40, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'));
+        $student = $this->studentOf($this->partner());
+
+        Livewire::test(ViewStudent::class, ['record' => $student->getRouteKey()])
+            ->assertSeeHtml(FileTemplates::url(DocumentType::MedicalStatement->value))
+            ->assertDontSeeHtml(FileTemplates::url(DocumentType::Photo->value));
+
+        $this->get(FileTemplates::url(DocumentType::MedicalStatement->value))->assertDownload('surat-sehat.docx');
     }
 
     public function test_agent_uploads_documents_and_submits(): void
@@ -255,6 +259,7 @@ class StudentsTest extends WorkflowTestCase
         $admin = $this->superAdmin();
         $agent = $this->partner();
         $this->covered->update(['admission_fee' => 500_000]);
+        PaymentAccount::query()->delete(); // ganti rekening umum dari WorkflowTestCase
         PaymentAccount::create(['bank_name' => 'Bank BPD Bali', 'account_name' => 'Universitas Udayana', 'va_number' => '8808 0001', 'is_active' => true]);
         $student = $this->studentOf($agent, StudentStatus::Approved);
 
@@ -289,27 +294,23 @@ class StudentsTest extends WorkflowTestCase
             ->assertNotified(__('workflow.errors.payment_already_verified', ['type' => PaymentType::AdmissionFee->getLabel()]));
     }
 
-    public function test_payment_is_closed_before_approval_and_for_free_programs(): void
+    public function test_payment_is_closed_before_approval(): void
     {
         $agent = $this->partner();
         $this->covered->update(['admission_fee' => 500_000]);
         $draft = $this->studentOf($agent);
 
         Livewire::test(ViewStudent::class, ['record' => $draft->getRouteKey()])
-            ->assertSee(__('agent.students.payments.locked_body'))
+            ->assertSee(__('agent.students.payments.fees_locked_body'))
+            ->assertSee(__('agent.students.payments.loa_locked_body'))
             ->callAction('uploadPayment', data: ['file' => $this->file()], arguments: ['type' => PaymentType::AdmissionFee->value]);
         $this->assertSame(0, $draft->payments()->count());
-
-        $this->covered->update(['admission_fee' => 0]);
-        $approved = $this->studentOf($agent, StudentStatus::Approved);
-        Livewire::test(ViewStudent::class, ['record' => $approved->getRouteKey()])
-            ->assertSee(__('agent.students.payments.no_fees'));
     }
 
     public function test_agent_downloads_the_loa_once_issued(): void
     {
         $agent = $this->partner();
-        $student = $this->studentOf($agent, StudentStatus::Approved);
+        $student = $this->paid($this->studentOf($agent, StudentStatus::Approved));
 
         Livewire::test(ViewStudent::class, ['record' => $student->getRouteKey()])->assertActionHidden('downloadLoa');
 
