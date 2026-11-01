@@ -2,6 +2,7 @@
 
 namespace App\Workflow;
 
+use App\Enums\AccountProvision;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Enums\LoaStatus;
@@ -22,8 +23,11 @@ use App\Notifications\LoaIssued;
 use App\Notifications\PaymentRejected;
 use App\Notifications\PaymentSubmitted;
 use App\Notifications\RevisionRequested;
+use App\Notifications\StudentAccountInvitation;
+use App\Notifications\StudentEnrolled;
 use App\Support\Numbering;
 use App\Support\PrivateFiles;
+use App\Support\StudentAccounts;
 use App\Support\UploadLimits;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -37,6 +41,8 @@ use Illuminate\Support\Facades\Validator;
  *   draft ─submit→ submitted ─startReview→ in_review ─approve→ approved ─issueLoa→ loa_issued
  *                     ↑                        │
  *                     └──── submit ── revision ←┘ requestRevision
+ *
+ *   loa_issued ─enroll→ enrolled ─complete→ completed ─reopen→ enrolled      (pasca-LOA, TP-0)
  *
  * Pembayaran terjadi SETELAH disetujui (template), menyimpang dari BPMN to-be yang membayar
  * sebelum submit. LOA hanya bisa diterbitkan setelah semua biaya program (> Rp 0) terverifikasi.
@@ -336,6 +342,71 @@ final class StudentWorkflow
 
             return $loa;
         });
+    }
+
+    // ── Pasca-LOA ────────────────────────────────────────────────────────────
+
+    /**
+     * Tandai mahasiswa Aktif: membuka fitur akademik (KTM, rubrik) di portal. Mahasiswa yang
+     * didaftarkan agen dibuatkan akun portal + undangan; gagal menyiapkan akun (email kosong /
+     * sudah dipakai) tidak membatalkan aktivasi — hasilnya dikembalikan untuk ditampilkan ke admin.
+     */
+    public function enroll(Student $student): AccountProvision
+    {
+        $this->expect($student, [StudentStatus::LoaIssued], 'enroll');
+
+        return DB::transaction(function () use ($student): AccountProvision {
+            $student->update([
+                'status' => StudentStatus::Enrolled,
+                'enrolled_at' => now(),
+                'enrolled_by' => auth()->id(),
+                'completed_at' => null,
+            ]);
+
+            $account = StudentAccounts::provision($student);
+
+            DB::afterCommit(function () use ($student, $account): void {
+                $student->load(['user', 'agent.user', 'program']);
+
+                // Akun baru menerima undangan (yang sudah memuat kabar aktif), bukan dua email
+                $recipients = collect([
+                    $account === AccountProvision::Created ? null : $student->user,
+                    $student->agent?->user,
+                ])->filter()->unique(fn (User $user): string => $user->getKey());
+
+                Notification::send($recipients, new StudentEnrolled($student));
+
+                if ($account === AccountProvision::Created) {
+                    $student->user->notify(new StudentAccountInvitation($student));
+                }
+            });
+
+            return $account;
+        });
+    }
+
+    /**
+     * Program selesai; KTM & rubrik tetap bisa dilihat.
+     */
+    public function complete(Student $student): Student
+    {
+        $this->expect($student, [StudentStatus::Enrolled], 'complete');
+
+        $student->update(['status' => StudentStatus::Completed, 'completed_at' => now()]);
+
+        return $student;
+    }
+
+    /**
+     * Koreksi "Selesai" yang keliru: kembali Aktif tanpa mengubah tanggal aktif.
+     */
+    public function reopen(Student $student): Student
+    {
+        $this->expect($student, [StudentStatus::Completed], 'reopen');
+
+        $student->update(['status' => StudentStatus::Enrolled, 'completed_at' => null]);
+
+        return $student;
     }
 
     // ── Pembayaran: aturan bersama ───────────────────────────────────────────

@@ -42,11 +42,11 @@ final class AgentDashboard
             ->withCount(['documents' => fn (Builder $q) => $q->whereIn('status', [DocumentStatus::Revision, DocumentStatus::Rejected])])
             ->get()->sum('documents_count');
         $unpaid = $this->unpaid()->count();
-        $notDownloaded = $this->students()->where('status', StudentStatus::LoaIssued)
+        $notDownloaded = $this->students()->whereIn('status', StudentStatus::acceptedStatuses())
             ->whereHas('loa', fn (Builder $q) => $q->whereNull('downloaded_at'))->count();
 
         return [
-            $this->card('draft', $count(StudentStatus::Draft), 'lucide-square-pen', 'gray',
+            $this->card('draft', $count(StudentStatus::Draft), 'lucide-square-pen', 'sand',
                 __('agent.home.cards.ready', ['count' => $ready]), $ready > 0 ? 'success' : 'gray'),
             $this->card('submitted', $count(StudentStatus::Submitted, StudentStatus::InReview), 'lucide-send', 'info',
                 __('agent.home.cards.in_review', ['count' => $inReview]), 'primary'),
@@ -54,8 +54,9 @@ final class AgentDashboard
                 __('agent.home.cards.flagged', ['count' => $flagged]), 'danger'),
             $this->card('approved', $count(StudentStatus::Approved), 'lucide-wallet', 'warning',
                 __('agent.home.cards.unpaid', ['count' => $unpaid]), $unpaid > 0 ? 'warning' : 'gray'),
-            $this->card('loa_issued', $count(StudentStatus::LoaIssued), 'lucide-file-check', 'success',
-                __('agent.home.cards.not_downloaded', ['count' => $notDownloaded]), $notDownloaded > 0 ? 'success' : 'gray'),
+            // Termasuk yang sudah Aktif / Selesai: angka LOA tidak turun saat mahasiswa diaktifkan
+            $this->card('loa_issued', $count(...StudentStatus::acceptedStatuses()), 'lucide-file-check', 'violet',
+                __('agent.home.cards.not_downloaded', ['count' => $notDownloaded]), $notDownloaded > 0 ? 'violet' : 'gray'),
         ];
     }
 
@@ -81,10 +82,10 @@ final class AgentDashboard
         $ready = $this->readyDrafts()
             ->map(fn (Student $s): array => $this->action($s, 'info', 'lucide-send', __('agent.home.actions.ready'), __('agent.home.actions.submit')));
 
-        $loa = $this->students()->where('status', StudentStatus::LoaIssued)
+        $loa = $this->students()->whereIn('status', StudentStatus::acceptedStatuses())
             ->whereHas('loa', fn (Builder $q) => $q->whereNull('downloaded_at'))
             ->with('program')->latest('updated_at')->get()
-            ->map(fn (Student $s): array => $this->action($s, 'success', 'lucide-file-check', __('agent.home.actions.loa'), __('agent.home.actions.download')));
+            ->map(fn (Student $s): array => $this->action($s, 'violet', 'lucide-file-check', __('agent.home.actions.loa'), __('agent.home.actions.download')));
 
         return $revision->concat($unpaid)->concat($ready)->concat($loa)->values();
     }

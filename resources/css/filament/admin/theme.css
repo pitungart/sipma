@@ -43,6 +43,12 @@
     --sp-success: #5EC26A;
     --sp-success-l: #EEF9F0;
     --sp-success-ink: #2F8A3B;
+    --sp-violet: #9B6BE0;
+    --sp-violet-l: #F4EFFC;
+    --sp-violet-ink: #7440C2;
+    --sp-sand: #B39B78;
+    --sp-sand-l: #F7F3ED;
+    --sp-sand-ink: #7A6445;
     --sp-gray: #90949E;
     --sp-gray-ink: #6D727F;
 
@@ -80,6 +86,10 @@
     --sp-info-ink: #7FCBE2;
     --sp-success-l: rgba(94, 194, 106, 0.14);
     --sp-success-ink: #86D690;
+    --sp-violet-l: rgba(155, 107, 224, 0.15);
+    --sp-violet-ink: #C3A5F2;
+    --sp-sand-l: rgba(179, 155, 120, 0.15);
+    --sp-sand-ink: #D6C4A6;
     --sp-gray-ink: #9BA0AD;
 
     --sp-shadow: none;
@@ -95,6 +105,8 @@
 .sipma-tone-warning { --tone: var(--sp-warning); --tone-l: var(--sp-warning-l); --tone-ink: var(--sp-warning-ink); }
 .sipma-tone-danger { --tone: var(--sp-danger); --tone-l: var(--sp-danger-l); --tone-ink: var(--sp-danger-ink); }
 .sipma-tone-gray { --tone: var(--sp-gray); --tone-l: var(--sp-gray-l); --tone-ink: var(--sp-gray-ink); }
+.sipma-tone-violet { --tone: var(--sp-violet); --tone-l: var(--sp-violet-l); --tone-ink: var(--sp-violet-ink); }
+.sipma-tone-sand { --tone: var(--sp-sand); --tone-l: var(--sp-sand-l); --tone-ink: var(--sp-sand-ink); }
 
 /* ─────────────────────────────────────────────────────────────
    1. Dasar
@@ -1464,6 +1476,8 @@ select.fi-select-input:has(option[value='']:checked) {
 .fi-badge.fi-color-warning { background-color: var(--sp-warning-l); color: var(--sp-warning-ink); --dot: var(--sp-warning); }
 .fi-badge.fi-color-danger { background-color: var(--sp-danger-l); color: var(--sp-danger-ink); --dot: var(--sp-danger); }
 .fi-badge.fi-color-gray { background-color: var(--sp-gray-l); color: var(--sp-muted); --dot: var(--sp-light); }
+.fi-badge.fi-color-violet { background-color: var(--sp-violet-l); color: var(--sp-violet-ink); --dot: var(--sp-violet); }
+.fi-badge.fi-color-sand { background-color: var(--sp-sand-l); color: var(--sp-sand-ink); --dot: var(--sp-sand); }
 
 /* Badge status berikon (enum): ikon diganti titik 6px seperti template; bergaris tepi tipis
    sewarna nadanya, abu = latar kartu + garis abu (sama dengan .sipma-status) */

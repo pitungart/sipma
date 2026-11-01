@@ -49,6 +49,9 @@ class Student extends Model
         'status',
         'revision_note',
         'submitted_at',
+        'enrolled_at',
+        'enrolled_by',
+        'completed_at',
         'enrollment_month',
         'enrollment_year',
     ];
@@ -63,6 +66,8 @@ class Student extends Model
             'date_of_passport_expiry' => 'date',
             'status' => StudentStatus::class,
             'submitted_at' => 'datetime',
+            'enrolled_at' => 'datetime',
+            'completed_at' => 'datetime',
             'enrollment_month' => 'integer',
             'enrollment_year' => 'integer',
         ];
@@ -131,6 +136,14 @@ class Student extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Staf yang menandai mahasiswa Aktif.
+     */
+    public function enroller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'enrolled_by');
     }
 
     public function agent(): BelongsTo

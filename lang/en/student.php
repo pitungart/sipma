@@ -27,7 +27,9 @@ return [
             'revision' => ['title' => 'Changes needed', 'body' => 'KUI asked for changes. Fix the marked documents, then submit again.', 'cta' => 'Fix now'],
             'pay' => ['title' => 'Approved — please pay', 'body' => 'Not paid yet: :fees. Transfer to the VA number, then upload your transfer proof.', 'cta' => 'Pay & upload proof'],
             'payment_review' => ['title' => 'Payment under review', 'body' => 'KUI is checking your payment proof. The LOA is issued once every fee is verified.'],
-            'loa' => ['title' => 'Your LOA is ready', 'body' => 'Congratulations! Your Letter of Acceptance is ready to download.'],
+            'loa' => ['title' => 'Your LOA is ready', 'body' => 'Congratulations! Your Letter of Acceptance is ready to download. Your student card and academic rubric open once KUI activates your status.'],
+            'active' => ['title' => 'You are an active student', 'body' => 'KUI has marked you as an active student. Your student card and academic rubric will be available in this portal.'],
+            'completed' => ['title' => 'Program completed', 'body' => 'Your program is complete. Your application details and LOA remain available here.'],
         ],
     ],
 

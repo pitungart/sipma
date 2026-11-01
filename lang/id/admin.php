@@ -72,6 +72,7 @@ return [
     'groups' => [
         'system' => 'Sistem',
         'admissions' => 'Penerimaan',
+        'academic' => 'Akademik',
         'main' => 'Utama',
         'master_data' => 'Data master',
     ],

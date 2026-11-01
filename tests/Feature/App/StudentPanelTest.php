@@ -260,11 +260,12 @@ class StudentPanelTest extends WorkflowTestCase
         $this->assertSame(StudentStatus::Revision, $status('student.revision@sipma.test'));
         $this->assertSame(StudentStatus::Approved, $status('student.approved@sipma.test'));
         $this->assertSame(StudentStatus::LoaIssued, $status('student.loa@sipma.test'));
-        $this->assertSame(5, User::query()->where('role', UserRole::Student)->count());
+        $this->assertSame(StudentStatus::Enrolled, $status('student.active@sipma.test'));
+        $this->assertSame(6, User::query()->where('role', UserRole::Student)->count());
 
         // Dijalankan ulang tidak menggandakan akun
         $this->seed(StudentAccountSeeder::class);
-        $this->assertSame(5, User::query()->where('role', UserRole::Student)->count());
+        $this->assertSame(6, User::query()->where('role', UserRole::Student)->count());
         $this->assertSame(1, Student::query()->whereHas('user', fn ($q) => $q->where('email', 'student.approved@sipma.test'))->count());
     }
 }

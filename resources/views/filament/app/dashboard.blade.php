@@ -23,7 +23,7 @@
             <div class="sipma-portal-hero-body">
                 <span @class(['sipma-portal-kicker', 'sipma-tone-'.$next['tone']])>
                     <span class="sipma-portal-kicker-dot"></span>
-                    {{ __(in_array($stage, [StudentHome::WAITING, StudentHome::PAYMENT_REVIEW, StudentHome::LOA], true) ? 'student.home.status' : 'student.home.next_step') }}
+                    {{ __(in_array($stage, [StudentHome::WAITING, StudentHome::PAYMENT_REVIEW, StudentHome::LOA, StudentHome::ACTIVE, StudentHome::COMPLETED], true) ? 'student.home.status' : 'student.home.next_step') }}
                 </span>
                 <h2 class="sipma-portal-hero-title">{{ $next['title'] }}</h2>
                 <p class="sipma-portal-hero-text">{{ $next['body'] }}</p>

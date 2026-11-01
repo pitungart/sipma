@@ -120,11 +120,12 @@ class StatCards extends DashboardWidget
         return [
             'label' => __('admin.dashboard.loa_issued'),
             'url' => StudentResource::getUrl('index', ['activeTab' => 'loa_issued']),
-            'value' => $this->students()->where('status', StudentStatus::LoaIssued)->count(),
+            // Termasuk yang sudah Aktif / Selesai: angka LOA tidak turun saat mahasiswa diaktifkan
+            'value' => $this->students()->whereIn('status', StudentStatus::acceptedStatuses())->count(),
             'icon' => 'lucide-file-check',
-            'tone' => 'success',
+            'tone' => 'violet',
             'badge' => '+'.$thisWeek,
-            'badgeTone' => 'success',
+            'badgeTone' => 'violet',
             'caption' => __('admin.dashboard.this_week'),
         ];
     }

@@ -38,6 +38,8 @@ return [
         'revision' => 'Perlu revisi',
         'approved' => 'Disetujui, menunggu pembayaran',
         'loa_issued' => 'LOA terbit',
+        'enrolled' => 'Aktif',
+        'completed' => 'Selesai',
     ],
 
     'document_status' => [

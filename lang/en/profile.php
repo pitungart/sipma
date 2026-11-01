@@ -101,6 +101,7 @@ return [
             'application_approved' => ['Application approved', 'When the application is approved and payment opens.'],
             'payment_rejected' => ['Payment rejected', 'When proof of payment needs to be uploaded again.'],
             'loa_issued' => ['LOA issued', 'When the Letter of Acceptance is ready to download.'],
+            'student_enrolled' => ['Student activated', 'When KUI marks the student active and academic features open.'],
             'reminders' => ['Reminders', 'Reminders about unsubmitted drafts and unpaid fees.'],
             'mou_reviewed' => ['MOU reviewed', 'When the International Office approves or rejects your MOU.'],
         ],

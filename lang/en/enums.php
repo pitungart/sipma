@@ -38,6 +38,8 @@ return [
         'revision' => 'Revision required',
         'approved' => 'Approved, awaiting payment',
         'loa_issued' => 'LOA issued',
+        'enrolled' => 'Active',
+        'completed' => 'Completed',
     ],
 
     'document_status' => [

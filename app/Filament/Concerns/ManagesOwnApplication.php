@@ -239,7 +239,7 @@ trait ManagesOwnApplication
             'requiredDone' => $documents->filter(fn (array $item): bool => $item['type']->isRequired()
                 && in_array($item['document']?->status, [DocumentStatus::Pending, DocumentStatus::Approved], true))->count(),
             'checklist' => $this->canChange() ? $this->checklist()->items() : new Collection,
-            'paymentsOpen' => in_array($student->status, [StudentStatus::Approved, StudentStatus::LoaIssued], true),
+            'paymentsOpen' => $student->status === StudentStatus::Approved || $student->status->isAccepted(),
             'canPay' => $student->status === StudentStatus::Approved,
             'fees' => ApplicantDetails::fees($student),
             'loa' => $student->loa,

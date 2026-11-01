@@ -26,6 +26,8 @@ class ListStudents extends ListWithStatusTabs
         StudentStatus::InReview,
         StudentStatus::Approved,
         StudentStatus::LoaIssued,
+        StudentStatus::Enrolled,
+        StudentStatus::Completed,
     ];
 
     /**

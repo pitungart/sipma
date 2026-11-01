@@ -79,7 +79,11 @@ class DemoSeeder extends Seeder
             ...array_fill(0, 6, StudentStatus::InReview),
             ...array_fill(0, 5, StudentStatus::Revision),
             ...array_fill(0, 5, StudentStatus::Approved),
-            ...array_fill(0, 7, StudentStatus::LoaIssued),
+            // Aktif sebelum LOA terbit agar keduanya punya pendaftar mandiri (indeks kelipatan 5) untuk
+            // StudentAccountSeeder
+            ...array_fill(0, 4, StudentStatus::Enrolled),
+            ...array_fill(0, 5, StudentStatus::LoaIssued),
+            ...array_fill(0, 2, StudentStatus::Completed),
             ...array_fill(0, 3, StudentStatus::Draft),
         ];
 
@@ -167,6 +171,8 @@ class DemoSeeder extends Seeder
             'status' => $status,
             'submitted_at' => $isDraft ? null : $createdAt,
             'revision_note' => $status === StudentStatus::Revision ? 'Please re-upload the medical statement signed by a doctor.' : null,
+            'enrolled_at' => $status->hasAcademicAccess() ? now()->subDays(random_int(30, 90)) : null,
+            'completed_at' => $status === StudentStatus::Completed ? now()->subDays(random_int(1, 20)) : null,
         ]);
         $student->created_at = $createdAt ?? now();
         $student->registration_number = $isDraft ? null : Numbering::next(NumberType::Application);
@@ -176,11 +182,11 @@ class DemoSeeder extends Seeder
             $this->documents($student, $status);
         }
 
-        if (in_array($status, [StudentStatus::Approved, StudentStatus::LoaIssued], true)) {
+        if ($status === StudentStatus::Approved || $status->isAccepted()) {
             $this->payments($student, $status);
         }
 
-        if ($status === StudentStatus::LoaIssued) {
+        if ($status->isAccepted()) {
             $student->loa()->create([
                 'loa_number' => Numbering::next(NumberType::Loa),
                 'file_path' => $this->dummyFile(PrivateFiles::studentDirectory($student->id, 'loa'), 'pdf'),
@@ -196,7 +202,7 @@ class DemoSeeder extends Seeder
     {
         foreach (DocumentType::required() as $type) {
             $documentStatus = match ($status) {
-                StudentStatus::Approved, StudentStatus::LoaIssued => DocumentStatus::Approved,
+                StudentStatus::Approved, StudentStatus::LoaIssued, StudentStatus::Enrolled, StudentStatus::Completed => DocumentStatus::Approved,
                 StudentStatus::Revision => $type === DocumentType::MedicalStatement ? DocumentStatus::Revision : DocumentStatus::Approved,
                 default => DocumentStatus::Pending,
             };
@@ -244,7 +250,7 @@ class DemoSeeder extends Seeder
                 continue;
             }
 
-            $verified = $status === StudentStatus::LoaIssued;
+            $verified = $status->isAccepted();
             $account = PaymentAccount::bestFor($type, $student->program_id);
 
             $student->payments()->create([

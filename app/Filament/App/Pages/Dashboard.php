@@ -66,7 +66,7 @@ class Dashboard extends BaseDashboard
             'cta' => match ($stage) {
                 StudentHome::START => ['label' => __('student.application.actions.start'), 'url' => StartApplication::getUrl()],
                 StudentHome::LOA => ['label' => __('agent.students.payments.download_loa'), 'url' => route('files.loa', $application->loa)],
-                StudentHome::WAITING, StudentHome::PAYMENT_REVIEW => ['label' => __('student.home.view_application'), 'url' => MyApplication::getUrl()],
+                StudentHome::WAITING, StudentHome::PAYMENT_REVIEW, StudentHome::ACTIVE, StudentHome::COMPLETED => ['label' => __('student.home.view_application'), 'url' => MyApplication::getUrl()],
                 default => ['label' => __("student.home.stages.{$stage}.cta"), 'url' => MyApplication::getUrl()],
             },
             'checklist' => $application?->status->isEditable() ? $home->checklist()->items() : collect(),

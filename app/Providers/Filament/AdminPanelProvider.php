@@ -41,6 +41,10 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()
                     ->label(fn (): string => __('admin.groups.admissions'))
                     ->collapsible(false),
+                // Pasca-LOA (TP-0): Mahasiswa Asing, KTM, rubrik, SK. Tersembunyi selama belum berisi.
+                NavigationGroup::make()
+                    ->label(fn (): string => __('admin.groups.academic'))
+                    ->collapsible(false),
                 NavigationGroup::make()
                     ->label(fn (): string => __('admin.groups.master_data'))
                     ->collapsible(),

@@ -28,7 +28,7 @@ final class StatusTimeline
             StudentStatus::Submitted => 'submitted',
             StudentStatus::InReview, StudentStatus::Revision => 'review',
             StudentStatus::Approved => 'payment',
-            StudentStatus::LoaIssued => null, // semua langkah selesai
+            StudentStatus::LoaIssued, StudentStatus::Enrolled, StudentStatus::Completed => null, // semua langkah selesai
         };
 
         $keys = array_keys(self::STEPS);

@@ -66,6 +66,27 @@ class StudentPolicy
     }
 
     /**
+     * Pasca-LOA: tandai Aktif / Selesai. Admin Fakultas untuk mahasiswa di fakultasnya.
+     */
+    public function enroll(User $user, Student $student): bool
+    {
+        return $user->hasRole(UserRole::Admin) && $this->view($user, $student);
+    }
+
+    public function complete(User $user, Student $student): bool
+    {
+        return $this->enroll($user, $student);
+    }
+
+    /**
+     * Membuka kembali status Selesai: hanya Super Admin (via Gate::before).
+     */
+    public function reopen(User $user, Student $student): bool
+    {
+        return false;
+    }
+
+    /**
      * UC-15 s/d UC-18 Verifikasi & update status: hanya Super Admin.
      */
     public function verify(User $user, Student $student): bool

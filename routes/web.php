@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AcceptInvitationController;
 use App\Http\Controllers\PrivateFileController;
 use App\Http\Controllers\SwitchLocaleController;
 use App\Livewire\Auth\Login;
@@ -17,6 +18,9 @@ Route::get('/register', Register::class)->name('register');
 
 // UC-06: satu halaman login untuk semua role; diarahkan ke panel sesuai role setelah masuk
 Route::get('/login', Login::class)->name('login');
+
+// Undangan akun mahasiswa yang didaftarkan agen (dikirim saat ditandai Aktif): tanda tangan diperiksa controller
+Route::get('/invitation/{user}', AcceptInvitationController::class)->name('invitation.accept');
 
 // Ganti bahasa portal & panel agen/mahasiswa (disimpan di session + cookie)
 Route::get('/locale/{locale}', SwitchLocaleController::class)

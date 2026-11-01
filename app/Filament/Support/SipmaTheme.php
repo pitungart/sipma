@@ -110,8 +110,9 @@ final class SipmaTheme
     ];
 
     /**
-     * Status: hijau (selesai), kuning (menunggu pembayaran), merah (revisi/gagal), cyan (diajukan).
-     * Warna dasar template ada di stop 600, versi "-ink" di 700, latar "-l" di 50.
+     * Status: hijau (aktif), kuning (menunggu pembayaran), merah (revisi/gagal), cyan (diajukan),
+     * ungu (LOA terbit), pasir (draf). Warna dasar template ada di stop 600, versi "-ink" di 700,
+     * latar "-l" di 50.
      *
      * @return array<string, array<int, string>>
      */
@@ -137,6 +138,18 @@ final class SipmaTheme
                 300 => '240, 135, 130', 400 => '230, 106, 101', 500 => '226, 95, 90',
                 600 => '221, 82, 76', 700 => '184, 58, 52', 800 => '150, 47, 42',
                 900 => '122, 40, 36', 950 => '67, 18, 16',
+            ],
+            'violet' => [
+                50 => '244, 239, 252', 100 => '235, 225, 249', 200 => '217, 199, 243',
+                300 => '197, 169, 237', 400 => '179, 143, 231', 500 => '165, 122, 227',
+                600 => '155, 107, 224', 700 => '116, 64, 194', 800 => '95, 52, 159',
+                900 => '77, 42, 128', 950 => '44, 24, 74',
+            ],
+            'sand' => [
+                50 => '247, 243, 237', 100 => '240, 235, 228', 200 => '226, 217, 204',
+                300 => '211, 197, 177', 400 => '197, 179, 152', 500 => '187, 165, 134',
+                600 => '179, 155, 120', 700 => '122, 100, 69', 800 => '100, 82, 57',
+                900 => '81, 66, 46', 950 => '46, 38, 26',
             ],
             'info' => [
                 50 => '237, 247, 250', 100 => '213, 238, 245', 200 => '176, 223, 236',

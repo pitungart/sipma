@@ -176,7 +176,7 @@ class FoundationTest extends WorkflowTestCase
         // Biaya tidak boleh Rp 0: semua program demo berbayar; LOA terbit = semua biaya terverifikasi
         $workflow = app(StudentWorkflow::class);
         $this->assertSame(0, Program::query()->where('admission_fee', '<=', 0)->orWhere('tuition_fee', '<=', 0)->count());
-        foreach (Student::query()->where('status', StudentStatus::LoaIssued)->get() as $student) {
+        foreach (Student::query()->whereIn('status', StudentStatus::acceptedStatuses())->get() as $student) {
             $this->assertTrue($workflow->outstandingPayments($student)->isEmpty());
         }
         $this->assertSame(0, Payment::query()->where('amount', '<=', 0)->count());

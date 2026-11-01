@@ -37,6 +37,9 @@ return [
         'request_revision' => 'meminta revisi',
         'approve' => 'menyetujui pendaftaran',
         'issue_loa' => 'menerbitkan LOA',
+        'enroll' => 'menandai mahasiswa aktif',
+        'complete' => 'menandai program selesai',
+        'reopen' => 'membuka kembali status aktif',
     ],
 
     'errors' => [
@@ -90,6 +93,16 @@ return [
             'title' => 'LOA sudah terbit',
             'body' => 'Letter of Acceptance untuk :name sudah bisa diunduh.',
         ],
+        'student_enrolled' => [
+            'title' => 'Terdaftar sebagai mahasiswa aktif',
+            'body' => ':name sudah terdaftar aktif di program :program. KTM dan rubrik akademik akan tersedia di portal.',
+        ],
+        'student_invitation' => [
+            'title' => 'Akun portal SIPMA Anda',
+            'body' => 'Selamat, :name sudah terdaftar aktif di program :program. Buat password untuk masuk ke portal SIPMA dan melihat KTM serta rubrik akademik Anda.',
+            'action' => 'Buat password',
+            'expiry' => 'Tautan ini berlaku :days hari dan hanya bisa dipakai sekali. Setelah itu, masuk dengan email :email.',
+        ],
         'mou_submitted' => [
             'title' => 'MOU baru untuk diperiksa',
             'body' => ':agency mengunggah MOU.',
@@ -116,6 +129,14 @@ return [
     ],
 
     'timeline_label' => 'Progres pendaftaran',
+
+    'accounts' => [
+        'existing' => 'Mahasiswa sudah punya akun portal.',
+        'created' => 'Akun portal dibuat dan undangan dikirim ke email mahasiswa.',
+        'linked' => 'Dihubungkan ke akun portal yang sudah terdaftar dengan email ini.',
+        'missing_email' => 'Akun portal belum dibuat: email mahasiswa kosong.',
+        'email_taken' => 'Akun portal belum dibuat: email mahasiswa sudah dipakai akun lain.',
+    ],
 
     'timeline' => [
         'draft' => ['label' => 'Isi pendaftaran', 'description' => 'Data diri dan dokumen'],

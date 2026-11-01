@@ -45,6 +45,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Undangan akun mahasiswa
+    |--------------------------------------------------------------------------
+    |
+    | Mahasiswa yang didaftarkan agen belum punya akun. Saat KUI menandainya Aktif, akun portal
+    | dibuat dari email pendaftaran dan undangan "buat password" dikirim (selalu lewat email,
+    | seperti reset password). Tautan berlaku sekian hari dan mati setelah password dibuat.
+    |
+    */
+
+    'invitation_days' => max(1, (int) env('SIPMA_INVITATION_DAYS', 7)),
+
+    /*
+    |--------------------------------------------------------------------------
     | Pengingat terjadwal (php artisan sipma:reminders)
     |--------------------------------------------------------------------------
     |

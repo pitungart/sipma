@@ -166,7 +166,7 @@ final class ActivityDescriber
             $activity->event === 'deleted' => 'danger',
             $activity->subject instanceof Student && $status !== null => $status->getColor(),
             $activity->subject instanceof Payment => 'warning',
-            $activity->subject instanceof Loa => 'success',
+            $activity->subject instanceof Loa => 'violet',
             $activity->subject instanceof Document => 'info',
             $activity->subject instanceof Mou => 'warning',
             default => 'primary',

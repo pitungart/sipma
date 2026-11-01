@@ -10,7 +10,7 @@ use Illuminate\Support\Collection;
 
 /**
  * Isi dasbor mahasiswa mandiri (/app): tahap sekarang dan kartu "langkah berikutnya"
- * — mulai daftar → lengkapi → ajukan → menunggu KUI → perbaiki → bayar → unduh LOA.
+ * — mulai daftar → lengkapi → ajukan → menunggu KUI → perbaiki → bayar → unduh LOA → aktif → selesai.
  */
 final class StudentHome
 {
@@ -30,6 +30,10 @@ final class StudentHome
 
     public const LOA = 'loa';
 
+    public const ACTIVE = 'active';
+
+    public const COMPLETED = 'completed';
+
     /** @var Collection<int, array<string, mixed>>|null */
     private ?Collection $fees = null;
 
@@ -42,6 +46,8 @@ final class StudentHome
         return match (true) {
             $student === null => self::START,
             $student->status === StudentStatus::LoaIssued => self::LOA,
+            $student->status === StudentStatus::Enrolled => self::ACTIVE,
+            $student->status === StudentStatus::Completed => self::COMPLETED,
             $student->status === StudentStatus::Revision => self::REVISION,
             $student->status === StudentStatus::Draft => $this->checklist()->isComplete() ? self::SUBMIT : self::COMPLETE,
             $student->status === StudentStatus::Approved => $this->unpaid()->isNotEmpty() ? self::PAY : self::PAYMENT_REVIEW,
@@ -70,7 +76,9 @@ final class StudentHome
                 self::REVISION => 'danger',
                 self::PAY, self::COMPLETE => 'warning',
                 self::WAITING, self::PAYMENT_REVIEW => 'info',
-                self::LOA => 'success',
+                self::LOA => 'violet',
+                self::ACTIVE => 'success',
+                self::COMPLETED => 'gray',
                 default => 'primary',
             },
             'icon' => match ($stage) {
@@ -80,6 +88,8 @@ final class StudentHome
                 self::REVISION => 'lucide-triangle-alert',
                 self::PAY => 'lucide-wallet',
                 self::LOA => 'lucide-file-check',
+                self::ACTIVE => 'lucide-graduation-cap',
+                self::COMPLETED => 'lucide-badge-check',
                 default => 'lucide-clock',
             },
         ];

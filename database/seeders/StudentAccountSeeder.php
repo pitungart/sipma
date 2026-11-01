@@ -19,6 +19,7 @@ use Illuminate\Database\Seeder;
  * - student.revision@sipma.test  pendaftar mandiri demo yang diminta revisi
  * - student.approved@sipma.test  disetujui, program BIPA (biaya demo) belum dibayar
  * - student.loa@sipma.test       LOA terbit
+ * - student.active@sipma.test    Aktif (tahap pasca-LOA)
  * Draf: student@sipma.test (DemoSeeder).
  */
 class StudentAccountSeeder extends Seeder
@@ -40,8 +41,9 @@ class StudentAccountSeeder extends Seeder
         $this->link('student.revision@sipma.test', StudentStatus::Revision);
         $this->link('student.approved@sipma.test', StudentStatus::Approved, program: 'ND-BIPA');
         $this->link('student.loa@sipma.test', StudentStatus::LoaIssued);
+        $this->link('student.active@sipma.test', StudentStatus::Enrolled);
 
-        $this->command?->info('Akun mahasiswa siap: student.new@, student.revision@, student.approved@, student.loa@sipma.test (password: password).');
+        $this->command?->info('Akun mahasiswa siap: student.new@, student.revision@, student.approved@, student.loa@, student.active@sipma.test (password: password).');
     }
 
     /**

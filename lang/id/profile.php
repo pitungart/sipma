@@ -101,6 +101,7 @@ return [
             'application_approved' => ['Pendaftaran disetujui', 'Saat pendaftaran disetujui dan pembayaran dibuka.'],
             'payment_rejected' => ['Pembayaran ditolak', 'Saat bukti pembayaran perlu diunggah ulang.'],
             'loa_issued' => ['LOA terbit', 'Saat Letter of Acceptance siap diunduh.'],
+            'student_enrolled' => ['Mahasiswa aktif', 'Saat KUI menandai mahasiswa aktif dan fitur akademik dibuka.'],
             'reminders' => ['Pengingat', 'Pengingat draf yang belum diajukan dan pembayaran yang belum lunas.'],
             'mou_reviewed' => ['MOU ditinjau', 'Saat KUI menyetujui atau menolak MOU Anda.'],
         ],

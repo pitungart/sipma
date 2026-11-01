@@ -38,6 +38,9 @@ return [
         'request_revision' => 'ask for a revision',
         'approve' => 'approve the application',
         'issue_loa' => 'issue the LOA',
+        'enroll' => 'mark the student active',
+        'complete' => 'mark the program completed',
+        'reopen' => 'reopen the active status',
     ],
 
     'errors' => [
@@ -91,6 +94,16 @@ return [
             'title' => 'Your Letter of Acceptance is ready',
             'body' => 'The Letter of Acceptance for :name is ready to download.',
         ],
+        'student_enrolled' => [
+            'title' => 'Registered as an active student',
+            'body' => ':name is now active in :program. The student card and academic rubric will be available in the portal.',
+        ],
+        'student_invitation' => [
+            'title' => 'Your SIPMA portal account',
+            'body' => 'Congratulations, :name is now an active student in :program. Create a password to sign in to the SIPMA portal and see your student card and academic rubric.',
+            'action' => 'Create password',
+            'expiry' => 'This link is valid for :days days and can be used once. After that, sign in with :email.',
+        ],
         'mou_submitted' => [
             'title' => 'New MOU to review',
             'body' => ':agency uploaded an MOU.',
@@ -117,6 +130,14 @@ return [
     ],
 
     'timeline_label' => 'Application progress',
+
+    'accounts' => [
+        'existing' => 'The student already has a portal account.',
+        'created' => 'A portal account was created and an invitation sent to the student’s email.',
+        'linked' => 'Linked to the existing portal account registered with this email.',
+        'missing_email' => 'No portal account yet: the student’s email is empty.',
+        'email_taken' => 'No portal account yet: the student’s email belongs to another account.',
+    ],
 
     'timeline' => [
         'draft' => ['label' => 'Fill in the application', 'description' => 'Personal data and documents'],

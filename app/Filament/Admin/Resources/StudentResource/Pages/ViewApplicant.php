@@ -365,7 +365,7 @@ class ViewApplicant extends ViewRecord
             'documents' => ApplicantDetails::documents($student),
             'templates' => FileTemplates::uploaded(),
             'fees' => ApplicantDetails::fees($student),
-            'paymentsOpen' => in_array($student->status, [StudentStatus::Approved, StudentStatus::LoaIssued], true),
+            'paymentsOpen' => $student->status === StudentStatus::Approved || $student->status->isAccepted(),
             'paymentSetupProblem' => $this->canVerify() && $student->status === StudentStatus::InReview ? $this->paymentSetupMessage() : null,
             'history' => ActivityDescriber::forStudent($student),
         ];
