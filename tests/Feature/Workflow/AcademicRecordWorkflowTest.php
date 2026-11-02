@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Workflow;
 
+use App\Enums\Grade;
 use App\Enums\StudentCourseStatus;
 use App\Enums\StudentStatus;
 use App\Models\Course;
@@ -122,7 +123,7 @@ class AcademicRecordWorkflowTest extends WorkflowTestCase
         $this->workflow()->drop($graded, 'Bentrok jadwal');
         $graded->refresh();
         $this->assertSame(StudentCourseStatus::Dropped, $graded->status);
-        $this->assertSame('A', $graded->grade);
+        $this->assertSame(Grade::A, $graded->grade);
         $this->assertSame('Bentrok jadwal', $graded->notes);
 
         $this->workflow()->drop($ungraded);

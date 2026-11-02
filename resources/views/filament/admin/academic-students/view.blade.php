@@ -222,12 +222,14 @@
         <section x-show="tab === 'rubric'" x-cloak class="sipma-section">
             <div class="sipma-subsection-head">
                 <h3 class="sipma-card-title">{{ __('admin.student_course.title') }}</h3>
-                @if ($canManageCourses)
-                    <div class="sipma-actions-inline">
-                        {{ $this->applyPackageAction }}
-                        {{ $this->addCourseAction }}
-                    </div>
-                @endif
+                <div class="sipma-actions-inline">
+                    {{-- Dipanggil langsung, action tidak memeriksa visible() sendiri --}}
+                    @foreach ([$this->gradeCoursesAction, $this->applyPackageAction, $this->addCourseAction] as $courseAction)
+                        @if ($courseAction->isVisible())
+                            {{ $courseAction }}
+                        @endif
+                    @endforeach
+                </div>
             </div>
 
             @if ($courses->isEmpty())
@@ -245,6 +247,7 @@
                                 <th>{{ __('workflow.rubric.course') }}</th>
                                 <th>{{ __('workflow.rubric.semester') }}</th>
                                 <th class="is-end">{{ __('workflow.rubric.credits') }}</th>
+                                <th>{{ __('workflow.rubric.grade') }}</th>
                                 <th>{{ __('admin.dashboard.status') }}</th>
                                 @if ($canManageCourses)
                                     <th></th>
@@ -265,8 +268,9 @@
                                         @endif
                                     </td>
                                     <td>{{ $row->course?->semester ?? '—' }}</td>
-                                    <td class="is-end">{{ $row->course?->credits ?? '—' }}</td>
-                                    <td><x-sipma.status-badge :status="$row->status" /></td>
+                                    <td class="is-end">{{ $row->effectiveCredits() ?? '—' }}</td>
+                                    <td>{{ $row->grade?->getLabel() ?? '—' }}</td>
+                                    <td><x-sipma.course-status :row="$row" :student="$record" /></td>
                                     @if ($canManageCourses)
                                         <td class="is-end">
                                             {{ $row->isDropped() ? ($this->restoreCourseAction)(['row' => $row->getKey()]) : ($this->dropCourseAction)(['row' => $row->getKey()]) }}
@@ -275,15 +279,10 @@
                                 </tr>
                             @endforeach
                         </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="3">{{ __('workflow.rubric.total') }}</td>
-                                <td class="is-end">{{ $courses->reject->isDropped()->sum(fn ($row) => $row->course?->credits) }}</td>
-                                <td colspan="{{ $canManageCourses ? 2 : 1 }}"></td>
-                            </tr>
-                        </tfoot>
                     </table>
                 </div>
+
+                <x-sipma.academic-summary :summary="$courseSummary" class="sipma-rubric-note" />
             @endif
 
             @if ($record->status === StudentStatus::Completed)

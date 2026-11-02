@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\DocumentStatus;
+use App\Enums\Grade;
 use App\Enums\MouStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StudentCardStatus;
@@ -113,7 +114,7 @@ final class ActivityDescriber
         }
 
         if ($subject instanceof StudentCourse && ($course = self::courseEvent($activity)) !== null) {
-            return __("admin.dashboard.activity_course_{$course}", ['causer' => $causer, 'name' => $name, 'course' => $subject->course?->code]);
+            return __("admin.dashboard.activity_course_{$course}", ['causer' => $causer, 'name' => $name, 'course' => $subject->course?->code, ...self::gradeChange($activity)]);
         }
 
         if ($subject instanceof StudentCard && ($card = self::cardEvent($activity)) !== null) {
@@ -142,7 +143,7 @@ final class ActivityDescriber
         $decision = match (true) {
             $activity->event === 'deleted' => null,
             $subject instanceof Student && isset($activity->properties['courses_applied']) => ['courses_applied', ['name' => $name, 'count' => $activity->properties['courses_applied']]],
-            $subject instanceof StudentCourse && ($course = self::courseEvent($activity)) !== null => ["course_{$course}", ['name' => $name, 'course' => $subject->course?->code]],
+            $subject instanceof StudentCourse && ($course = self::courseEvent($activity)) !== null => ["course_{$course}", ['name' => $name, 'course' => $subject->course?->code, ...self::gradeChange($activity)]],
             $subject instanceof Student && ($state = StudentStatus::tryFrom($status)) !== null => ['status', ['name' => $name, 'status' => $state->getLabel()]],
             $subject instanceof Document && ($state = DocumentStatus::tryFrom($status)) !== null && $state !== DocumentStatus::Pending => ["document_{$state->value}", ['document' => $subject->type?->getLabel(), 'name' => $name]],
             $subject instanceof Payment && ($state = PaymentStatus::tryFrom($status)) !== null && $state !== PaymentStatus::Pending => ["payment_{$state->value}", ['name' => $name]],
@@ -178,7 +179,7 @@ final class ActivityDescriber
     }
 
     /**
-     * added | dropped | restored; perubahan lain (nilai, F3) memakai kalimat umum.
+     * added | dropped | restored | graded; perubahan lain memakai kalimat umum.
      */
     private static function courseEvent(Activity $activity): ?string
     {
@@ -188,8 +189,24 @@ final class ActivityDescriber
             $activity->event === 'created' => 'added',
             ($activity->properties['attributes']['status'] ?? null) === $dropped => 'dropped',
             ($activity->properties['old']['status'] ?? null) === $dropped => 'restored',
+            array_key_exists('grade', $activity->properties['attributes'] ?? []) => 'graded',
             default => null,
         };
+    }
+
+    /**
+     * Nilai lama dan baru untuk kalimat riwayat; kosong ditulis "—".
+     *
+     * @return array{old: string, new: string}
+     */
+    private static function gradeChange(Activity $activity): array
+    {
+        $label = fn (?string $grade): string => Grade::tryFrom((string) $grade)?->getLabel() ?? '—';
+
+        return [
+            'old' => $label($activity->properties['old']['grade'] ?? null),
+            'new' => $label($activity->properties['attributes']['grade'] ?? null),
+        ];
     }
 
     private static function subjectKind(mixed $subject): string
@@ -230,7 +247,11 @@ final class ActivityDescriber
                 'expired' => 'warning',
                 default => 'success',
             },
-            $activity->subject instanceof StudentCourse => self::courseEvent($activity) === 'dropped' ? 'warning' : 'info',
+            $activity->subject instanceof StudentCourse => match (self::courseEvent($activity)) {
+                'dropped' => 'warning',
+                'graded' => 'success',
+                default => 'info',
+            },
             $activity->subject instanceof Student && isset($activity->properties['courses_applied']) => 'info',
             $activity->subject instanceof Document => 'info',
             $activity->subject instanceof Mou => 'warning',

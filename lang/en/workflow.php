@@ -43,6 +43,7 @@ return [
         'reopen' => 'reopen the active status',
         'issue_card' => 'issue a student card',
         'manage_courses' => 'change the courses',
+        'grade' => 'enter grades',
     ],
 
     'rubric' => [
@@ -53,6 +54,10 @@ return [
         'semester' => 'Semester',
         'credits' => 'Credits',
         'total' => 'Total credits',
+        'grade' => 'Grade',
+        'completed' => 'Courses completed',
+        'gpa' => 'GPA',
+        'not_graded' => 'Not graded',
         'close' => 'Close',
     ],
 
@@ -160,6 +165,10 @@ return [
         'card_expiring' => [
             'title' => 'Your student card expires soon',
             'body' => 'Student card :number is valid until :date. Contact KUI if you still need it after that date.',
+        ],
+        'grades_published' => [
+            'title' => 'Your grades were updated',
+            'body' => ':count course grade was updated. See your Academic rubric.|:count course grades were updated. See your Academic rubric.',
         ],
         'cards_expiring' => [
             'title' => 'Student cards expiring soon',

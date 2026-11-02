@@ -86,6 +86,11 @@ return [
         'rejected' => 'Ditolak',
     ],
 
+    'grade' => [
+        'pass' => 'Lulus',
+        'fail' => 'Tidak lulus',
+    ],
+
     'student_course_status' => [
         'active' => 'Sedang ditempuh',
         'completed' => 'Selesai',

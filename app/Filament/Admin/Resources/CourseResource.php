@@ -21,6 +21,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\Rules\In;
@@ -229,6 +230,14 @@ class CourseResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
+                Tables\Actions\Action::make('grades')
+                    ->iconButton()
+                    ->icon('lucide-clipboard-pen')
+                    ->color('gray')
+                    ->tooltip(__('admin.student_course.actions.grade'))
+                    ->visible(fn (Course $record): bool => ! $record->trashed() && Gate::allows('update', $record))
+                    ->url(fn (Course $record): string => static::getUrl('grades', ['record' => $record])),
+
                 static::editAction(),
                 static::deleteAction(),
                 static::restoreAction(),
@@ -240,6 +249,7 @@ class CourseResource extends Resource
     {
         return [
             'index' => Pages\ManageCourses::route('/'),
+            'grades' => Pages\GradeSheet::route('/{record}/grades'),
         ];
     }
 

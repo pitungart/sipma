@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\User;
 use App\Notifications\ApplicationApproved;
 use App\Notifications\ApplicationSubmitted;
+use App\Notifications\GradesPublished;
 use App\Notifications\LoaIssued;
 use App\Notifications\MouReviewed;
 use App\Notifications\MouSubmitted;
@@ -43,6 +44,7 @@ final class NotificationPreferences
         StudentCardRevoked::class => 'student_card',
         StudentCardExpiring::class => 'student_card',
         StudentCardsExpiring::class => 'student_cards_expiring',
+        GradesPublished::class => 'grades',
         MouReviewed::class => 'mou_reviewed',
         SubmissionReminder::class => 'reminders',
         PaymentReminder::class => 'reminders',
@@ -59,7 +61,7 @@ final class NotificationPreferences
             UserRole::SuperAdmin => ['application_submitted', 'payment_submitted', 'mou_submitted', 'student_cards_expiring'],
             UserRole::Admin => [],
             UserRole::Agent => ['revision_requested', 'application_approved', 'payment_rejected', 'loa_issued', 'student_enrolled', 'reminders', 'mou_reviewed'],
-            UserRole::Student => ['revision_requested', 'application_approved', 'payment_rejected', 'loa_issued', 'student_enrolled', 'student_card', 'reminders'],
+            UserRole::Student => ['revision_requested', 'application_approved', 'payment_rejected', 'loa_issued', 'student_enrolled', 'student_card', 'grades', 'reminders'],
         };
     }
 

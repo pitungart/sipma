@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\Grade;
 use App\Enums\StudentCourseStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -26,6 +28,7 @@ class StudentCourse extends Model
         'status',
         'grade',
         'grade_point',
+        'graded_credits',
         'graded_at',
         'graded_by',
         'notes',
@@ -35,6 +38,8 @@ class StudentCourse extends Model
     {
         return [
             'status' => StudentCourseStatus::class,
+            'grade' => Grade::class,
+            'graded_credits' => 'integer',
             'grade_point' => 'decimal:2',
             'graded_at' => 'datetime',
         ];
@@ -43,6 +48,30 @@ class StudentCourse extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['course_id', 'status', 'grade', 'notes'])->logOnlyDirty()->dontSubmitEmptyLogs();
+    }
+
+    /**
+     * SKS yang dipakai: salinan saat dinilai, atau SKS paket selama belum ada nilai.
+     */
+    public function effectiveCredits(): ?int
+    {
+        return $this->grade !== null ? $this->graded_credits : $this->course?->credits;
+    }
+
+    /**
+     * Urutan tampil: yang di-drop di akhir, lalu semester dan kode seperti paketnya.
+     *
+     * @param  Collection<int, self>  $rows
+     * @return Collection<int, self>
+     */
+    public static function inPackageOrder(Collection $rows): Collection
+    {
+        return $rows->sortBy(fn (self $row): array => [
+            $row->isDropped() ? 1 : 0,
+            $row->course?->semester === null ? 1 : 0,
+            $row->course?->semester,
+            $row->course?->code,
+        ])->values();
     }
 
     public function isDropped(): bool

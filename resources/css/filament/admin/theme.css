@@ -3171,6 +3171,10 @@ select.fi-select-input:has(option[value='']:checked) {
     margin-top: 16px;
 }
 
+.sipma-sheet-actions {
+    margin-top: 24px;
+}
+
 .sipma-portal-rubric {
     display: inline-flex;
     align-items: center;

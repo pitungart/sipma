@@ -2,11 +2,13 @@
 
 namespace App\Workflow;
 
+use App\Enums\Grade;
 use App\Enums\StudentCourseStatus;
 use App\Enums\StudentStatus;
 use App\Models\Course;
 use App\Models\Student;
 use App\Models\StudentCourse;
+use App\Notifications\GradesPublished;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -105,6 +107,64 @@ final class AcademicRecordWorkflow
             ]);
 
             return $row;
+        });
+    }
+
+    /**
+     * Simpan nilai sekaligus untuk satu mahasiswa; satu notifikasi per simpan. MK yang di-drop atau
+     * bukan milik mahasiswa ini dilewati, nilai yang tidak berubah tidak disentuh. Mengembalikan
+     * jumlah nilai yang berubah. Siapa yang boleh dan kapan diperiksa StudentPolicy::gradeCourses.
+     *
+     * @param  array<string, Grade|null>  $grades  ID baris => nilai; null mengosongkan nilai
+     */
+    public function saveGrades(Student $student, array $grades): int
+    {
+        return DB::transaction(function () use ($student, $grades): int {
+            $student = Student::query()->whereKey($student->getKey())->lockForUpdate()->firstOrFail();
+
+            if (! $student->status->hasAcademicAccess()) {
+                throw WorkflowException::transition($student->status, 'grade');
+            }
+
+            $changed = 0;
+
+            $rows = $student->studentCourses()
+                ->whereKey(array_keys($grades))
+                ->where('status', '!=', StudentCourseStatus::Dropped)
+                ->with('course')
+                ->get();
+
+            foreach ($rows as $row) {
+                $grade = $grades[$row->getKey()] ?? null;
+
+                if ($row->grade === $grade) {
+                    continue;
+                }
+
+                $row->update($grade === null ? [
+                    'status' => StudentCourseStatus::Active,
+                    'grade' => null,
+                    'grade_point' => null,
+                    'graded_credits' => null,
+                    'graded_at' => null,
+                    'graded_by' => null,
+                ] : [
+                    'status' => StudentCourseStatus::Completed,
+                    'grade' => $grade,
+                    'grade_point' => $grade->point(),
+                    'graded_credits' => $row->course?->credits,
+                    'graded_at' => now(),
+                    'graded_by' => auth()->id(),
+                ]);
+
+                $changed++;
+            }
+
+            if ($changed > 0) {
+                DB::afterCommit(fn () => $student->user?->notify(new GradesPublished($changed)));
+            }
+
+            return $changed;
         });
     }
 

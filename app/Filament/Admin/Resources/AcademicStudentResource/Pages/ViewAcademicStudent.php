@@ -2,6 +2,8 @@
 
 namespace App\Filament\Admin\Resources\AcademicStudentResource\Pages;
 
+use App\Enums\Grade;
+use App\Enums\StudentCourseStatus;
 use App\Enums\StudentStatus;
 use App\Enums\VisaProcessStatus;
 use App\Filament\Admin\Resources\AcademicStudentResource;
@@ -13,6 +15,7 @@ use App\Models\Student;
 use App\Models\StudentCard;
 use App\Models\StudentCourse;
 use App\Models\VisaStatus;
+use App\Support\AcademicSummary;
 use App\Support\ActivityDescriber;
 use App\Support\ApplicantDetails;
 use App\Support\EnrollmentPeriod;
@@ -28,6 +31,7 @@ use Filament\Support\Enums\MaxWidth;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 /**
  * Detail Mahasiswa Asing (TP-1 F2): ringkasan tahap pasca-LOA + tab Info · Visa · KTM · Rubrik · Riwayat.
@@ -119,7 +123,12 @@ class ViewAcademicStudent extends ViewRecord
                 ->requiresConfirmation()
                 ->modalIcon('lucide-badge-check')
                 ->modalHeading(fn (): string => __('admin.academic_student.confirm.complete_heading', ['name' => $this->record->full_name]))
-                ->modalDescription(__('admin.academic_student.confirm.complete_body'))
+                ->modalDescription(fn (): string => collect([
+                    __('admin.academic_student.confirm.complete_body'),
+                    ($ungraded = $this->record->studentCourses()->where('status', StudentCourseStatus::Active)->count()) > 0
+                        ? __('admin.academic_student.confirm.complete_ungraded', ['count' => $ungraded])
+                        : null,
+                ])->filter()->implode(' '))
                 ->modalSubmitActionLabel(__('admin.academic_student.actions.complete'))
                 ->action($step('complete')),
 
@@ -294,6 +303,53 @@ class ViewAcademicStudent extends ViewRecord
             });
     }
 
+    /**
+     * Nilai: Admin Fakultas selama mahasiswa Aktif, koreksi setelah Selesai hanya Super Admin.
+     */
+    public function canGradeCourses(): bool
+    {
+        return $this->record->status->hasAcademicAccess() && Gate::allows('gradeCourses', $this->record);
+    }
+
+    public function gradeCoursesAction(): Action
+    {
+        $rows = fn () => StudentCourse::inPackageOrder($this->record->studentCourses()
+            ->where('status', '!=', StudentCourseStatus::Dropped)
+            ->with('course')
+            ->get());
+
+        return FormModal::apply(Action::make('gradeCourses'))
+            ->label(__('admin.student_course.actions.grade'))
+            ->icon('lucide-clipboard-pen')
+            ->color('gray')
+            ->size('sm')
+            ->visible(fn (): bool => $this->canGradeCourses() && $rows()->isNotEmpty())
+            ->modalIcon('lucide-clipboard-pen')
+            ->modalHeading(__('admin.student_course.actions.grade'))
+            ->modalDescription(__('admin.student_course.confirm.grade_body'))
+            ->modalWidth(MaxWidth::Large)
+            ->modalSubmitActionLabel(__('admin.master.save'))
+            ->fillForm(fn (): array => ['grades' => $rows()->mapWithKeys(fn (StudentCourse $row): array => [$row->getKey() => $row->grade?->value])->all()])
+            ->form(fn (): array => $rows()->map(fn (StudentCourse $row): Select => Select::make("grades.{$row->getKey()}")
+                ->label("{$row->course?->code} · {$row->course?->localizedName()}")
+                ->placeholder(__('admin.student_course.sheet.no_grade'))
+                ->options(Grade::class)
+                ->rule(Rule::enum(Grade::class)))->all())
+            ->action(function (array $data) use ($rows): void {
+                abort_unless($this->canGradeCourses(), 403);
+
+                $this->runCourseStep(function (AcademicRecordWorkflow $workflow) use ($data, $rows): string {
+                    $changed = $workflow->saveGrades($this->record, $rows()->mapWithKeys(fn (StudentCourse $row): array => [
+                        $row->getKey() => Grade::tryFrom((string) ($data['grades'][$row->getKey()] ?? '')),
+                    ])->all());
+
+                    return $changed > 0
+                        ? __('admin.student_course.success.graded', ['count' => $changed])
+                        : __('admin.student_course.success.no_grade_change');
+                });
+            });
+    }
+
     public function dropCourseAction(): Action
     {
         return FormModal::apply(Action::make('dropCourse'))
@@ -413,12 +469,8 @@ class ViewAcademicStudent extends ViewRecord
             'activeCard' => $cards->first(fn (StudentCard $card): bool => $card->isActive()),
             'pastCards' => $cards->reject(fn (StudentCard $card): bool => $card->isActive()),
             'canManageCards' => Gate::allows('create', StudentCard::class),
-            'courses' => $student->studentCourses()->with('course')->get()->sortBy(fn (StudentCourse $row): array => [
-                $row->isDropped() ? 1 : 0,
-                $row->course?->semester === null ? 1 : 0,
-                $row->course?->semester,
-                $row->course?->code,
-            ])->values(),
+            'courses' => $courses = StudentCourse::inPackageOrder($student->studentCourses()->with('course.program')->get()),
+            'courseSummary' => AcademicSummary::from($courses),
             'canManageCourses' => $this->canManageCourses(),
             'history' => ActivityDescriber::forStudent($student),
         ];

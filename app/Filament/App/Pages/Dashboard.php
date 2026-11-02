@@ -5,6 +5,7 @@ namespace App\Filament\App\Pages;
 use App\Enums\DocumentType;
 use App\Filament\App\Concerns\InteractsWithApplication;
 use App\Models\Program;
+use App\Support\AcademicSummary;
 use App\Support\StudentHome;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
@@ -70,6 +71,7 @@ class Dashboard extends BaseDashboard
                 default => ['label' => __("student.home.stages.{$stage}.cta"), 'url' => MyApplication::getUrl()],
             },
             'studentCard' => $application?->status->hasAcademicAccess() ? $application->currentCard() : null,
+            'rubric' => $application?->status->hasAcademicAccess() ? AcademicSummary::from($application->studentCourses()->with('course')->get()) : null,
             'checklist' => $application?->status->isEditable() ? $home->checklist()->items() : collect(),
             'requiredDocuments' => DocumentType::required(),
             'openPrograms' => $stage === StudentHome::START

@@ -42,6 +42,7 @@ return [
         'reopen' => 'membuka kembali status aktif',
         'issue_card' => 'menerbitkan KTM',
         'manage_courses' => 'mengubah mata kuliah',
+        'grade' => 'mengisi nilai',
     ],
 
     'rubric' => [
@@ -52,6 +53,10 @@ return [
         'semester' => 'Semester',
         'credits' => 'SKS',
         'total' => 'Total SKS',
+        'grade' => 'Nilai',
+        'completed' => 'MK selesai',
+        'gpa' => 'IP',
+        'not_graded' => 'Belum dinilai',
         'close' => 'Tutup',
     ],
 
@@ -159,6 +164,10 @@ return [
         'card_expiring' => [
             'title' => 'KTM Anda segera habis',
             'body' => 'KTM nomor :number berlaku sampai :date. Hubungi KUI bila Anda masih memerlukannya setelah tanggal itu.',
+        ],
+        'grades_published' => [
+            'title' => 'Nilai Anda diperbarui',
+            'body' => ':count nilai mata kuliah diperbarui. Lihat di Rubrik akademik.',
         ],
         'cards_expiring' => [
             'title' => 'KTM segera habis',

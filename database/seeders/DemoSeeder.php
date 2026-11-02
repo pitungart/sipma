@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Enums\Gender;
+use App\Enums\Grade;
 use App\Enums\LoaStatus;
 use App\Enums\MouStatus;
 use App\Enums\NumberType;
@@ -192,10 +193,19 @@ class DemoSeeder extends Seeder
         }
 
         if ($status->hasAcademicAccess()) {
-            $program->courses()->active()->get()->each(fn (Course $course) => $student->studentCourses()->create([
-                'course_id' => $course->getKey(),
-                'status' => $status === StudentStatus::Completed ? StudentCourseStatus::Completed : StudentCourseStatus::Active,
-            ]));
+            $program->courses()->active()->get()->each(function (Course $course) use ($student, $status): void {
+                // Mahasiswa Selesai sudah dinilai; MK tanpa SKS memakai Lulus
+                $grade = $status === StudentStatus::Completed ? ($course->credits ? Grade::B : Grade::Pass) : null;
+
+                $student->studentCourses()->create([
+                    'course_id' => $course->getKey(),
+                    'status' => $grade ? StudentCourseStatus::Completed : StudentCourseStatus::Active,
+                    'grade' => $grade,
+                    'grade_point' => $grade?->point(),
+                    'graded_credits' => $grade ? $course->credits : null,
+                    'graded_at' => $grade ? now() : null,
+                ]);
+            });
         }
 
         // Sebagian mahasiswa Aktif sengaja belum punya KTM agar antreannya terlihat

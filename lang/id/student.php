@@ -28,9 +28,17 @@ return [
             'pay' => ['title' => 'Pendaftaran disetujui — silakan bayar', 'body' => 'Belum dibayar: :fees. Transfer ke nomor VA lalu unggah bukti transfernya.', 'cta' => 'Bayar & unggah bukti'],
             'payment_review' => ['title' => 'Pembayaran sedang diperiksa', 'body' => 'KUI sedang memeriksa bukti bayar Anda. LOA terbit setelah semua biaya terverifikasi.'],
             'loa' => ['title' => 'LOA sudah terbit', 'body' => 'Selamat! Letter of Acceptance Anda sudah bisa diunduh. KTM dan rubrik akademik terbuka setelah KUI mengaktifkan status Anda.'],
-            'active' => ['title' => 'Anda terdaftar aktif', 'body' => 'KUI sudah menandai Anda sebagai mahasiswa aktif. KTM dan rubrik akademik akan tersedia di portal ini.'],
+            'active' => ['title' => 'Anda terdaftar aktif', 'body' => 'KUI sudah menandai Anda sebagai mahasiswa aktif. KTM dan rubrik akademik Anda ada di menu samping setelah disiapkan KUI.'],
             'completed' => ['title' => 'Program selesai', 'body' => 'Program Anda sudah selesai. Data pendaftaran dan LOA tetap bisa Anda lihat di sini.'],
         ],
+    ],
+
+    'rubric' => [
+        'description' => 'Mata kuliah yang Anda tempuh dan nilainya.',
+        'empty_title' => 'Rubrik akademik sedang disiapkan KUI',
+        'empty_body' => 'Mata kuliah Anda akan tampil di sini setelah ditetapkan.',
+        'progress' => ':completed dari :total MK selesai',
+        'open' => 'Lihat rubrik',
     ],
 
     'card' => [

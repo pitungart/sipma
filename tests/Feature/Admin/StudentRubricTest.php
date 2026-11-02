@@ -98,11 +98,11 @@ class StudentRubricTest extends WorkflowTestCase
 
         $total = fn (): string => Livewire::test(ViewAcademicStudent::class, ['record' => $student->getKey()])->html();
 
-        $this->assertMatchesRegularExpression('/'.preg_quote(__('workflow.rubric.total'), '/').'.*?>\s*5\s*</s', $total());
+        $this->assertMatchesRegularExpression('/'.preg_quote(__('workflow.rubric.total'), '/').'.*?<dd>\s*5\s*</s', $total());
 
         app(AcademicRecordWorkflow::class)->drop($row);
 
-        $this->assertMatchesRegularExpression('/'.preg_quote(__('workflow.rubric.total'), '/').'.*?>\s*2\s*</s', $total());
+        $this->assertMatchesRegularExpression('/'.preg_quote(__('workflow.rubric.total'), '/').'.*?<dd>\s*2\s*</s', $total());
     }
 
     public function test_row_argument_cannot_reach_another_students_course(): void

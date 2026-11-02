@@ -87,6 +87,15 @@ class StudentPolicy
     }
 
     /**
+     * TP-3: mengisi nilai. Admin Fakultas selama mahasiswanya Aktif; koreksi setelah Selesai hanya
+     * Super Admin (via Gate::before).
+     */
+    public function gradeCourses(User $user, Student $student): bool
+    {
+        return $this->enroll($user, $student) && $student->status === StudentStatus::Enrolled;
+    }
+
+    /**
      * Membuka kembali status Selesai: hanya Super Admin (via Gate::before).
      */
     public function reopen(User $user, Student $student): bool

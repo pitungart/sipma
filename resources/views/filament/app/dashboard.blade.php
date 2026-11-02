@@ -144,6 +144,34 @@
         </section>
     @endif
 
+    {{-- Rubrik (mahasiswa Aktif / Selesai): progres MK, rinciannya di menu Rubrik akademik --}}
+    @if ($rubric)
+        <section class="sipma-card sipma-portal-section">
+            <div class="sipma-portal-card-row">
+                <span class="sipma-tile sipma-tone-primary">
+                    <x-filament::icon icon="lucide-book-open" class="sipma-tile-icon" />
+                </span>
+                <div class="sipma-row-main">
+                    <h2 class="sipma-card-title">{{ __('workflow.rubric.title') }}</h2>
+                    <p class="sipma-card-desc">
+                        @if ($rubric->total > 0)
+                            {{ __('student.rubric.progress', ['completed' => $rubric->completed, 'total' => $rubric->total]) }}
+                            @if ($rubric->gpa !== null)
+                                · {{ __('workflow.rubric.gpa') }} {{ $rubric->gpaLabel() }}
+                            @endif
+                        @else
+                            {{ __('student.rubric.empty_title') }}
+                        @endif
+                    </p>
+                </div>
+                <a href="{{ \App\Filament\App\Pages\AcademicRubric::getUrl() }}" class="sipma-link sipma-portal-more">
+                    {{ __('student.rubric.open') }}
+                    <x-filament::icon icon="lucide-chevron-right" class="sipma-portal-more-icon" />
+                </a>
+            </div>
+        </section>
+    @endif
+
     {{-- Kelengkapan (draf / perlu revisi): komponen yang sama dengan halaman Pendaftaran saya --}}
     @if ($checklist->isNotEmpty())
         <x-sipma.application-checklist :checklist="$checklist" />

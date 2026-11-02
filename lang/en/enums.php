@@ -86,6 +86,11 @@ return [
         'rejected' => 'Rejected',
     ],
 
+    'grade' => [
+        'pass' => 'Pass',
+        'fail' => 'Fail',
+    ],
+
     'student_course_status' => [
         'active' => 'In progress',
         'completed' => 'Completed',
