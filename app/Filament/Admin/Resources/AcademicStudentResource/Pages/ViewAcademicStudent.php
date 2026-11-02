@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\AcademicStudentResource\Pages;
 
+use App\Enums\StudentStatus;
 use App\Enums\VisaProcessStatus;
 use App\Filament\Admin\Resources\AcademicStudentResource;
 use App\Filament\Admin\Resources\StudentResource;
@@ -81,7 +82,50 @@ class ViewAcademicStudent extends ViewRecord
 
     protected function getHeaderActions(): array
     {
+        $step = fn (string $name) => function () use ($name): void {
+            AcademicStudentResource::runStep($this->record, $name);
+            $this->record->refresh();
+        };
+
         return [
+            Action::make('enroll')
+                ->label(__('admin.academic_student.actions.enroll'))
+                ->icon('lucide-graduation-cap')
+                ->color('success')
+                ->visible(fn (): bool => $this->record->status === StudentStatus::LoaIssued && Gate::allows('enroll', $this->record))
+                ->requiresConfirmation()
+                ->modalIcon('lucide-graduation-cap')
+                ->modalIconColor('success')
+                ->modalHeading(fn (): string => __('admin.academic_student.confirm.enroll_heading', ['name' => $this->record->full_name]))
+                ->modalDescription(fn (): string => AcademicStudentResource::enrollDescription($this->record))
+                ->modalSubmitActionLabel(__('admin.academic_student.actions.enroll'))
+                ->action($step('enroll')),
+
+            Action::make('complete')
+                ->label(__('admin.academic_student.actions.complete'))
+                ->icon('lucide-badge-check')
+                ->color('gray')
+                ->visible(fn (): bool => $this->record->status === StudentStatus::Enrolled && Gate::allows('complete', $this->record))
+                ->requiresConfirmation()
+                ->modalIcon('lucide-badge-check')
+                ->modalHeading(fn (): string => __('admin.academic_student.confirm.complete_heading', ['name' => $this->record->full_name]))
+                ->modalDescription(__('admin.academic_student.confirm.complete_body'))
+                ->modalSubmitActionLabel(__('admin.academic_student.actions.complete'))
+                ->action($step('complete')),
+
+            Action::make('reopen')
+                ->label(__('admin.academic_student.actions.reopen'))
+                ->icon('lucide-rotate-ccw')
+                ->color('gray')
+                ->visible(fn (): bool => $this->record->status === StudentStatus::Completed && Gate::allows('reopen', $this->record))
+                ->requiresConfirmation()
+                ->modalIcon('lucide-rotate-ccw')
+                ->modalIconColor('warning')
+                ->modalHeading(fn (): string => __('admin.academic_student.confirm.reopen_heading', ['name' => $this->record->full_name]))
+                ->modalDescription(__('admin.academic_student.confirm.reopen_body'))
+                ->modalSubmitActionLabel(__('admin.academic_student.actions.reopen'))
+                ->action($step('reopen')),
+
             Action::make('openApplication')
                 ->label(__('admin.academic_student.actions.open_application'))
                 ->icon('lucide-file-text')

@@ -1,5 +1,5 @@
 <x-filament-widgets::widget>
-    <div class="sipma-stat-grid">
+    <div @class(['sipma-stat-grid', 'is-five' => count($cards) === 5])>
         @foreach ($cards as $card)
             <a href="{{ $card['url'] }}" class="sipma-card sipma-stat sipma-card-link">
                 <div class="sipma-stat-head">

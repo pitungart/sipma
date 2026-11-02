@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\AccountProvision;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Enums\VisaProcessStatus;
@@ -11,11 +12,15 @@ use App\Filament\Admin\Resources\AcademicStudentResource\Pages\ViewAcademicStude
 use App\Filament\Admin\Resources\StudentResource;
 use App\Filament\Admin\Resources\StudentResource\Pages\ListApplicants;
 use App\Filament\Admin\Widgets\StatCards;
+use App\Models\Agent;
 use App\Models\Faculty;
 use App\Models\Student;
 use App\Models\User;
+use App\Notifications\StudentAccountInvitation;
+use App\Notifications\StudentEnrolled;
 use App\Support\ActivityDescriber;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\Feature\Workflow\WorkflowTestCase;
 
@@ -254,5 +259,120 @@ class AcademicStudentsTest extends WorkflowTestCase
             ->assertActionHasUrl('viewAcademic', AcademicStudentResource::getUrl('view', ['record' => $accepted]));
         Livewire::test(StudentResource\Pages\ViewApplicant::class, ['record' => $approved->getRouteKey()])
             ->assertActionHidden('viewAcademic');
+    }
+
+    private function viaAgent(StudentStatus $status = StudentStatus::LoaIssued, string $email = 'nadia.r@example.test'): Student
+    {
+        $student = $this->student(status: $status);
+        $student->user()->first()->delete();
+        $student->update(['user_id' => null, 'agent_id' => Agent::query()->first()?->id ?? $this->agent()->id, 'email' => $email]);
+
+        return $student->fresh();
+    }
+
+    public function test_kui_activates_completes_and_reopens_from_the_detail_page(): void
+    {
+        $student = $this->viaAgent();
+        $this->actingAs($this->superAdmin());
+
+        Livewire::test(ViewAcademicStudent::class, ['record' => $student->getRouteKey()])
+            ->assertActionHidden('complete')
+            ->assertActionHidden('reopen')
+            ->mountAction('enroll')
+            ->assertSee(__('admin.academic_student.confirm.enroll_invite', ['email' => 'nadia.r@example.test']))
+            ->callMountedAction()
+            ->assertNotified(__('admin.academic_student.success.enrolled', ['name' => $student->full_name]))
+            ->assertActionHidden('enroll')
+            ->assertActionVisible('complete');
+
+        $student->refresh();
+        $this->assertSame(StudentStatus::Enrolled, $student->status);
+        Notification::assertSentTo($student->user, StudentAccountInvitation::class);
+
+        Livewire::test(ViewAcademicStudent::class, ['record' => $student->getRouteKey()])
+            ->callAction('complete')
+            ->assertActionVisible('reopen');
+        $this->assertSame(StudentStatus::Completed, $student->fresh()->status);
+
+        Livewire::test(ViewAcademicStudent::class, ['record' => $student->getRouteKey()])->callAction('reopen');
+        $this->assertSame(StudentStatus::Enrolled, $student->fresh()->status);
+    }
+
+    public function test_activation_warns_when_no_portal_account_could_be_made(): void
+    {
+        $agent = $this->agent();
+        $student = $this->viaAgent(email: $agent->user->email);
+        $this->actingAs($this->superAdmin());
+
+        Livewire::test(ViewAcademicStudent::class, ['record' => $student->getRouteKey()])
+            ->callAction('enroll')
+            ->assertNotified(
+                \Filament\Notifications\Notification::make()
+                    ->title(__('admin.academic_student.success.enrolled', ['name' => $student->full_name]))
+                    ->body(AccountProvision::EmailTaken->getLabel())
+                    ->warning()
+            );
+
+        $this->assertSame(StudentStatus::Enrolled, $student->fresh()->status);
+    }
+
+    public function test_faculty_admin_activates_and_completes_but_cannot_reopen(): void
+    {
+        $student = $this->student(status: StudentStatus::LoaIssued);
+        $admin = User::factory()->create(['role' => UserRole::Admin, 'faculty_id' => $student->program->faculty_id]);
+        $this->actingAs($admin);
+
+        Livewire::test(ViewAcademicStudent::class, ['record' => $student->getRouteKey()])->callAction('enroll');
+        Livewire::test(ViewAcademicStudent::class, ['record' => $student->getRouteKey()])->callAction('complete');
+        $this->assertSame(StudentStatus::Completed, $student->fresh()->status);
+        $this->assertTrue($student->fresh()->enroller->is($admin));
+
+        Livewire::test(ViewAcademicStudent::class, ['record' => $student->getRouteKey()])->assertActionHidden('reopen');
+    }
+
+    public function test_list_activates_one_row_or_many_and_skips_the_rest(): void
+    {
+        $program = $this->program();
+        $ready = collect(range(1, 3))->map(fn (): Student => $this->student($program, StudentStatus::LoaIssued));
+        $active = $this->student($program, StudentStatus::Enrolled);
+        $this->actingAs($this->superAdmin());
+
+        Livewire::test(ListAcademicStudents::class)
+            ->assertTableActionVisible('enroll', $ready[0])
+            ->assertTableActionHidden('enroll', $active)
+            ->callTableAction('enroll', $ready[0]);
+        $this->assertSame(StudentStatus::Enrolled, $ready[0]->fresh()->status);
+        session()->forget('filament.notifications');
+
+        Livewire::test(ListAcademicStudents::class)
+            ->callTableBulkAction('enrollSelected', [...$ready, $active])
+            ->assertNotified(
+                \Filament\Notifications\Notification::make()
+                    ->title(__('admin.academic_student.success.bulk', ['count' => 2]))
+                    ->body(__('admin.academic_student.success.bulk_skipped', ['count' => 2]))
+                    ->warning()
+            );
+
+        foreach ($ready as $student) {
+            $this->assertSame(StudentStatus::Enrolled, $student->fresh()->status);
+        }
+        Notification::assertSentToTimes($ready[1]->user, StudentEnrolled::class, 1);
+    }
+
+    public function test_dashboard_counts_active_students_this_month(): void
+    {
+        $this->travelTo('2026-11-15 10:00:00');
+        $program = $this->program();
+        $this->student($program, StudentStatus::Enrolled)->update(['enrolled_at' => '2026-11-03 09:00:00']);
+        $this->student($program, StudentStatus::Enrolled)->update(['enrolled_at' => '2026-09-01 09:00:00']);
+        $this->student($program, StudentStatus::Completed);
+        $this->actingAs($this->superAdmin());
+
+        Livewire::test(StatCards::class)
+            ->assertViewHas('cards', fn (array $cards): bool => collect($cards)->contains(fn (array $card): bool => $card['label'] === __('admin.dashboard.active_students')
+                && $card['value'] === 2
+                && $card['badge'] === '+1'
+                && $card['url'] === AcademicStudentResource::getUrl('index', ['activeTab' => 'enrolled'])))
+            ->assertSeeHtml('is-five');
     }
 }

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Number;
 
 /**
- * Empat kartu angka kunci: pendaftar, menunggu verifikasi, perlu revisi, LOA terbit.
+ * Lima kartu angka kunci: pendaftar, menunggu verifikasi, perlu revisi, LOA terbit, mahasiswa aktif.
  * Setiap kartu memuat ikon bertone, angka besar, dan badge + keterangan di bawahnya.
  */
 class StatCards extends DashboardWidget
@@ -33,6 +33,7 @@ class StatCards extends DashboardWidget
             $this->waiting(),
             $this->revision(),
             $this->loaIssued(),
+            $this->activeStudents(),
         ]];
     }
 
@@ -129,6 +130,27 @@ class StatCards extends DashboardWidget
             'badge' => '+'.$thisWeek,
             'badgeTone' => 'violet',
             'caption' => __('admin.dashboard.this_week'),
+        ];
+    }
+
+    /**
+     * Mahasiswa yang sedang menjalani program (TP-1), dengan yang diaktifkan bulan ini.
+     *
+     * @return array<string, mixed>
+     */
+    private function activeStudents(): array
+    {
+        $active = fn (): Builder => $this->students()->where('status', StudentStatus::Enrolled);
+
+        return [
+            'label' => __('admin.dashboard.active_students'),
+            'url' => AcademicStudentResource::getUrl('index', ['activeTab' => StudentStatus::Enrolled->value]),
+            'value' => $active()->count(),
+            'icon' => 'lucide-graduation-cap',
+            'tone' => 'success',
+            'badge' => '+'.$active()->where('enrolled_at', '>=', now()->startOfMonth())->count(),
+            'badgeTone' => 'success',
+            'caption' => __('admin.dashboard.this_month'),
         ];
     }
 }

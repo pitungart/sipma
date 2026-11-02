@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources;
 
+use App\Enums\AccountProvision;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Filament\Admin\Resources\AcademicStudentResource\Pages;
@@ -11,12 +12,17 @@ use App\Models\Faculty;
 use App\Models\Program;
 use App\Models\Student;
 use App\Support\EnrollmentPeriod;
+use App\Workflow\StudentWorkflow;
+use App\Workflow\WorkflowException;
 use Filament\Facades\Filament;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 /**
@@ -188,13 +194,120 @@ class AcademicStudentResource extends Resource
                     ->searchable(),
             ])
             ->actions([
+                Tables\Actions\Action::make('enroll')
+                    ->iconButton()
+                    ->icon('lucide-graduation-cap')
+                    ->color('success')
+                    ->tooltip(__('admin.academic_student.actions.enroll'))
+                    ->visible(fn (Student $record): bool => $record->status === StudentStatus::LoaIssued && Gate::allows('enroll', $record))
+                    ->requiresConfirmation()
+                    ->modalIcon('lucide-graduation-cap')
+                    ->modalIconColor('success')
+                    ->modalHeading(fn (Student $record): string => __('admin.academic_student.confirm.enroll_heading', ['name' => $record->full_name]))
+                    ->modalDescription(fn (Student $record): string => static::enrollDescription($record))
+                    ->modalSubmitActionLabel(__('admin.academic_student.actions.enroll'))
+                    ->action(fn (Student $record) => static::runStep($record, 'enroll')),
+
                 Tables\Actions\ViewAction::make()
                     ->iconButton()
                     ->icon('lucide-eye')
                     ->color('gray')
                     ->tooltip(__('admin.applicant.open')),
             ])
-            ->bulkActions([]);
+            ->bulkActions([
+                Tables\Actions\BulkAction::make('enrollSelected')
+                    ->label(__('admin.academic_student.actions.enroll_bulk'))
+                    ->icon('lucide-graduation-cap')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalIcon('lucide-graduation-cap')
+                    ->modalIconColor('success')
+                    ->modalHeading(fn (Collection $records): string => __('admin.academic_student.confirm.bulk_heading', ['count' => $records->count()]))
+                    ->modalDescription(__('admin.academic_student.confirm.bulk_body'))
+                    ->modalSubmitActionLabel(__('admin.academic_student.actions.enroll'))
+                    ->deselectRecordsAfterCompletion()
+                    ->action(fn (Collection $records) => static::enrollMany($records)),
+            ]);
+    }
+
+    // ── Langkah pasca-LOA (dipakai daftar & halaman detail) ──────────────────
+
+    /**
+     * Isi konfirmasi Aktifkan; mahasiswa tanpa akun diberi tahu bahwa akun & undangan akan dibuat.
+     */
+    public static function enrollDescription(Student $student): string
+    {
+        return collect([
+            __('admin.academic_student.confirm.enroll_body'),
+            $student->user_id === null ? __('admin.academic_student.confirm.enroll_invite', ['email' => $student->email]) : null,
+        ])->filter()->implode(' ');
+    }
+
+    /**
+     * enroll | complete | reopen lewat StudentWorkflow. Ability bernama sama di StudentPolicy.
+     * Hasil Aktifkan menyebut nasib akun portal; akun yang gagal disiapkan tampil sebagai peringatan.
+     */
+    public static function runStep(Student $student, string $step): void
+    {
+        abort_unless(Gate::allows($step, $student), 403);
+
+        try {
+            $result = app(StudentWorkflow::class)->{$step}($student);
+        } catch (WorkflowException $e) {
+            Notification::make()->danger()->title($e->getMessage())->send();
+
+            return;
+        }
+
+        $done = ['enroll' => 'enrolled', 'complete' => 'completed', 'reopen' => 'reopened'][$step];
+        $notification = Notification::make()->title(__("admin.academic_student.success.{$done}", ['name' => $student->full_name]));
+
+        if ($result instanceof AccountProvision) {
+            $notification->body($result->getLabel())->status($result->hasAccount() ? 'success' : 'warning');
+        } else {
+            $notification->success();
+        }
+
+        $notification->send();
+    }
+
+    /**
+     * Aktifkan beberapa sekaligus: yang bukan LOA terbit atau di luar akses dilewati, bukan menggagalkan semuanya.
+     *
+     * @param  Collection<int, Student>  $students
+     */
+    public static function enrollMany(Collection $students): void
+    {
+        $workflow = app(StudentWorkflow::class);
+        $enrolled = $skipped = $withoutAccount = 0;
+
+        foreach ($students as $student) {
+            if ($student->status !== StudentStatus::LoaIssued || ! Gate::allows('enroll', $student)) {
+                $skipped++;
+
+                continue;
+            }
+
+            try {
+                $account = $workflow->enroll($student);
+            } catch (WorkflowException) {
+                $skipped++;
+
+                continue;
+            }
+
+            $enrolled++;
+            $withoutAccount += $account->hasAccount() ? 0 : 1;
+        }
+
+        Notification::make()
+            ->title(__('admin.academic_student.success.bulk', ['count' => $enrolled]))
+            ->body(collect([
+                $skipped ? __('admin.academic_student.success.bulk_skipped', ['count' => $skipped]) : null,
+                $withoutAccount ? __('admin.academic_student.success.bulk_accounts', ['count' => $withoutAccount]) : null,
+            ])->filter()->implode(' ') ?: null)
+            ->status($enrolled === 0 ? 'danger' : ($skipped || $withoutAccount ? 'warning' : 'success'))
+            ->send();
     }
 
     public static function getPages(): array
