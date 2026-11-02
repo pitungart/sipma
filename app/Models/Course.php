@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -58,6 +59,14 @@ class Course extends Model
     public function scopePackageOrder(Builder $query): Builder
     {
         return $query->orderByRaw('semester IS NULL')->orderBy('semester')->orderBy('code');
+    }
+
+    /**
+     * Mahasiswa yang menempuh MK ini.
+     */
+    public function studentCourses(): HasMany
+    {
+        return $this->hasMany(StudentCourse::class);
     }
 
     public function program(): BelongsTo

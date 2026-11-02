@@ -41,6 +41,7 @@ return [
         'complete' => 'menandai program selesai',
         'reopen' => 'membuka kembali status aktif',
         'issue_card' => 'menerbitkan KTM',
+        'manage_courses' => 'mengubah mata kuliah',
     ],
 
     'rubric' => [
@@ -79,6 +80,10 @@ return [
         'card_valid_until_required' => 'Isi tanggal berlaku KTM. Tanggal tidak bisa dihitung karena durasi program atau periode masuk masih kosong.',
         'card_valid_until_past' => 'Tanggal berlaku KTM harus setelah hari ini.',
         'card_number_taken' => 'Nomor KTM :number sudah dipakai.',
+        'course_unavailable' => 'Mata kuliah :course sudah tidak aktif.',
+        'course_already_added' => 'Mahasiswa ini sudah punya :course. Bila di-drop, pulihkan dari daftarnya.',
+        'course_already_dropped' => 'Mata kuliah ini sudah di-drop.',
+        'course_not_dropped' => 'Mata kuliah ini tidak sedang di-drop.',
     ],
 
     'notifications' => [

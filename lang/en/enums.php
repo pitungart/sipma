@@ -86,6 +86,12 @@ return [
         'rejected' => 'Rejected',
     ],
 
+    'student_course_status' => [
+        'active' => 'In progress',
+        'completed' => 'Completed',
+        'dropped' => 'Dropped',
+    ],
+
     'student_card_status' => [
         'active' => 'Active',
         'expired' => 'Expired',

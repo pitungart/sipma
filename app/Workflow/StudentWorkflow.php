@@ -347,8 +347,8 @@ final class StudentWorkflow
     // ── Pasca-LOA ────────────────────────────────────────────────────────────
 
     /**
-     * Tandai mahasiswa Aktif: membuka fitur akademik (KTM, rubrik) di portal. Mahasiswa yang
-     * didaftarkan agen dibuatkan akun portal + undangan; gagal menyiapkan akun (email kosong /
+     * Tandai mahasiswa Aktif: membuka fitur akademik (KTM, rubrik) di portal dan memasang paket MK
+     * programnya. Mahasiswa yang didaftarkan agen dibuatkan akun portal + undangan; gagal menyiapkan akun (email kosong /
      * sudah dipakai) tidak membatalkan aktivasi — hasilnya dikembalikan untuk ditampilkan ke admin.
      */
     public function enroll(Student $student): AccountProvision
@@ -364,6 +364,8 @@ final class StudentWorkflow
             ]);
 
             $account = StudentAccounts::provision($student);
+
+            app(AcademicRecordWorkflow::class)->applyPackage($student);
 
             DB::afterCommit(function () use ($student, $account): void {
                 $student->load(['user', 'agent.user', 'program']);

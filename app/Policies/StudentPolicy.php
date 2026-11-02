@@ -79,6 +79,14 @@ class StudentPolicy
     }
 
     /**
+     * TP-3: mengatur mata kuliah mahasiswa. Admin Fakultas untuk mahasiswa di fakultasnya.
+     */
+    public function manageCourses(User $user, Student $student): bool
+    {
+        return $this->enroll($user, $student);
+    }
+
+    /**
      * Membuka kembali status Selesai: hanya Super Admin (via Gate::before).
      */
     public function reopen(User $user, Student $student): bool

@@ -3163,6 +3163,14 @@ select.fi-select-input:has(option[value='']:checked) {
     text-align: end;
 }
 
+.sipma-rubric-table tr.is-muted td {
+    color: var(--sp-muted);
+}
+
+.sipma-rubric-note {
+    margin-top: 16px;
+}
+
 .sipma-portal-rubric {
     display: inline-flex;
     align-items: center;

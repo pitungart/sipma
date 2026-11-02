@@ -42,6 +42,7 @@ return [
         'complete' => 'mark the program completed',
         'reopen' => 'reopen the active status',
         'issue_card' => 'issue a student card',
+        'manage_courses' => 'change the courses',
     ],
 
     'rubric' => [
@@ -80,6 +81,10 @@ return [
         'card_valid_until_required' => 'Enter the card’s expiry date. It cannot be calculated because the program duration or enrollment period is empty.',
         'card_valid_until_past' => 'The card’s expiry date must be after today.',
         'card_number_taken' => 'Student card number :number is already in use.',
+        'course_unavailable' => 'Course :course is no longer active.',
+        'course_already_added' => 'This student already has :course. If it was dropped, restore it from the list.',
+        'course_already_dropped' => 'This course has already been dropped.',
+        'course_not_dropped' => 'This course is not dropped.',
     ],
 
     'notifications' => [

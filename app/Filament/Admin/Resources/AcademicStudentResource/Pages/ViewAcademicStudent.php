@@ -8,12 +8,17 @@ use App\Filament\Admin\Resources\AcademicStudentResource;
 use App\Filament\Admin\Resources\StudentResource;
 use App\Filament\Support\FormModal;
 use App\Filament\Support\StudentCardActions;
+use App\Models\Course;
 use App\Models\Student;
 use App\Models\StudentCard;
+use App\Models\StudentCourse;
 use App\Models\VisaStatus;
 use App\Support\ActivityDescriber;
 use App\Support\ApplicantDetails;
 use App\Support\EnrollmentPeriod;
+use App\Workflow\AcademicRecordWorkflow;
+use App\Workflow\WorkflowException;
+use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -21,11 +26,12 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * Detail Mahasiswa Asing (TP-1 F2): ringkasan tahap pasca-LOA + tab Info · Visa · KTM · Riwayat.
- * Tab Rubrik dan SK Mengajar ditambahkan TP-3 dan TP-4 lewat tabs().
+ * Detail Mahasiswa Asing (TP-1 F2): ringkasan tahap pasca-LOA + tab Info · Visa · KTM · Rubrik · Riwayat.
+ * Tab SK Mengajar ditambahkan TP-4 lewat tabs().
  *
  * Super Admin melihat dokumen, biaya, dan LOA (seperti detail Pendaftar); Admin Fakultas hanya
  * data ringkas (keputusan 6 Oktober 2026). Visa diubah hanya oleh Super Admin.
@@ -79,6 +85,7 @@ class ViewAcademicStudent extends ViewRecord
             'info' => __('admin.academic_student.tabs.info'),
             'visa' => __('admin.academic_student.tabs.visa'),
             'card' => __('admin.academic_student.tabs.card'),
+            'rubric' => __('admin.academic_student.tabs.rubric'),
             'history' => __('admin.academic_student.tabs.history'),
         ];
     }
@@ -219,6 +226,169 @@ class ViewAcademicStudent extends ViewRecord
             ->record(fn (): ?StudentCard => $this->activeCard());
     }
 
+    // ── Rubrik ───────────────────────────────────────────────────────────────
+
+    /**
+     * Daftar MK hanya bisa diubah selagi mahasiswa Aktif.
+     */
+    public function canManageCourses(): bool
+    {
+        return $this->record->status === StudentStatus::Enrolled && Gate::allows('manageCourses', $this->record);
+    }
+
+    public function applyPackageAction(): Action
+    {
+        return Action::make('applyPackage')
+            ->label(__('admin.student_course.actions.apply'))
+            ->icon('lucide-list-checks')
+            ->color('gray')
+            ->size('sm')
+            ->visible(fn (): bool => $this->canManageCourses())
+            ->requiresConfirmation()
+            ->modalIcon('lucide-list-checks')
+            ->modalHeading(__('admin.student_course.confirm.apply_heading'))
+            ->modalDescription(__('admin.student_course.confirm.apply_body'))
+            ->modalSubmitActionLabel(__('admin.student_course.actions.apply'))
+            ->action(function (): void {
+                abort_unless($this->canManageCourses(), 403);
+
+                $this->runCourseStep(function (AcademicRecordWorkflow $workflow): string {
+                    $added = $workflow->applyPackage($this->record);
+
+                    return $added > 0
+                        ? __('admin.student_course.success.applied', ['count' => $added])
+                        : __('admin.student_course.success.nothing_to_apply');
+                });
+            });
+    }
+
+    public function addCourseAction(): Action
+    {
+        return FormModal::apply(Action::make('addCourse'))
+            ->label(__('admin.student_course.actions.add'))
+            ->icon('lucide-plus')
+            ->size('sm')
+            ->visible(fn (): bool => $this->canManageCourses())
+            ->modalIcon('lucide-book-open')
+            ->modalHeading(__('admin.student_course.actions.add'))
+            ->modalDescription(__('admin.student_course.confirm.add_body'))
+            ->modalWidth(MaxWidth::Large)
+            ->modalSubmitActionLabel(__('admin.student_course.actions.add'))
+            ->form([
+                Select::make('course_id')
+                    ->label(__('admin.course.label'))
+                    ->options(fn (): array => $this->availableCourses())
+                    // MK di luar daftar (fakultas lain) ditolak walau dikirim paksa lewat Livewire
+                    ->in(fn (Select $component): array => array_keys($component->getOptions()))
+                    ->searchable()
+                    ->required(),
+            ])
+            ->action(function (array $data): void {
+                abort_unless($this->canManageCourses(), 403);
+
+                $this->runCourseStep(function (AcademicRecordWorkflow $workflow) use ($data): string {
+                    $row = $workflow->addCourse($this->record, Course::query()->findOrFail($data['course_id']));
+
+                    return __('admin.student_course.success.added', ['course' => $row->course->code]);
+                });
+            });
+    }
+
+    public function dropCourseAction(): Action
+    {
+        return FormModal::apply(Action::make('dropCourse'))
+            ->iconButton()
+            ->icon('lucide-circle-minus')
+            ->color('gray')
+            ->tooltip(__('admin.student_course.actions.drop'))
+            ->visible(fn (): bool => $this->canManageCourses())
+            ->modalIcon('lucide-circle-minus')
+            ->modalIconColor('warning')
+            ->modalHeading(fn (array $arguments): string => __('admin.student_course.confirm.drop_heading', ['course' => $this->courseRow($arguments)->course?->code]))
+            ->modalDescription(__('admin.student_course.confirm.drop_body'))
+            ->modalWidth(MaxWidth::Large)
+            ->modalSubmitActionLabel(__('admin.student_course.actions.drop'))
+            ->form([
+                Textarea::make('note')
+                    ->label(__('admin.student_course.fields.drop_note'))
+                    ->rows(3)
+                    ->maxLength(1000),
+            ])
+            ->action(function (array $arguments, array $data): void {
+                abort_unless($this->canManageCourses(), 403);
+
+                $this->runCourseStep(function (AcademicRecordWorkflow $workflow) use ($arguments, $data): string {
+                    $row = $workflow->drop($this->courseRow($arguments), $data['note'] ?? null);
+
+                    return __('admin.student_course.success.dropped', ['course' => $row->course?->code]);
+                });
+            });
+    }
+
+    public function restoreCourseAction(): Action
+    {
+        return Action::make('restoreCourse')
+            ->iconButton()
+            ->icon('lucide-undo-2')
+            ->color('gray')
+            ->tooltip(__('admin.student_course.actions.restore'))
+            ->visible(fn (): bool => $this->canManageCourses())
+            ->requiresConfirmation()
+            ->modalIcon('lucide-undo-2')
+            ->modalHeading(fn (array $arguments): string => __('admin.student_course.confirm.restore_heading', ['course' => $this->courseRow($arguments)->course?->code]))
+            ->modalDescription(__('admin.student_course.confirm.restore_body'))
+            ->modalSubmitActionLabel(__('admin.student_course.actions.restore'))
+            ->action(function (array $arguments): void {
+                abort_unless($this->canManageCourses(), 403);
+
+                $this->runCourseStep(function (AcademicRecordWorkflow $workflow) use ($arguments): string {
+                    $row = $workflow->restore($this->courseRow($arguments));
+
+                    return __('admin.student_course.success.restored', ['course' => $row->course?->code]);
+                });
+            });
+    }
+
+    /**
+     * Baris selalu dicari di dalam MK mahasiswa ini, bukan dari ID yang dikirim browser saja.
+     */
+    private function courseRow(array $arguments): StudentCourse
+    {
+        return $this->record->studentCourses()->with('course')->findOrFail($arguments['row'] ?? null);
+    }
+
+    /**
+     * MK aktif yang belum dimiliki mahasiswa, dalam batas akses admin; lintas program diperbolehkan.
+     *
+     * @return array<string, string>
+     */
+    private function availableCourses(): array
+    {
+        return Course::query()
+            ->active()
+            ->whereHas('program', fn (Builder $program) => $program->visibleTo(auth()->user()))
+            ->whereNotIn('id', $this->record->studentCourses()->select('course_id'))
+            ->with('program:id,name')
+            ->packageOrder()
+            ->get()
+            ->mapWithKeys(fn (Course $course): array => [
+                $course->getKey() => "{$course->code} · {$course->localizedName()} ({$course->program?->name})",
+            ])
+            ->all();
+    }
+
+    /**
+     * @param  Closure(AcademicRecordWorkflow): string  $step  mengembalikan judul notifikasi berhasil
+     */
+    private function runCourseStep(Closure $step): void
+    {
+        try {
+            Notification::make()->success()->title($step(app(AcademicRecordWorkflow::class)))->send();
+        } catch (WorkflowException $e) {
+            Notification::make()->danger()->title($e->getMessage())->send();
+        }
+    }
+
     // ── Data untuk view ──────────────────────────────────────────────────────
 
     /**
@@ -243,6 +413,13 @@ class ViewAcademicStudent extends ViewRecord
             'activeCard' => $cards->first(fn (StudentCard $card): bool => $card->isActive()),
             'pastCards' => $cards->reject(fn (StudentCard $card): bool => $card->isActive()),
             'canManageCards' => Gate::allows('create', StudentCard::class),
+            'courses' => $student->studentCourses()->with('course')->get()->sortBy(fn (StudentCourse $row): array => [
+                $row->isDropped() ? 1 : 0,
+                $row->course?->semester === null ? 1 : 0,
+                $row->course?->semester,
+                $row->course?->code,
+            ])->values(),
+            'canManageCourses' => $this->canManageCourses(),
             'history' => ActivityDescriber::forStudent($student),
         ];
     }

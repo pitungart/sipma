@@ -86,6 +86,12 @@ return [
         'rejected' => 'Ditolak',
     ],
 
+    'student_course_status' => [
+        'active' => 'Sedang ditempuh',
+        'completed' => 'Selesai',
+        'dropped' => 'Di-drop',
+    ],
+
     'student_card_status' => [
         'active' => 'Aktif',
         'expired' => 'Kedaluwarsa',

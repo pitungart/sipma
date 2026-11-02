@@ -6,6 +6,7 @@ use App\Enums\DocumentStatus;
 use App\Enums\MouStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StudentCardStatus;
+use App\Enums\StudentCourseStatus;
 use App\Enums\StudentStatus;
 use App\Enums\VisaProcessStatus;
 use App\Models\Agent;
@@ -16,6 +17,7 @@ use App\Models\Mou;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\StudentCard;
+use App\Models\StudentCourse;
 use App\Models\User;
 use App\Models\VisaStatus;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,6 +39,7 @@ final class ActivityDescriber
         Loa::class => 'loa',
         VisaStatus::class => 'visa',
         StudentCard::class => 'card',
+        StudentCourse::class => 'course',
     ];
 
     /**
@@ -105,6 +108,14 @@ final class ActivityDescriber
             return __('admin.dashboard.activity_visa', ['causer' => $causer, 'name' => $name, 'status' => $visa->getLabel()]);
         }
 
+        if ($subject instanceof Student && isset($activity->properties['courses_applied'])) {
+            return __('admin.dashboard.activity_courses_applied', ['causer' => $causer, 'name' => $name, 'count' => $activity->properties['courses_applied']]);
+        }
+
+        if ($subject instanceof StudentCourse && ($course = self::courseEvent($activity)) !== null) {
+            return __("admin.dashboard.activity_course_{$course}", ['causer' => $causer, 'name' => $name, 'course' => $subject->course?->code]);
+        }
+
         if ($subject instanceof StudentCard && ($card = self::cardEvent($activity)) !== null) {
             return __("admin.dashboard.activity_card_{$card}", ['causer' => $causer, 'name' => $name]);
         }
@@ -130,6 +141,8 @@ final class ActivityDescriber
 
         $decision = match (true) {
             $activity->event === 'deleted' => null,
+            $subject instanceof Student && isset($activity->properties['courses_applied']) => ['courses_applied', ['name' => $name, 'count' => $activity->properties['courses_applied']]],
+            $subject instanceof StudentCourse && ($course = self::courseEvent($activity)) !== null => ["course_{$course}", ['name' => $name, 'course' => $subject->course?->code]],
             $subject instanceof Student && ($state = StudentStatus::tryFrom($status)) !== null => ['status', ['name' => $name, 'status' => $state->getLabel()]],
             $subject instanceof Document && ($state = DocumentStatus::tryFrom($status)) !== null && $state !== DocumentStatus::Pending => ["document_{$state->value}", ['document' => $subject->type?->getLabel(), 'name' => $name]],
             $subject instanceof Payment && ($state = PaymentStatus::tryFrom($status)) !== null && $state !== PaymentStatus::Pending => ["payment_{$state->value}", ['name' => $name]],
@@ -160,6 +173,21 @@ final class ActivityDescriber
             $activity->event === 'created' => 'issued',
             ($activity->properties['attributes']['status'] ?? null) === StudentCardStatus::Revoked->value => 'revoked',
             ($activity->properties['attributes']['status'] ?? null) === StudentCardStatus::Expired->value => 'expired',
+            default => null,
+        };
+    }
+
+    /**
+     * added | dropped | restored; perubahan lain (nilai, F3) memakai kalimat umum.
+     */
+    private static function courseEvent(Activity $activity): ?string
+    {
+        $dropped = StudentCourseStatus::Dropped->value;
+
+        return match (true) {
+            $activity->event === 'created' => 'added',
+            ($activity->properties['attributes']['status'] ?? null) === $dropped => 'dropped',
+            ($activity->properties['old']['status'] ?? null) === $dropped => 'restored',
             default => null,
         };
     }
@@ -202,6 +230,8 @@ final class ActivityDescriber
                 'expired' => 'warning',
                 default => 'success',
             },
+            $activity->subject instanceof StudentCourse => self::courseEvent($activity) === 'dropped' ? 'warning' : 'info',
+            $activity->subject instanceof Student && isset($activity->properties['courses_applied']) => 'info',
             $activity->subject instanceof Document => 'info',
             $activity->subject instanceof Mou => 'warning',
             default => 'primary',
@@ -219,6 +249,8 @@ final class ActivityDescriber
             $subject instanceof Loa => 'lucide-file-check',
             $subject instanceof VisaStatus => 'lucide-plane',
             $subject instanceof StudentCard => 'lucide-id-card',
+            $subject instanceof StudentCourse => 'lucide-book-open',
+            $subject instanceof Student && isset($activity->properties['courses_applied']) => 'lucide-book-open',
             $subject instanceof Document => 'lucide-file-text',
             $subject instanceof Mou => 'lucide-handshake',
             $subject instanceof Agent => 'lucide-building-2',

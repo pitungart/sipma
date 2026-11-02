@@ -1,5 +1,5 @@
-{{-- Detail Mahasiswa Asing: ringkasan tahap pasca-LOA, lalu tab Info · Visa · KTM · Riwayat
-     (Rubrik dan SK Mengajar menyusul lewat ViewAcademicStudent::tabs()). --}}
+{{-- Detail Mahasiswa Asing: ringkasan tahap pasca-LOA, lalu tab Info · Visa · KTM · Rubrik · Riwayat
+     (SK Mengajar menyusul lewat ViewAcademicStudent::tabs()). --}}
 @php
     use App\Enums\StudentStatus;
 
@@ -216,6 +216,79 @@
             @unless ($canManageCards)
                 <x-sipma.notice tone="warning" icon="lucide-lock">{{ __('admin.student_card.detail.readonly') }}</x-sipma.notice>
             @endunless
+        </section>
+
+        {{-- Rubrik: MK yang ditempuh; hanya bisa diubah selagi mahasiswa Aktif --}}
+        <section x-show="tab === 'rubric'" x-cloak class="sipma-section">
+            <div class="sipma-subsection-head">
+                <h3 class="sipma-card-title">{{ __('admin.student_course.title') }}</h3>
+                @if ($canManageCourses)
+                    <div class="sipma-actions-inline">
+                        {{ $this->applyPackageAction }}
+                        {{ $this->addCourseAction }}
+                    </div>
+                @endif
+            </div>
+
+            @if ($courses->isEmpty())
+                <x-sipma.empty
+                    icon="lucide-book-open"
+                    :title="__('admin.student_course.empty')"
+                    :description="$record->status === StudentStatus::LoaIssued ? __('admin.student_course.empty_not_active') : __('admin.student_course.empty_active')"
+                />
+            @else
+                <div class="sipma-rubric-scroll">
+                    <table class="sipma-rubric-table">
+                        <thead>
+                            <tr>
+                                <th>{{ __('workflow.rubric.code') }}</th>
+                                <th>{{ __('workflow.rubric.course') }}</th>
+                                <th>{{ __('workflow.rubric.semester') }}</th>
+                                <th class="is-end">{{ __('workflow.rubric.credits') }}</th>
+                                <th>{{ __('admin.dashboard.status') }}</th>
+                                @if ($canManageCourses)
+                                    <th></th>
+                                @endif
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($courses as $row)
+                                <tr wire:key="course-{{ $row->getKey() }}" @class(['is-muted' => $row->isDropped()])>
+                                    <td class="sipma-mono">{{ $row->course?->code }}</td>
+                                    <td>
+                                        {{ $row->course?->localizedName() }}
+                                        @if ($row->course?->program_id !== $record->program_id)
+                                            <span class="sipma-row-tag">{{ $row->course?->program?->name }}</span>
+                                        @endif
+                                        @if ($row->isDropped() && filled($row->notes))
+                                            <div class="sipma-row-meta">{{ $row->notes }}</div>
+                                        @endif
+                                    </td>
+                                    <td>{{ $row->course?->semester ?? '—' }}</td>
+                                    <td class="is-end">{{ $row->course?->credits ?? '—' }}</td>
+                                    <td><x-sipma.status-badge :status="$row->status" /></td>
+                                    @if ($canManageCourses)
+                                        <td class="is-end">
+                                            {{ $row->isDropped() ? ($this->restoreCourseAction)(['row' => $row->getKey()]) : ($this->dropCourseAction)(['row' => $row->getKey()]) }}
+                                        </td>
+                                    @endif
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3">{{ __('workflow.rubric.total') }}</td>
+                                <td class="is-end">{{ $courses->reject->isDropped()->sum(fn ($row) => $row->course?->credits) }}</td>
+                                <td colspan="{{ $canManageCourses ? 2 : 1 }}"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            @endif
+
+            @if ($record->status === StudentStatus::Completed)
+                <x-sipma.notice tone="warning" icon="lucide-lock" class="sipma-rubric-note">{{ __('admin.student_course.locked') }}</x-sipma.notice>
+            @endif
         </section>
 
         {{-- Riwayat --}}

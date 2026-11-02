@@ -10,9 +10,11 @@ use App\Enums\MouStatus;
 use App\Enums\NumberType;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
+use App\Enums\StudentCourseStatus;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Models\Agent;
+use App\Models\Course;
 use App\Models\PaymentAccount;
 use App\Models\Program;
 use App\Models\Student;
@@ -187,6 +189,13 @@ class DemoSeeder extends Seeder
 
         if ($status === StudentStatus::Approved || $status->isAccepted()) {
             $this->payments($student, $status);
+        }
+
+        if ($status->hasAcademicAccess()) {
+            $program->courses()->active()->get()->each(fn (Course $course) => $student->studentCourses()->create([
+                'course_id' => $course->getKey(),
+                'status' => $status === StudentStatus::Completed ? StudentCourseStatus::Completed : StudentCourseStatus::Active,
+            ]));
         }
 
         // Sebagian mahasiswa Aktif sengaja belum punya KTM agar antreannya terlihat

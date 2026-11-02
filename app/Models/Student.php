@@ -194,6 +194,14 @@ class Student extends Model
     }
 
     /**
+     * Mata kuliah yang ditempuh, termasuk yang di-drop (TP-3).
+     */
+    public function studentCourses(): HasMany
+    {
+        return $this->hasMany(StudentCourse::class);
+    }
+
+    /**
      * Seluruh KTM, termasuk yang sudah dicabut atau kedaluwarsa (TP-2).
      */
     public function studentCards(): HasMany

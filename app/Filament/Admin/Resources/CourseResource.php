@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources;
 
+use App\Enums\StudentCourseStatus;
 use App\Enums\UserRole;
 use App\Filament\Admin\Resources\Concerns\AcademicModule;
 use App\Filament\Admin\Resources\Concerns\MasterData;
@@ -84,7 +85,8 @@ class CourseResource extends Resource
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([SoftDeletingScope::class]) // filter "dihapus" mengaturnya sendiri
             ->whereHas('program', fn (Builder $program) => $program->visibleTo(Filament::auth()->user()))
-            ->with('program.faculty');
+            ->with('program.faculty')
+            ->withCount(['studentCourses as students_taking' => fn (Builder $query): Builder => $query->where('status', '!=', StudentCourseStatus::Dropped)]);
     }
 
     /**
@@ -189,6 +191,12 @@ class CourseResource extends Resource
                     ->label(__('admin.program.label'))
                     ->description(fn (Course $record): ?string => $record->program?->faculty?->name)
                     ->wrap(),
+
+                // Tanpa yang di-drop
+                Tables\Columns\TextColumn::make('students_taking')
+                    ->label(__('admin.course.fields.students'))
+                    ->state(fn (Course $record): int => (int) $record->students_taking)
+                    ->sortable(),
 
                 static::activeColumn(),
             ])

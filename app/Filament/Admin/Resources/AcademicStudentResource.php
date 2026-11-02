@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Enums\AccountProvision;
+use App\Enums\StudentCourseStatus;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Filament\Admin\Resources\AcademicStudentResource\Pages;
@@ -74,7 +75,8 @@ class AcademicStudentResource extends Resource
         return parent::getEloquentQuery()
             ->visibleTo(Filament::auth()->user())
             ->whereIn('status', StudentStatus::acceptedStatuses())
-            ->with(['program.faculty', 'nationality', 'agent:id,company_name', 'activeCard']);
+            ->with(['program.faculty', 'nationality', 'agent:id,company_name', 'activeCard'])
+            ->withCount(['studentCourses as courses_taken' => fn (Builder $query): Builder => $query->where('status', '!=', StudentCourseStatus::Dropped)]);
     }
 
     public static function canCreate(): bool
@@ -161,6 +163,12 @@ class AcademicStudentResource extends Resource
                     })
                     ->icon(fn (Student $record): string => $record->activeCard ? 'lucide-circle-check' : 'lucide-circle-minus')
                     ->tooltip(fn (Student $record): ?string => $record->activeCard?->card_number),
+
+                // Mahasiswa Aktif tanpa MK perlu ditindaklanjuti (program tanpa paket)
+                Tables\Columns\TextColumn::make('courses_taken')
+                    ->label(__('admin.academic_student.fields.courses'))
+                    ->badge()
+                    ->color(fn (Student $record): string => $record->status === StudentStatus::Enrolled && (int) $record->courses_taken === 0 ? 'warning' : 'gray'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('admin.dashboard.status'))
