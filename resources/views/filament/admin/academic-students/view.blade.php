@@ -1,5 +1,4 @@
-{{-- Detail Mahasiswa Asing: ringkasan tahap pasca-LOA, lalu tab Info · Visa · KTM · Rubrik · Riwayat
-     (SK Mengajar menyusul lewat ViewAcademicStudent::tabs()). --}}
+{{-- Detail Mahasiswa Asing: ringkasan tahap pasca-LOA, lalu tab Info · Visa · KTM · Rubrik · SK Mengajar · Riwayat --}}
 @php
     use App\Enums\StudentStatus;
 
@@ -263,6 +262,9 @@
                                         @if ($row->course?->program_id !== $record->program_id)
                                             <span class="sipma-row-tag">{{ $row->course?->program?->name }}</span>
                                         @endif
+                                        @if ($teachers->has($row->course_id))
+                                            <div class="sipma-row-meta">{{ $teachers[$row->course_id] }}</div>
+                                        @endif
                                         @if ($row->isDropped() && filled($row->notes))
                                             <div class="sipma-row-meta">{{ $row->notes }}</div>
                                         @endif
@@ -287,6 +289,56 @@
 
             @if ($record->status === StudentStatus::Completed)
                 <x-sipma.notice tone="warning" icon="lucide-lock" class="sipma-rubric-note">{{ __('admin.student_course.locked') }}</x-sipma.notice>
+            @endif
+        </section>
+
+        {{-- SK Mengajar: SK yang memuat MK mahasiswa dalam masa aktifnya. Berkas hanya untuk yang berhak
+             atas SK itu; MK lintas fakultas tetap menampilkan nama dosen dan nomor SK. --}}
+        <section x-show="tab === 'decrees'" x-cloak class="sipma-section">
+            @if ($teaching->isEmpty())
+                <x-sipma.empty
+                    icon="lucide-file-signature"
+                    :title="__('admin.teaching_decree.student.empty')"
+                    :description="$record->enrolled_at === null ? __('admin.teaching_decree.student.not_active') : __('admin.teaching_decree.student.empty_hint')"
+                />
+            @else
+                <div class="sipma-rubric-scroll">
+                    <table class="sipma-rubric-table">
+                        <thead>
+                            <tr>
+                                <th>{{ __('admin.teaching_decree.fields.number') }}</th>
+                                <th>{{ __('workflow.rubric.course') }}</th>
+                                <th>{{ __('admin.lecturer.label') }}</th>
+                                <th>{{ __('admin.teaching_decree.fields.role') }}</th>
+                                <th>{{ __('admin.teaching_decree.fields.period') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($teaching as $row)
+                                <tr wire:key="teaching-{{ $row->getKey() }}">
+                                    <td>{{ $row->decree->decree_number }}</td>
+                                    <td><span class="sipma-mono">{{ $row->course?->code }}</span> {{ $row->course?->localizedName() }}</td>
+                                    <td>{{ $row->lecturer?->name }}</td>
+                                    <td>{{ $row->role->getLabel() }}</td>
+                                    <td>{{ $row->decree->period_start->translatedFormat('j M Y') }} – {{ $row->decree->period_end->translatedFormat('j M Y') }}</td>
+                                    <td class="is-end">
+                                        @if ($row->decree->document && \Illuminate\Support\Facades\Gate::allows('view', $row->decree))
+                                            <x-filament::icon-button
+                                                tag="a"
+                                                :href="route('files.teaching-decree', ['decree' => $row->decree, 'download' => 1])"
+                                                icon="lucide-download"
+                                                color="gray"
+                                                :tooltip="__('admin.teaching_decree.download')"
+                                                :label="__('admin.teaching_decree.download')"
+                                            />
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             @endif
         </section>
 

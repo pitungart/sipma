@@ -1,4 +1,5 @@
-{{-- Rubrik mahasiswa: ringkasan program & IP, lalu mata kuliah. Nilai MK yang di-drop tidak ditampilkan. --}}
+{{-- Rubrik mahasiswa: ringkasan program & IP, lalu mata kuliah dan pengajarnya (nama & peran saja).
+     Nilai MK yang di-drop tidak ditampilkan. --}}
 @php
     use App\Support\EnrollmentPeriod;
 @endphp
@@ -44,7 +45,12 @@
                         @foreach ($rows as $row)
                             <tr @class(['is-muted' => $row->isDropped()])>
                                 <td class="sipma-mono">{{ $row->course?->code }}</td>
-                                <td>{{ $row->course?->localizedName() }}</td>
+                                <td>
+                                    {{ $row->course?->localizedName() }}
+                                    @if ($teachers->has($row->course_id))
+                                        <div class="sipma-row-meta">{{ $teachers[$row->course_id] }}</div>
+                                    @endif
+                                </td>
                                 <td class="is-end">{{ $row->effectiveCredits() ?? '—' }}</td>
                                 <td>{{ $row->isDropped() ? '—' : ($row->grade?->getLabel() ?? '—') }}</td>
                                 <td><x-sipma.course-status :row="$row" :student="$student" /></td>

@@ -19,6 +19,7 @@ use App\Support\AcademicSummary;
 use App\Support\ActivityDescriber;
 use App\Support\ApplicantDetails;
 use App\Support\EnrollmentPeriod;
+use App\Support\TeachingRecords;
 use App\Workflow\AcademicRecordWorkflow;
 use App\Workflow\WorkflowException;
 use Closure;
@@ -34,8 +35,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 /**
- * Detail Mahasiswa Asing (TP-1 F2): ringkasan tahap pasca-LOA + tab Info · Visa · KTM · Rubrik · Riwayat.
- * Tab SK Mengajar ditambahkan TP-4 lewat tabs().
+ * Detail Mahasiswa Asing (TP-1 F2): ringkasan tahap pasca-LOA + tab Info · Visa · KTM · Rubrik · SK Mengajar · Riwayat.
  *
  * Super Admin melihat dokumen, biaya, dan LOA (seperti detail Pendaftar); Admin Fakultas hanya
  * data ringkas (keputusan 6 Oktober 2026). Visa diubah hanya oleh Super Admin.
@@ -90,6 +90,7 @@ class ViewAcademicStudent extends ViewRecord
             'visa' => __('admin.academic_student.tabs.visa'),
             'card' => __('admin.academic_student.tabs.card'),
             'rubric' => __('admin.academic_student.tabs.rubric'),
+            'decrees' => __('admin.academic_student.tabs.decrees'),
             'history' => __('admin.academic_student.tabs.history'),
         ];
     }
@@ -471,6 +472,8 @@ class ViewAcademicStudent extends ViewRecord
             'canManageCards' => Gate::allows('create', StudentCard::class),
             'courses' => $courses = StudentCourse::inPackageOrder($student->studentCourses()->with('course.program')->get()),
             'courseSummary' => AcademicSummary::from($courses),
+            'teaching' => $teaching = TeachingRecords::forStudent($student),
+            'teachers' => TeachingRecords::teachersByCourse($teaching),
             'canManageCourses' => $this->canManageCourses(),
             'history' => ActivityDescriber::forStudent($student),
         ];

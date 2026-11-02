@@ -69,6 +69,14 @@ class Course extends Model
         return $this->hasMany(StudentCourse::class);
     }
 
+    /**
+     * Penugasan dosen pada MK ini di semua SK.
+     */
+    public function teachingAssignments(): HasMany
+    {
+        return $this->hasMany(TeachingAssignment::class);
+    }
+
     public function program(): BelongsTo
     {
         return $this->belongsTo(Program::class);

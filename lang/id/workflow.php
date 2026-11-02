@@ -53,6 +53,7 @@ return [
         'semester' => 'Semester',
         'credits' => 'SKS',
         'total' => 'Total SKS',
+        'teachers' => 'Pengajar',
         'grade' => 'Nilai',
         'completed' => 'MK selesai',
         'gpa' => 'IP',

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources;
 
+use App\Enums\DecreePeriod;
 use App\Enums\StudentCourseStatus;
 use App\Enums\UserRole;
 use App\Filament\Admin\Resources\Concerns\AcademicModule;
@@ -10,6 +11,7 @@ use App\Filament\Admin\Resources\CourseResource\Pages;
 use App\Models\Course;
 use App\Models\Faculty;
 use App\Models\Program;
+use App\Support\TeachingRecords;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -86,7 +88,9 @@ class CourseResource extends Resource
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([SoftDeletingScope::class]) // filter "dihapus" mengaturnya sendiri
             ->whereHas('program', fn (Builder $program) => $program->visibleTo(Filament::auth()->user()))
-            ->with('program.faculty')
+            ->with(['program.faculty', 'teachingAssignments' => fn ($query) => $query
+                ->whereHas('decree', fn (Builder $decree) => $decree->inPeriod(DecreePeriod::Current))
+                ->with('lecturer')])
             ->withCount(['studentCourses as students_taking' => fn (Builder $query): Builder => $query->where('status', '!=', StudentCourseStatus::Dropped)]);
     }
 
@@ -191,6 +195,13 @@ class CourseResource extends Resource
                 Tables\Columns\TextColumn::make('program.name')
                     ->label(__('admin.program.label'))
                     ->description(fn (Course $record): ?string => $record->program?->faculty?->name)
+                    ->wrap(),
+
+                // Dari SK yang berlaku hari ini; satu MK bisa punya SK berbeda dari tahun ke tahun
+                Tables\Columns\TextColumn::make('teachers')
+                    ->label(__('workflow.rubric.teachers'))
+                    ->state(fn (Course $record): ?string => $record->teachingAssignments->isEmpty() ? null : TeachingRecords::teachers($record->teachingAssignments))
+                    ->placeholder('—')
                     ->wrap(),
 
                 // Tanpa yang di-drop

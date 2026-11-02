@@ -239,6 +239,7 @@ return [
             'visa' => 'Visa',
             'card' => 'KTM',
             'rubric' => 'Rubrik',
+            'decrees' => 'SK Mengajar',
             'history' => 'Riwayat',
             'ready' => 'Siap diaktifkan',
         ],
@@ -466,6 +467,12 @@ return [
         'empty_description' => 'Tambahkan SK agar pengajar tiap mata kuliah tercatat.',
         'number_taken' => 'Nomor SK ini sudah dipakai di fakultas yang sama, termasuk oleh SK yang sudah dihapus. Pulihkan SK itu atau periksa kembali nomornya.',
         'duplicate_assignment' => 'Dosen yang sama tercantum lebih dari sekali untuk mata kuliah yang sama.',
+        'export' => 'Ekspor rekap',
+        'student' => [
+            'empty' => 'Belum ada SK untuk mata kuliah mahasiswa ini',
+            'empty_hint' => 'SK tampil bila memuat mata kuliah mahasiswa dan periodenya beririsan dengan masa aktifnya.',
+            'not_active' => 'SK tampil setelah mahasiswa ditandai Aktif.',
+        ],
         'summary_lecturers' => ':count dosen',
         'summary_courses' => ':count MK',
         'document_hint' => 'PDF, maksimal :max. Boleh menyusul bila berkas bertanda tangan belum ada.',
@@ -490,6 +497,7 @@ return [
             'role' => 'Peran',
             'assignments' => 'Penugasan',
             'document' => 'Berkas',
+            'students' => 'Jumlah mahasiswa',
         ],
         'document_state' => [
             'yes' => 'Ada',

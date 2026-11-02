@@ -239,6 +239,7 @@ return [
             'visa' => 'Visa',
             'card' => 'Student card',
             'rubric' => 'Rubric',
+            'decrees' => 'Teaching decrees',
             'history' => 'History',
             'ready' => 'Ready to activate',
         ],
@@ -466,6 +467,12 @@ return [
         'empty_description' => 'Add a decree to record who teaches each course.',
         'number_taken' => 'This decree number is already used in the same faculty, including by a deleted decree. Restore that decree or check the number.',
         'duplicate_assignment' => 'The same lecturer is listed more than once for the same course.',
+        'export' => 'Export summary',
+        'student' => [
+            'empty' => 'No decrees yet for this student’s courses',
+            'empty_hint' => 'A decree appears when it covers the student’s courses and its period overlaps their active time.',
+            'not_active' => 'Decrees appear once the student is marked active.',
+        ],
         'summary_lecturers' => ':count lecturer|:count lecturers',
         'summary_courses' => ':count course|:count courses',
         'document_hint' => 'PDF, up to :max. It can follow later if the signed file is not ready.',
@@ -490,6 +497,7 @@ return [
             'role' => 'Role',
             'assignments' => 'Assignments',
             'document' => 'File',
+            'students' => 'Number of students',
         ],
         'document_state' => [
             'yes' => 'Yes',

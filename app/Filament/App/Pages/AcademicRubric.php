@@ -5,6 +5,7 @@ namespace App\Filament\App\Pages;
 use App\Filament\App\Concerns\RequiresAcademicAccess;
 use App\Models\StudentCourse;
 use App\Support\AcademicSummary;
+use App\Support\TeachingRecords;
 use Filament\Pages\Page;
 
 /**
@@ -49,6 +50,7 @@ class AcademicRubric extends Page
             'student' => $student->loadMissing('program.faculty'),
             'rows' => $rows,
             'summary' => AcademicSummary::from($rows),
+            'teachers' => TeachingRecords::teachersByCourse(TeachingRecords::forStudent($student)),
         ];
     }
 }

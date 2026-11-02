@@ -54,6 +54,7 @@ return [
         'semester' => 'Semester',
         'credits' => 'Credits',
         'total' => 'Total credits',
+        'teachers' => 'Lecturers',
         'grade' => 'Grade',
         'completed' => 'Courses completed',
         'gpa' => 'GPA',

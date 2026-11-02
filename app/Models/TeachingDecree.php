@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DecreePeriod;
 use App\Enums\UserRole;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -59,6 +60,16 @@ class TeachingDecree extends Model
             DecreePeriod::Ended => $query->whereDate('period_end', '<', today()),
             DecreePeriod::Current => $query->whereDate('period_start', '<=', today())->whereDate('period_end', '>=', today()),
         };
+    }
+
+    /**
+     * SK yang periodenya beririsan dengan rentang tanggal; $to kosong = tanpa batas akhir.
+     */
+    public function scopeOverlapping(Builder $query, CarbonInterface $from, ?CarbonInterface $to = null): Builder
+    {
+        return $query
+            ->whereDate('period_end', '>=', $from)
+            ->when($to, fn (Builder $query) => $query->whereDate('period_start', '<=', $to));
     }
 
     public function period(): DecreePeriod
