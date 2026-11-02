@@ -91,6 +91,18 @@ return [
         'fail' => 'Fail',
     ],
 
+    'teaching_role' => [
+        'coordinator' => 'Coordinator',
+        'lecturer' => 'Lecturer',
+        'assistant' => 'Assistant',
+    ],
+
+    'decree_period' => [
+        'upcoming' => 'Upcoming',
+        'current' => 'In effect',
+        'ended' => 'Ended',
+    ],
+
     'student_course_status' => [
         'active' => 'In progress',
         'completed' => 'Completed',

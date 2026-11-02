@@ -91,6 +91,18 @@ return [
         'fail' => 'Tidak lulus',
     ],
 
+    'teaching_role' => [
+        'coordinator' => 'Koordinator',
+        'lecturer' => 'Pengajar',
+        'assistant' => 'Asisten',
+    ],
+
+    'decree_period' => [
+        'upcoming' => 'Akan datang',
+        'current' => 'Berlaku',
+        'ended' => 'Berakhir',
+    ],
+
     'student_course_status' => [
         'active' => 'Sedang ditempuh',
         'completed' => 'Selesai',

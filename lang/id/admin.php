@@ -456,6 +456,47 @@ return [
         ],
     ],
 
+    'teaching_decree' => [
+        'label' => 'SK mengajar',
+        'plural' => 'SK mengajar',
+        'description' => 'Arsip SK penugasan dosen untuk mata kuliah mahasiswa asing. Tidak memengaruhi siapa yang mengisi nilai.',
+        'create' => 'Tambah SK',
+        'edit' => 'Ubah SK',
+        'empty_heading' => 'Belum ada SK mengajar',
+        'empty_description' => 'Tambahkan SK agar pengajar tiap mata kuliah tercatat.',
+        'number_taken' => 'Nomor SK ini sudah dipakai di fakultas yang sama, termasuk oleh SK yang sudah dihapus. Pulihkan SK itu atau periksa kembali nomornya.',
+        'duplicate_assignment' => 'Dosen yang sama tercantum lebih dari sekali untuk mata kuliah yang sama.',
+        'summary_lecturers' => ':count dosen',
+        'summary_courses' => ':count MK',
+        'document_hint' => 'PDF, maksimal :max. Boleh menyusul bila berkas bertanda tangan belum ada.',
+        'assignments_hint' => 'Satu SK bisa menugaskan beberapa dosen untuk beberapa mata kuliah. Mata kuliah harus dari program fakultas SK.',
+        'add_assignment' => 'Tambah penugasan',
+        'current_document' => 'Berkas saat ini',
+        'open_document' => 'Buka PDF',
+        'download' => 'Unduh SK',
+        'sections' => [
+            'decree' => 'Data SK',
+            'document' => 'Dokumen',
+            'assignments' => 'Penugasan',
+        ],
+        'fields' => [
+            'number' => 'Nomor SK',
+            'date' => 'Tanggal SK',
+            'faculty' => 'Fakultas',
+            'period' => 'Periode',
+            'period_start' => 'Periode mulai',
+            'period_end' => 'Periode selesai',
+            'notes' => 'Catatan',
+            'role' => 'Peran',
+            'assignments' => 'Penugasan',
+            'document' => 'Berkas',
+        ],
+        'document_state' => [
+            'yes' => 'Ada',
+            'no' => 'Belum ada berkas',
+        ],
+    ],
+
     'payment' => [
         'label' => 'Pembayaran',
         'plural' => 'Pembayaran',
@@ -519,8 +560,8 @@ return [
         'sections' => [
             'documents' => 'Dokumen pendaftaran',
             'documents_hint' => 'Diunggah mahasiswa, agen, dan staf. Pilih ukuran, atau Custom untuk mengisi sendiri dalam KB (100–10240 KB).',
-            'other' => 'Pembayaran & MOU',
-            'other_hint' => 'Bukti transfer dan berkas MOU agen punya batas sendiri.',
+            'other' => 'Pembayaran, MOU & SK',
+            'other_hint' => 'Bukti transfer, berkas MOU agen, dan SK mengajar punya batas sendiri.',
         ],
         'custom' => 'Custom…',
         'size_of' => 'Batas ukuran :name',
@@ -529,10 +570,12 @@ return [
         'fields' => [
             'payment_proof' => 'Bukti pembayaran',
             'mou' => 'Berkas MOU agen',
+            'teaching_decree' => 'SK mengajar',
         ],
         'hints' => [
             'payment_proof' => 'PDF, JPG, PNG · bukti transfer dari mahasiswa dan agen.',
             'mou' => 'PDF · MOU bertanda tangan dari agen.',
+            'teaching_decree' => 'PDF · SK penugasan dosen dari fakultas.',
         ],
         'templates' => [
             'title' => 'Template dokumen',

@@ -122,6 +122,7 @@ class UploadSettings extends Page implements HasForms
                     ->schema([
                         $this->limitRow(UploadLimits::PAYMENT_PROOF, __('admin.uploads.fields.payment_proof'), __('admin.uploads.hints.payment_proof')),
                         $this->limitRow(UploadLimits::MOU, __('admin.uploads.fields.mou'), __('admin.uploads.hints.mou'), withTemplate: true),
+                        $this->limitRow(UploadLimits::TEACHING_DECREE, __('admin.uploads.fields.teaching_decree'), __('admin.uploads.hints.teaching_decree')),
                     ]),
             ]);
     }

@@ -136,6 +136,10 @@ final class ActivityDescriber
      */
     public static function ownSentence(Activity $activity): string
     {
+        if (isset($activity->properties['decree_number'])) {
+            return __("profile.activity.decree_{$activity->event}", ['number' => $activity->properties['decree_number']]);
+        }
+
         $subject = $activity->subject;
         $status = (string) ($activity->properties['attributes']['status'] ?? '');
         $name = self::subjectName($subject);
@@ -239,6 +243,7 @@ final class ActivityDescriber
         return match (true) {
             $activity->event === 'deleted' => 'danger',
             $activity->subject instanceof Student && $status !== null => $status->getColor(),
+            isset($activity->properties['decree_number']) => 'primary',
             $activity->subject instanceof Payment => 'warning',
             $activity->subject instanceof Loa => 'violet',
             $activity->subject instanceof VisaStatus => VisaProcessStatus::tryFrom((string) ($activity->properties['attributes']['status'] ?? ''))?->getColor() ?? 'info',
@@ -265,6 +270,7 @@ final class ActivityDescriber
         $status = StudentStatus::tryFrom((string) ($activity->properties['attributes']['status'] ?? ''));
 
         return match (true) {
+            isset($activity->properties['decree_number']) => 'lucide-file-signature',
             $activity->event === 'deleted' => 'lucide-trash-2',
             $subject instanceof Payment => 'lucide-receipt',
             $subject instanceof Loa => 'lucide-file-check',

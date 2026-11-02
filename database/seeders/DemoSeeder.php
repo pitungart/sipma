@@ -13,6 +13,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\StudentCourseStatus;
 use App\Enums\StudentStatus;
+use App\Enums\TeachingRole;
 use App\Enums\UserRole;
 use App\Models\Agent;
 use App\Models\Course;
@@ -20,6 +21,7 @@ use App\Models\Lecturer;
 use App\Models\PaymentAccount;
 use App\Models\Program;
 use App\Models\Student;
+use App\Models\TeachingDecree;
 use App\Models\User;
 use App\Support\Numbering;
 use App\Support\PrivateFiles;
@@ -67,6 +69,7 @@ class DemoSeeder extends Seeder
 
         $this->coursePackages($programs->take(3));
         $this->lecturers($programs->take(3));
+        $this->teachingDecrees($programs->take(3));
 
         $agent = $this->agent('agent@sipma.test', 'EduBridge Australia', 'AU', MouStatus::Approved);
         $this->agent('agent2@sipma.test', 'Nusantara Study Link', 'MY', MouStatus::Pending);
@@ -338,6 +341,30 @@ class DemoSeeder extends Seeder
             'nip' => 'DEMO-'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT),
             'email' => 'dosen'.($i + 1).'@demo.sipma.test',
         ]));
+    }
+
+    /**
+     * SK contoh untuk demo, tanpa berkas: satu per fakultas program demo.
+     */
+    private function teachingDecrees(Collection $programs): void
+    {
+        $programs->unique('faculty_id')->values()->each(function (Program $program, int $i): void {
+            $decree = TeachingDecree::create([
+                'faculty_id' => $program->faculty_id,
+                'decree_number' => 'DEMO/SK/'.now()->year.'/'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT),
+                'decree_date' => now()->subMonth(),
+                'period_start' => now()->startOfMonth(),
+                'period_end' => now()->addMonths(5)->endOfMonth(),
+            ]);
+
+            $lecturer = Lecturer::query()->where('faculty_id', $program->faculty_id)->first();
+
+            $program->courses()->active()->get()->each(fn (Course $course) => $decree->assignments()->create([
+                'lecturer_id' => $lecturer->getKey(),
+                'course_id' => $course->getKey(),
+                'role' => TeachingRole::Lecturer,
+            ]));
+        });
     }
 
     private function dummyFile(string $directory, string $extension): string

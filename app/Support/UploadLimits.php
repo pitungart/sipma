@@ -9,10 +9,10 @@ use Illuminate\Support\Number;
 
 /**
  * Batas ukuran unggahan (Sistem → Unggahan berkas, keputusan 26 Oktober 2026): tiap jenis dokumen
- * pendaftar, bukti pembayaran, dan berkas MOU agen diatur terpisah oleh Super Admin. Nilai dalam KB;
+ * pendaftar, bukti pembayaran, berkas MOU agen, dan SK mengajar diatur terpisah oleh Super Admin. Nilai dalam KB;
  * belum diatur = nilai bawaan. Dibaca dari cache; disimpan lewat save().
  *
- * Nama batas = nilai DocumentType untuk dokumen, ditambah PAYMENT_PROOF dan MOU.
+ * Nama batas = nilai DocumentType untuk dokumen, ditambah PAYMENT_PROOF, MOU, dan TEACHING_DECREE.
  */
 final class UploadLimits
 {
@@ -20,11 +20,15 @@ final class UploadLimits
 
     public const MOU = 'mou';
 
+    public const TEACHING_DECREE = 'teaching_decree';
+
     public const DOCUMENT_DEFAULT = 1024;
 
     public const PAYMENT_PROOF_DEFAULT = 2048;
 
     public const MOU_DEFAULT = 5120;
+
+    public const TEACHING_DECREE_DEFAULT = 5120;
 
     /** Pilihan cepat di halaman pengaturan; nilai lain diisi sebagai "Custom" */
     public const PRESETS = [300, 500, 1024, 2048, 5120, 10240];
@@ -51,7 +55,7 @@ final class UploadLimits
             $defaults[$type->value] = self::DOCUMENT_DEFAULT;
         }
 
-        return $defaults + [self::PAYMENT_PROOF => self::PAYMENT_PROOF_DEFAULT, self::MOU => self::MOU_DEFAULT];
+        return $defaults + [self::PAYMENT_PROOF => self::PAYMENT_PROOF_DEFAULT, self::MOU => self::MOU_DEFAULT, self::TEACHING_DECREE => self::TEACHING_DECREE_DEFAULT];
     }
 
     public static function document(DocumentType $type): int
@@ -67,6 +71,11 @@ final class UploadLimits
     public static function mou(): int
     {
         return self::all()[self::MOU];
+    }
+
+    public static function teachingDecree(): int
+    {
+        return self::all()[self::TEACHING_DECREE];
     }
 
     /**

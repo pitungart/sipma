@@ -456,6 +456,47 @@ return [
         ],
     ],
 
+    'teaching_decree' => [
+        'label' => 'Teaching decree',
+        'plural' => 'Teaching decrees',
+        'description' => 'Archive of decrees assigning lecturers to international students’ courses. They do not affect who enters grades.',
+        'create' => 'Add decree',
+        'edit' => 'Edit decree',
+        'empty_heading' => 'No teaching decrees yet',
+        'empty_description' => 'Add a decree to record who teaches each course.',
+        'number_taken' => 'This decree number is already used in the same faculty, including by a deleted decree. Restore that decree or check the number.',
+        'duplicate_assignment' => 'The same lecturer is listed more than once for the same course.',
+        'summary_lecturers' => ':count lecturer|:count lecturers',
+        'summary_courses' => ':count course|:count courses',
+        'document_hint' => 'PDF, up to :max. It can follow later if the signed file is not ready.',
+        'assignments_hint' => 'One decree can assign several lecturers to several courses. Courses must belong to programs of the decree’s faculty.',
+        'add_assignment' => 'Add assignment',
+        'current_document' => 'Current file',
+        'open_document' => 'Open PDF',
+        'download' => 'Download decree',
+        'sections' => [
+            'decree' => 'Decree details',
+            'document' => 'Document',
+            'assignments' => 'Assignments',
+        ],
+        'fields' => [
+            'number' => 'Decree number',
+            'date' => 'Decree date',
+            'faculty' => 'Faculty',
+            'period' => 'Period',
+            'period_start' => 'Period start',
+            'period_end' => 'Period end',
+            'notes' => 'Notes',
+            'role' => 'Role',
+            'assignments' => 'Assignments',
+            'document' => 'File',
+        ],
+        'document_state' => [
+            'yes' => 'Yes',
+            'no' => 'No file yet',
+        ],
+    ],
+
     'payment' => [
         'label' => 'Payment',
         'plural' => 'Payments',
@@ -519,8 +560,8 @@ return [
         'sections' => [
             'documents' => 'Application documents',
             'documents_hint' => 'Uploaded by students, agents, and staff. Pick a size, or Custom to enter your own in KB (100–10240 KB).',
-            'other' => 'Payments & MOU',
-            'other_hint' => 'Transfer proofs and agent MOU files have their own limits.',
+            'other' => 'Payments, MOU & decrees',
+            'other_hint' => 'Transfer proofs, agent MOU files, and teaching decrees have their own limits.',
         ],
         'custom' => 'Custom…',
         'size_of' => ':name size limit',
@@ -529,10 +570,12 @@ return [
         'fields' => [
             'payment_proof' => 'Payment proofs',
             'mou' => 'Agent MOU files',
+            'teaching_decree' => 'Teaching decrees',
         ],
         'hints' => [
             'payment_proof' => 'PDF, JPG, PNG · transfer proofs from students and agents.',
             'mou' => 'PDF · signed MOU from agents.',
+            'teaching_decree' => 'PDF · decree assigning lecturers, from the faculty.',
         ],
         'templates' => [
             'title' => 'Document templates',

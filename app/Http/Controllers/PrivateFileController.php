@@ -8,6 +8,7 @@ use App\Models\Loa;
 use App\Models\Mou;
 use App\Models\Payment;
 use App\Models\StudentCard;
+use App\Models\TeachingDecree;
 use App\Models\User;
 use App\Support\FileTemplates;
 use App\Support\PrivateFiles;
@@ -74,6 +75,16 @@ class PrivateFileController extends Controller
         $filename = StudentCardDocument::filename($card);
 
         return $request->boolean('download') ? $pdf->download($filename) : $pdf->stream($filename);
+    }
+
+    /**
+     * Berkas SK mengajar: Super Admin dan Admin Fakultas pemilik SK, juga saat SK-nya sudah dihapus.
+     */
+    public function teachingDecree(Request $request, TeachingDecree $decree): StreamedResponse
+    {
+        Gate::authorize('view', $decree);
+
+        return $this->respond($request, $decree->document, 'SK-'.$decree->decree_number);
     }
 
     /**

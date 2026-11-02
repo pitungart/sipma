@@ -34,6 +34,7 @@ Route::middleware('auth')->prefix('files')->name('files.')->group(function (): v
     Route::get('/mous/{mou}', [PrivateFileController::class, 'mou'])->name('mou');
     Route::get('/loas/{loa}', [PrivateFileController::class, 'loa'])->name('loa');
     Route::get('/student-cards/{card}', [PrivateFileController::class, 'studentCard'])->name('student-card');
+    Route::get('/teaching-decrees/{decree}', [PrivateFileController::class, 'teachingDecree'])->withTrashed()->name('teaching-decree');
     Route::get('/templates/{name}', [PrivateFileController::class, 'template'])->name('template');
     Route::get('/avatars/{user}', [PrivateFileController::class, 'avatar'])->name('avatar');
 });
