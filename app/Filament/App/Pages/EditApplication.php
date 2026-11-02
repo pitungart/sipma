@@ -71,6 +71,7 @@ class EditApplication extends Page implements HasForms
                     ApplicantForm::programSelect(fn (): array => static::programOptions($this->application))
                         ->helperText(__('student.application.program_hint'))
                         ->columnSpanFull(),
+                    ApplicantForm::programRubric(),
                 ], __('student.application.program_step_hint')))
                     ->skippable(),
             ]);

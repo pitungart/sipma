@@ -75,6 +75,22 @@ trait MasterData
     }
 
     /**
+     * Resource yang meminjam pola halaman ini tetapi bukan master data menimpanya dengan false.
+     */
+    public static function showsInMasterTabs(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Subjudul modal tambah/ubah.
+     */
+    public static function modalSubtitle(): string
+    {
+        return __('admin.master.modal_subtitle', ['entity' => static::getPluralModelLabel()]);
+    }
+
+    /**
      * Seluruh resource master data yang boleh dibuka pengguna, urut seperti sidebar.
      *
      * @return Collection<int, array<string, mixed>>
@@ -83,6 +99,7 @@ trait MasterData
     {
         return collect(Filament::getCurrentPanel()->getResources())
             ->filter(fn (string $resource): bool => in_array(MasterData::class, class_uses_recursive($resource), true)
+                && $resource::showsInMasterTabs()
                 && $resource::canViewAny())
             ->sortBy(fn (string $resource): int => $resource::getNavigationSort() ?? 0)
             ->map(fn (string $resource): array => [
@@ -122,7 +139,7 @@ trait MasterData
             ->modalHeading(__($isEdit ? 'admin.master.edit_heading' : 'admin.master.create_heading', [
                 'label' => Str::lower(static::getModelLabel()),
             ]))
-            ->modalDescription(__('admin.master.modal_subtitle', ['entity' => static::getPluralModelLabel()]))
+            ->modalDescription(static::modalSubtitle())
             ->modalIcon(static::getNavigationIcon())
             ->modalIconColor('primary')
             ->modalWidth(static::modalWidth())

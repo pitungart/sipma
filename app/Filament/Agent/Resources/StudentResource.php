@@ -127,6 +127,7 @@ class StudentResource extends Resource
                 })
                 ->helperText(__('agent.students.program_hint'))
                 ->columnSpanFull(),
+            ApplicantForm::programRubric(),
         ];
     }
 

@@ -40,6 +40,10 @@
                             @if (filled($program->description))
                                 <p class="sipma-portal-program-desc">{{ $program->description }}</p>
                             @endif
+                            <button type="button" class="sipma-link sipma-portal-rubric" wire:click="mountAction('rubric', {{ Js::from(['program' => $program->getKey()]) }})">
+                                <x-filament::icon icon="lucide-book-open" class="sipma-portal-more-icon" />
+                                {{ __('student.programs.view_rubric') }}
+                            </button>
                         </div>
 
                         {{-- Belum mendaftar → mulai pendaftaran; draf/revisi → ganti program (modal konfirmasi) --}}

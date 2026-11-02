@@ -44,6 +44,17 @@ return [
         'issue_card' => 'issue a student card',
     ],
 
+    'rubric' => [
+        'title' => 'Academic rubric',
+        'empty' => 'The academic rubric for this program is not available yet.',
+        'code' => 'Code',
+        'course' => 'Course',
+        'semester' => 'Semester',
+        'credits' => 'Credits',
+        'total' => 'Total credits',
+        'close' => 'Close',
+    ],
+
     'errors' => [
         'transition' => 'You cannot :action while the application is “:status”.',
         'incomplete' => 'Complete :count more item(s) before submitting.',

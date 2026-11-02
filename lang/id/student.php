@@ -67,6 +67,7 @@ return [
         'empty' => 'Belum ada program yang dibuka',
         'empty_body' => 'Periksa kembali nanti, atau hubungi KUI Universitas Udayana.',
         'choose' => 'Pilih program ini',
+        'view_rubric' => 'Lihat rubrik',
         'open_badge' => 'Pendaftaran dibuka',
         'search' => 'Cari nama program atau fakultas…',
         'no_match' => 'Tidak ada program yang cocok dengan pencarian Anda.',

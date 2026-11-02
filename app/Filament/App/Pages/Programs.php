@@ -3,10 +3,12 @@
 namespace App\Filament\App\Pages;
 
 use App\Filament\App\Concerns\InteractsWithApplication;
+use App\Filament\Support\FormModal;
 use App\Models\Program;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Support\Enums\MaxWidth;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
@@ -80,6 +82,21 @@ class Programs extends Page
 
                 Notification::make()->success()->title(__('student.programs.changed', ['program' => $program->name]))->send();
             });
+    }
+
+    /**
+     * Rubrik akademik program (K8), read-only, sebelum memilih.
+     */
+    public function rubricAction(): Action
+    {
+        return FormModal::apply(Action::make('rubric'))
+            ->modalHeading(fn (array $arguments): string => $this->program($arguments)->name)
+            ->modalDescription(__('workflow.rubric.title'))
+            ->modalIcon('lucide-book-open')
+            ->modalWidth(MaxWidth::TwoExtraLarge)
+            ->modalContent(fn (array $arguments): View => view('filament.app.program-rubric-modal', ['program' => $this->program($arguments)]))
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel(__('workflow.rubric.close'));
     }
 
     /**

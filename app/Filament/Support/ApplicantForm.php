@@ -5,14 +5,18 @@ namespace App\Filament\Support;
 use App\Enums\Gender;
 use App\Enums\Religion;
 use App\Models\Country;
+use App\Models\Program;
 use Closure;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms\Get;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 /**
@@ -132,6 +136,23 @@ final class ApplicantForm
             // Program di luar daftar pilihan ditolak walau dikirim paksa lewat Livewire
             ->in(fn (Select $component): array => array_keys($component->getOptions()))
             ->searchable()
-            ->required();
+            ->required()
+            ->live();
+    }
+
+    /**
+     * Rubrik akademik program yang sedang dipilih (K8), tepat di bawah pilihan program.
+     */
+    public static function programRubric(): Placeholder
+    {
+        return Placeholder::make('program_rubric')
+            ->hiddenLabel()
+            ->columnSpanFull()
+            ->visible(fn (Get $get): bool => filled($get('program_id')))
+            ->content(function (Get $get): ?HtmlString {
+                $program = Program::query()->find($get('program_id'));
+
+                return $program ? new HtmlString(Blade::render('<x-sipma.program-rubric :program="$program" with-heading />', ['program' => $program])) : null;
+            });
     }
 }

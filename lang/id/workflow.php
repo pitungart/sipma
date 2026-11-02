@@ -43,6 +43,17 @@ return [
         'issue_card' => 'menerbitkan KTM',
     ],
 
+    'rubric' => [
+        'title' => 'Rubrik akademik',
+        'empty' => 'Rubrik akademik program ini belum tersedia.',
+        'code' => 'Kode',
+        'course' => 'Mata kuliah',
+        'semester' => 'Semester',
+        'credits' => 'SKS',
+        'total' => 'Total SKS',
+        'close' => 'Tutup',
+    ],
+
     'errors' => [
         'transition' => 'Tidak bisa :action selagi status pendaftaran “:status”.',
         'incomplete' => 'Lengkapi :count butir lagi sebelum mengajukan.',

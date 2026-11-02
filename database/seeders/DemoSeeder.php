@@ -22,6 +22,7 @@ use App\Support\PrivateFiles;
 use App\Workflow\StudentWorkflow;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -59,6 +60,8 @@ class DemoSeeder extends Seeder
         $this->demoFees();
 
         $programs = Program::query()->where('is_active', true)->get();
+
+        $this->coursePackages($programs->take(3));
 
         $agent = $this->agent('agent@sipma.test', 'EduBridge Australia', 'AU', MouStatus::Approved);
         $this->agent('agent2@sipma.test', 'Nusantara Study Link', 'MY', MouStatus::Pending);
@@ -278,6 +281,31 @@ class DemoSeeder extends Seeder
     /**
      * Berkas dummy kecil yang valid (PDF satu halaman / PNG 1×1) agar pratinjau bisa dicoba.
      */
+    /**
+     * Paket contoh untuk demo, bukan kurikulum resmi. Satu MK sengaja tanpa SKS dan satu nonaktif.
+     */
+    private function coursePackages(Collection $programs): void
+    {
+        foreach ($programs as $program) {
+            foreach ([
+                ['DMO101', 'Bahasa Indonesia Dasar', 'Basic Indonesian', 3, 1, true],
+                ['DMO102', 'Budaya Bali', 'Balinese Culture', 2, 1, true],
+                ['DMO201', 'Proyek Lapangan', 'Field Project', 4, 2, true],
+                ['DMO900', 'Orientasi Kampus', 'Campus Orientation', null, null, true],
+                ['DMO901', 'Seminar Pilihan', 'Elective Seminar', 2, 2, false],
+            ] as [$code, $name, $nameEn, $credits, $semester, $active]) {
+                $program->courses()->create([
+                    'code' => $code,
+                    'name' => $name,
+                    'name_en' => $nameEn,
+                    'credits' => $credits,
+                    'semester' => $semester,
+                    'is_active' => $active,
+                ]);
+            }
+        }
+    }
+
     private function dummyFile(string $directory, string $extension): string
     {
         $path = $directory.'/'.Str::uuid().'.'.$extension;

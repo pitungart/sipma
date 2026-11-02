@@ -94,6 +94,7 @@ class StartApplication extends Page implements HasForms
                     ApplicantForm::programSelect(fn (): array => static::programOptions())
                         ->helperText(__('student.application.program_hint'))
                         ->columnSpanFull(),
+                    ApplicantForm::programRubric(),
                 ], __('student.application.program_step_hint')))
                     ->skippable()
                     ->submitAction(new HtmlString(Blade::render(

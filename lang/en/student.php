@@ -67,6 +67,7 @@ return [
         'empty' => 'No programs are open yet',
         'empty_body' => 'Please check again later, or contact KUI Universitas Udayana.',
         'choose' => 'Choose this program',
+        'view_rubric' => 'View rubric',
         'open_badge' => 'Open for applications',
         'search' => 'Search by program or faculty…',
         'no_match' => 'No program matches your search.',

@@ -119,6 +119,7 @@ class StudentResource extends Resource
         return [
             ApplicantForm::programSelect(fn (): array => Program::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
                 ->columnSpanFull(),
+            ApplicantForm::programRubric(),
             ...static::enrollmentFields(),
             Forms\Components\Select::make('agent_id')
                 ->label(__('admin.dashboard.source'))

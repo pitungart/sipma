@@ -179,6 +179,16 @@ class ProgramResource extends Resource
                     ->formatStateUsing(fn (int $state): string => __('admin.program.fields.duration_value', ['count' => $state]))
                     ->placeholder('—')
                     ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                // MK aktif saja, sama dengan yang tampil di rubrik
+                Tables\Columns\TextColumn::make('courses_count')
+                    ->label(__('admin.program.fields.courses'))
+                    ->counts(['courses' => fn (Builder $query): Builder => $query->where('is_active', true)])
+                    ->formatStateUsing(fn (int $state): string => trans_choice('admin.program.fields.courses_value', $state, ['count' => $state]))
+                    ->badge()
+                    ->color(fn (int $state): string => $state > 0 ? 'primary' : 'gray')
+                    ->url(fn (Program $record): string => CourseResource::urlForProgram($record))
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('students_count')
