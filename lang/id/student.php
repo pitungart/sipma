@@ -33,6 +33,20 @@ return [
         ],
     ],
 
+    'card' => [
+        'title' => 'KTM',
+        'description' => 'Kartu Tanda Mahasiswa Asing Anda dari KUI Universitas Udayana.',
+        'pending_title' => 'KTM sedang disiapkan KUI',
+        'pending_body' => 'Anda akan diberi tahu setelah KTM terbit.',
+        'revoked_title' => 'KTM :number dicabut',
+        'revoked_body' => 'Dicabut pada :date. Alasan: :reason. Hubungi KUI bila perlu penjelasan atau kartu pengganti.',
+        'expired_notice' => 'Masa berlaku KTM ini sudah habis. Hubungi KUI bila Anda masih memerlukannya.',
+        'download' => 'Unduh PDF',
+        'print' => 'Cetak',
+        'valid_until' => 'berlaku sampai :date',
+        'open' => 'Lihat KTM',
+    ],
+
     'application' => [
         'title' => 'Pendaftaran saya',
         'start_title' => 'Mulai pendaftaran',

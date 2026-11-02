@@ -15,6 +15,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * TP-2 KTM digital: seluruh KTM lintas mahasiswa. Super Admin menerbitkan dan mengelola;
@@ -133,6 +134,14 @@ class StudentCardResource extends Resource
                         : $query),
             ])
             ->actions([
+                Tables\Actions\Action::make('download')
+                    ->iconButton()
+                    ->icon('lucide-download')
+                    ->color('gray')
+                    ->tooltip(__('admin.student_card.actions.download'))
+                    ->visible(fn (StudentCard $record): bool => Gate::allows('download', $record))
+                    ->url(fn (StudentCard $record): string => route('files.student-card', ['card' => $record, 'download' => 1])),
+
                 StudentCardActions::reissue(Tables\Actions\Action::make('reissue'))
                     ->iconButton()
                     ->tooltip(__('admin.student_card.actions.reissue')),

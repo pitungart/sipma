@@ -330,6 +330,7 @@ return [
             'issue' => 'Issue student card',
             'reissue' => 'Reissue',
             'revoke' => 'Revoke',
+            'download' => 'Download',
             'open_student' => 'Open student record',
         ],
         'confirm' => [

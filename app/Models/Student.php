@@ -201,6 +201,18 @@ class Student extends Model
         return $this->hasMany(StudentCard::class);
     }
 
+    /**
+     * KTM yang relevan untuk ditampilkan: yang aktif, atau yang terakhir terbit bila tidak ada.
+     */
+    public function currentCard(): ?StudentCard
+    {
+        return $this->studentCards()
+            ->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', [StudentCardStatus::Active->value])
+            ->latest()
+            ->latest('id')
+            ->first();
+    }
+
     public function activeCard(): HasOne
     {
         return $this->hasOne(StudentCard::class)->where('status', StudentCardStatus::Active);

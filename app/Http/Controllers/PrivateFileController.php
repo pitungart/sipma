@@ -7,14 +7,17 @@ use App\Models\Document;
 use App\Models\Loa;
 use App\Models\Mou;
 use App\Models\Payment;
+use App\Models\StudentCard;
 use App\Models\User;
 use App\Support\FileTemplates;
 use App\Support\PrivateFiles;
+use App\Support\StudentCardDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -57,6 +60,20 @@ class PrivateFileController extends Controller
         }
 
         return $this->respond($request, $loa->file_path, 'LOA-'.Str::slug($loa->student->full_name), forceDownload: true);
+    }
+
+    /**
+     * KTM dibuat dari data saat diminta (tidak disimpan sebagai berkas), jadi selalu mengikuti
+     * status terbaru. `?download=1` mengunduh; tanpa itu PDF dibuka di browser untuk dicetak.
+     */
+    public function studentCard(Request $request, StudentCard $card): Response
+    {
+        Gate::authorize('download', $card);
+
+        $pdf = StudentCardDocument::pdf($card);
+        $filename = StudentCardDocument::filename($card);
+
+        return $request->boolean('download') ? $pdf->download($filename) : $pdf->stream($filename);
     }
 
     /**

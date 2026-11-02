@@ -302,6 +302,7 @@ class StudentCardsTest extends WorkflowTestCase
             ->assertCanSeeTableRecords([$ownCard])
             ->assertCanNotSeeTableRecords([$otherCard])
             ->assertActionHidden('issue')
+            ->assertTableActionVisible('download', $ownCard)
             ->assertTableActionHidden('reissue', $ownCard)
             ->assertTableActionHidden('revoke', $ownCard);
 

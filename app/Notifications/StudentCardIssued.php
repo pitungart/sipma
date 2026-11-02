@@ -2,7 +2,9 @@
 
 namespace App\Notifications;
 
+use App\Filament\App\Pages\StudentCard as StudentCardPage;
 use App\Models\StudentCard;
+use App\Models\User;
 
 /**
  * KTM terbit. Bila menggantikan KTM lama, alasannya ikut disebut.
@@ -33,5 +35,10 @@ class StudentCardIssued extends SipmaNotification
     protected function tone(): string
     {
         return 'success';
+    }
+
+    protected function url(User $notifiable): string
+    {
+        return StudentCardPage::getUrl(panel: 'app');
     }
 }

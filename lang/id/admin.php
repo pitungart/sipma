@@ -330,6 +330,7 @@ return [
             'issue' => 'Terbitkan KTM',
             'reissue' => 'Terbitkan ulang',
             'revoke' => 'Cabut',
+            'download' => 'Unduh',
             'open_student' => 'Buka data mahasiswa',
         ],
         'confirm' => [

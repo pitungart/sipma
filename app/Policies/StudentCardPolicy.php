@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\StudentCardStatus;
 use App\Enums\UserRole;
 use App\Models\StudentCard;
 use App\Models\User;
@@ -29,6 +30,15 @@ class StudentCardPolicy
         return $user->hasRole(UserRole::Student)
             && $card->student?->isOwnedBy($user) === true
             && $card->student->status->hasAcademicAccess();
+    }
+
+    /**
+     * Staf yang boleh melihat juga boleh mengunduh (PDF diberi watermark bila tidak aktif);
+     * mahasiswa tidak bisa mengunduh KTM yang dicabut agar kartu itu tidak beredar.
+     */
+    public function download(User $user, StudentCard $card): bool
+    {
+        return $this->view($user, $card) && ($user->hasRole(UserRole::Admin) || $card->status !== StudentCardStatus::Revoked);
     }
 
     public function reissue(User $user, StudentCard $card): bool

@@ -33,6 +33,20 @@ return [
         ],
     ],
 
+    'card' => [
+        'title' => 'Student card',
+        'description' => 'Your international student card from KUI Universitas Udayana.',
+        'pending_title' => 'KUI is preparing your student card',
+        'pending_body' => 'You will be notified once the card is issued.',
+        'revoked_title' => 'Student card :number was revoked',
+        'revoked_body' => 'Revoked on :date. Reason: :reason. Contact KUI if you need an explanation or a replacement card.',
+        'expired_notice' => 'This student card has expired. Contact KUI if you still need it.',
+        'download' => 'Download PDF',
+        'print' => 'Print',
+        'valid_until' => 'valid until :date',
+        'open' => 'View card',
+    ],
+
     'application' => [
         'title' => 'My application',
         'start_title' => 'Start your application',

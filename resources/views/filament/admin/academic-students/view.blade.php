@@ -128,6 +128,12 @@
             <div class="sipma-subsection-head">
                 <h3 class="sipma-card-title">{{ __('admin.student_card.detail.title') }}</h3>
                 <div class="sipma-actions-inline">
+                    @if ($activeCard)
+                        <x-filament::button tag="a" :href="route('files.student-card', ['card' => $activeCard, 'download' => 1])" color="gray" size="sm" icon="lucide-download">
+                            {{ __('admin.student_card.actions.download') }}
+                        </x-filament::button>
+                    @endif
+
                     {{-- Dipanggil langsung, action tidak memeriksa visible() sendiri --}}
                     @foreach ([$this->issueCardAction, $this->reissueCardAction, $this->revokeCardAction] as $cardAction)
                         @if ($cardAction->isVisible())
@@ -193,6 +199,14 @@
                                     @endif
                                 </div>
                                 <x-sipma.status-badge :status="$card->status" />
+                                <x-filament::icon-button
+                                    tag="a"
+                                    :href="route('files.student-card', ['card' => $card, 'download' => 1])"
+                                    icon="lucide-download"
+                                    color="gray"
+                                    :tooltip="__('admin.student_card.actions.download')"
+                                    :label="__('admin.student_card.actions.download')"
+                                />
                             </li>
                         @endforeach
                     </ul>

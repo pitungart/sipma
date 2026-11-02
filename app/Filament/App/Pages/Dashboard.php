@@ -69,6 +69,7 @@ class Dashboard extends BaseDashboard
                 StudentHome::WAITING, StudentHome::PAYMENT_REVIEW, StudentHome::ACTIVE, StudentHome::COMPLETED => ['label' => __('student.home.view_application'), 'url' => MyApplication::getUrl()],
                 default => ['label' => __("student.home.stages.{$stage}.cta"), 'url' => MyApplication::getUrl()],
             },
+            'studentCard' => $application?->status->hasAcademicAccess() ? $application->currentCard() : null,
             'checklist' => $application?->status->isEditable() ? $home->checklist()->items() : collect(),
             'requiredDocuments' => DocumentType::required(),
             'openPrograms' => $stage === StudentHome::START

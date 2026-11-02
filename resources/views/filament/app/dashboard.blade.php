@@ -115,6 +115,35 @@
         </section>
     </div>
 
+    {{-- KTM (mahasiswa Aktif / Selesai): ringkasan, kartunya di menu KTM --}}
+    @if ($application?->status->hasAcademicAccess())
+        <section class="sipma-card sipma-portal-section">
+            <div class="sipma-portal-card-row">
+                <span @class(['sipma-tile', 'sipma-tone-'.($studentCard?->status->getColor() ?? 'gray')])>
+                    <x-filament::icon icon="lucide-id-card" class="sipma-tile-icon" />
+                </span>
+                <div class="sipma-row-main">
+                    <h2 class="sipma-card-title">{{ __('student.card.title') }}</h2>
+                    <p class="sipma-card-desc">
+                        @if ($studentCard)
+                            <span class="sipma-mono">{{ $studentCard->card_number }}</span>
+                            · {{ __('student.card.valid_until', ['date' => $studentCard->valid_until->translatedFormat('j F Y')]) }}
+                        @else
+                            {{ __('student.card.pending_title') }}
+                        @endif
+                    </p>
+                </div>
+                @if ($studentCard)
+                    <x-sipma.status-badge :status="$studentCard->status" />
+                @endif
+                <a href="{{ \App\Filament\App\Pages\StudentCard::getUrl() }}" class="sipma-link sipma-portal-more">
+                    {{ __('student.card.open') }}
+                    <x-filament::icon icon="lucide-chevron-right" class="sipma-portal-more-icon" />
+                </a>
+            </div>
+        </section>
+    @endif
+
     {{-- Kelengkapan (draf / perlu revisi): komponen yang sama dengan halaman Pendaftaran saya --}}
     @if ($checklist->isNotEmpty())
         <x-sipma.application-checklist :checklist="$checklist" />

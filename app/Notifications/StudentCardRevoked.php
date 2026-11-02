@@ -2,7 +2,9 @@
 
 namespace App\Notifications;
 
+use App\Filament\App\Pages\StudentCard as StudentCardPage;
 use App\Models\StudentCard;
+use App\Models\User;
 
 class StudentCardRevoked extends SipmaNotification
 {
@@ -29,5 +31,10 @@ class StudentCardRevoked extends SipmaNotification
     protected function tone(): string
     {
         return 'danger';
+    }
+
+    protected function url(User $notifiable): string
+    {
+        return StudentCardPage::getUrl(panel: 'app');
     }
 }

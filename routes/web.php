@@ -33,6 +33,7 @@ Route::middleware('auth')->prefix('files')->name('files.')->group(function (): v
     Route::get('/payments/{payment}', [PrivateFileController::class, 'payment'])->name('payment');
     Route::get('/mous/{mou}', [PrivateFileController::class, 'mou'])->name('mou');
     Route::get('/loas/{loa}', [PrivateFileController::class, 'loa'])->name('loa');
+    Route::get('/student-cards/{card}', [PrivateFileController::class, 'studentCard'])->name('student-card');
     Route::get('/templates/{name}', [PrivateFileController::class, 'template'])->name('template');
     Route::get('/avatars/{user}', [PrivateFileController::class, 'avatar'])->name('avatar');
 });
