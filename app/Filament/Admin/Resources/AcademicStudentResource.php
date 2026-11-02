@@ -93,8 +93,7 @@ class AcademicStudentResource extends Resource
         return $table
             ->defaultSort('enrolled_at', 'desc')
             ->searchPlaceholder(__('admin.common.search', ['label' => Str::lower(__('admin.academic_student.plural'))]))
-            // Detail khusus Mahasiswa Asing menyusul (TP-1 F2); sementara ke detail pendaftaran
-            ->recordUrl(fn (Student $record): string => StudentResource::getUrl('view', ['record' => $record]))
+            ->recordUrl(fn (Student $record): string => static::getUrl('view', ['record' => $record]))
             ->paginationPageOptions([10, 25, 50, 100])
             ->defaultPaginationPageOption(10)
             ->emptyStateIcon('lucide-graduation-cap')
@@ -193,8 +192,7 @@ class AcademicStudentResource extends Resource
                     ->iconButton()
                     ->icon('lucide-eye')
                     ->color('gray')
-                    ->tooltip(__('admin.applicant.open'))
-                    ->url(fn (Student $record): string => StudentResource::getUrl('view', ['record' => $record])),
+                    ->tooltip(__('admin.applicant.open')),
             ])
             ->bulkActions([]);
     }
@@ -203,6 +201,7 @@ class AcademicStudentResource extends Resource
     {
         return [
             'index' => Pages\ListAcademicStudents::route('/'),
+            'view' => Pages\ViewAcademicStudent::route('/{record}'),
         ];
     }
 }

@@ -62,6 +62,8 @@ return [
         'activity_subject_document' => 'a document of :name',
         'activity_subject_payment' => 'a payment of :name',
         'activity_subject_loa' => 'the LOA of :name',
+        'activity_subject_visa' => 'the visa status of :name',
+        'activity_visa' => ':causer set the visa status of :name to :status',
         'sources' => 'Applicant sources',
         'sources_total' => 'applicants',
         'source_agent_long' => 'Through an agent',
@@ -176,6 +178,7 @@ return [
             'loa_number' => 'LOA number',
         ],
         'actions' => [
+            'view_academic' => 'View in International students',
             'save_draft' => 'Save draft',
             'new' => 'New application',
             'edit' => 'Edit data',
@@ -221,6 +224,9 @@ return [
         'empty_description' => 'Students appear here once their LOA is issued.',
         'tabs' => [
             'all' => 'All',
+            'info' => 'Info',
+            'visa' => 'Visa',
+            'history' => 'History',
             'ready' => 'Ready to activate',
         ],
         'fields' => [
@@ -228,12 +234,36 @@ return [
             'nationality' => 'Nationality',
             'enrolled_at' => 'Active since',
             'account' => 'Portal account',
+            'completed_at' => 'Completed on',
         ],
         'account' => [
             'yes' => 'Yes',
             'no' => 'Not yet',
             'pending_hint' => 'Created automatically from the application email when the student is activated.',
             'failed_hint' => 'Could not be created automatically: the application email is empty or used by another account.',
+        ],
+        'sections' => [
+            'documents' => 'Documents',
+            'payments' => 'Payments & LOA',
+        ],
+        'documents_hint' => 'Document status from the application. Open the application to see the files.',
+        'notice' => [
+            'ready' => 'The LOA has been issued. Mark the student active when the program starts; the student card and academic rubric open after that.',
+            'no_account' => 'The student has no portal account yet, so they cannot see their student card or academic rubric.',
+        ],
+        'actions' => [
+            'open_application' => 'Open application',
+        ],
+        'visa' => [
+            'status' => 'Visa status',
+            'notes' => 'Notes',
+            'updated_by' => 'Updated by',
+            'updated_at' => 'Last updated',
+            'none' => 'No visa updates yet.',
+            'edit' => 'Update visa status',
+            'edit_description' => 'The visa status is visible to KUI and this student’s faculty admin.',
+            'saved' => 'Visa status saved',
+            'readonly' => 'Only KUI can change the visa status.',
         ],
     ],
 

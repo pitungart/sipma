@@ -6,10 +6,12 @@ use App\Enums\VisaProcessStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class VisaStatus extends Model
 {
-    use HasUuids;
+    use HasUuids, LogsActivity;
 
     protected $attributes = [
         'status' => VisaProcessStatus::NotStarted->value,
@@ -27,6 +29,11 @@ class VisaStatus extends Model
         return [
             'status' => VisaProcessStatus::class,
         ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->logOnly(['status', 'notes'])->logOnlyDirty()->dontSubmitEmptyLogs();
     }
 
     public function student(): BelongsTo

@@ -6,6 +6,7 @@ use App\Enums\DocumentStatus;
 use App\Enums\DocumentType;
 use App\Enums\NumberType;
 use App\Enums\StudentStatus;
+use App\Filament\Admin\Resources\AcademicStudentResource;
 use App\Filament\Admin\Resources\StudentResource;
 use App\Filament\Support\FormModal;
 use App\Filament\Support\TemplateDownload;
@@ -82,6 +83,14 @@ class ViewApplicant extends ViewRecord
             && in_array($this->record->status, $statuses, true);
 
         return [
+            // Sudah menerima LOA: tahap berikutnya (aktivasi, visa, KTM, rubrik) ada di Mahasiswa Asing
+            Action::make('viewAcademic')
+                ->label(__('admin.applicant.actions.view_academic'))
+                ->icon('lucide-graduation-cap')
+                ->color('gray')
+                ->visible(fn (): bool => $this->record->status->isAccepted() && AcademicStudentResource::canViewAny())
+                ->url(fn (): string => AcademicStudentResource::getUrl('view', ['record' => $this->record])),
+
             // Atas nama pendaftar (keputusan #6): ubah data & ajukan selama draf / perlu revisi
             Action::make('editApplicant')
                 ->label(__('admin.applicant.actions.edit'))

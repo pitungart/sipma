@@ -6,6 +6,7 @@ use App\Enums\DocumentStatus;
 use App\Enums\MouStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StudentStatus;
+use App\Enums\VisaProcessStatus;
 use App\Models\Agent;
 use App\Models\Document;
 use App\Models\FileTemplate;
@@ -14,6 +15,7 @@ use App\Models\Mou;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\User;
+use App\Models\VisaStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Activity;
@@ -31,6 +33,7 @@ final class ActivityDescriber
         Document::class => 'document',
         Payment::class => 'payment',
         Loa::class => 'loa',
+        VisaStatus::class => 'visa',
     ];
 
     /**
@@ -95,6 +98,10 @@ final class ActivityDescriber
             return __('admin.dashboard.activity_status', ['name' => $name, 'status' => $state->getLabel()]);
         }
 
+        if ($subject instanceof VisaStatus && $status !== null && ($visa = VisaProcessStatus::tryFrom($status))) {
+            return __('admin.dashboard.activity_visa', ['causer' => $causer, 'name' => $name, 'status' => $visa->getLabel()]);
+        }
+
         $kind = $subject instanceof Student || $subject === null ? 'student' : self::CHILD_SUBJECTS[$subject::class];
         $event = in_array($activity->event, ['created', 'updated', 'deleted'], true) ? $activity->event : 'updated';
 
@@ -121,6 +128,7 @@ final class ActivityDescriber
             $subject instanceof Payment && ($state = PaymentStatus::tryFrom($status)) !== null && $state !== PaymentStatus::Pending => ["payment_{$state->value}", ['name' => $name]],
             $subject instanceof Mou && ($state = MouStatus::tryFrom($status)) !== null && $state !== MouStatus::Pending => ["mou_{$state->value}", ['name' => $name]],
             $subject instanceof Loa && $activity->event === 'created' => ['loa_issued', ['name' => $name]],
+            $subject instanceof VisaStatus && ($visa = VisaProcessStatus::tryFrom($status)) !== null => ['visa', ['name' => $name, 'status' => $visa->getLabel()]],
             default => null,
         };
 
@@ -167,6 +175,7 @@ final class ActivityDescriber
             $activity->subject instanceof Student && $status !== null => $status->getColor(),
             $activity->subject instanceof Payment => 'warning',
             $activity->subject instanceof Loa => 'violet',
+            $activity->subject instanceof VisaStatus => VisaProcessStatus::tryFrom((string) ($activity->properties['attributes']['status'] ?? ''))?->getColor() ?? 'info',
             $activity->subject instanceof Document => 'info',
             $activity->subject instanceof Mou => 'warning',
             default => 'primary',
@@ -182,6 +191,7 @@ final class ActivityDescriber
             $activity->event === 'deleted' => 'lucide-trash-2',
             $subject instanceof Payment => 'lucide-receipt',
             $subject instanceof Loa => 'lucide-file-check',
+            $subject instanceof VisaStatus => 'lucide-plane',
             $subject instanceof Document => 'lucide-file-text',
             $subject instanceof Mou => 'lucide-handshake',
             $subject instanceof Agent => 'lucide-building-2',

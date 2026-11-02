@@ -62,6 +62,8 @@ return [
         'activity_subject_document' => 'dokumen :name',
         'activity_subject_payment' => 'pembayaran :name',
         'activity_subject_loa' => 'LOA :name',
+        'activity_subject_visa' => 'status visa :name',
+        'activity_visa' => ':causer mengubah status visa :name menjadi :status',
         'sources' => 'Sumber pendaftar',
         'sources_total' => 'pendaftar',
         'source_agent_long' => 'Melalui agen',
@@ -176,6 +178,7 @@ return [
             'loa_number' => 'Nomor LOA',
         ],
         'actions' => [
+            'view_academic' => 'Lihat di Mahasiswa Asing',
             'save_draft' => 'Simpan draf',
             'new' => 'Pendaftaran baru',
             'edit' => 'Ubah data',
@@ -221,6 +224,9 @@ return [
         'empty_description' => 'Mahasiswa muncul di sini setelah LOA-nya terbit.',
         'tabs' => [
             'all' => 'Semua',
+            'info' => 'Info',
+            'visa' => 'Visa',
+            'history' => 'Riwayat',
             'ready' => 'Siap diaktifkan',
         ],
         'fields' => [
@@ -228,12 +234,36 @@ return [
             'nationality' => 'Kewarganegaraan',
             'enrolled_at' => 'Tanggal aktif',
             'account' => 'Akun portal',
+            'completed_at' => 'Selesai pada',
         ],
         'account' => [
             'yes' => 'Ada',
             'no' => 'Belum ada',
             'pending_hint' => 'Dibuat otomatis dari email pendaftaran saat mahasiswa diaktifkan.',
             'failed_hint' => 'Tidak bisa dibuat otomatis: email pendaftaran kosong atau dipakai akun lain.',
+        ],
+        'sections' => [
+            'documents' => 'Dokumen',
+            'payments' => 'Pembayaran & LOA',
+        ],
+        'documents_hint' => 'Status dokumen saat pendaftaran. Buka data pendaftaran untuk melihat berkasnya.',
+        'notice' => [
+            'ready' => 'LOA sudah terbit. Tandai mahasiswa Aktif saat program dimulai; KTM dan rubrik akademik terbuka setelah itu.',
+            'no_account' => 'Mahasiswa belum punya akun portal sehingga belum bisa melihat KTM dan rubrik akademik.',
+        ],
+        'actions' => [
+            'open_application' => 'Buka data pendaftaran',
+        ],
+        'visa' => [
+            'status' => 'Status visa',
+            'notes' => 'Catatan',
+            'updated_by' => 'Diubah oleh',
+            'updated_at' => 'Terakhir diubah',
+            'none' => 'Belum ada pembaruan visa.',
+            'edit' => 'Ubah status visa',
+            'edit_description' => 'Status visa terlihat oleh KUI dan admin fakultas mahasiswa ini.',
+            'saved' => 'Status visa disimpan',
+            'readonly' => 'Status visa hanya bisa diubah oleh KUI.',
         ],
     ],
 

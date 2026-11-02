@@ -3033,6 +3033,46 @@ select.fi-select-input:has(option[value='']:checked) {
     color: var(--sp-heading);
 }
 
+/* Butir selebar baris (mis. catatan) */
+.sipma-def-grid .sipma-def-wide {
+    grid-column: 1 / -1;
+}
+
+/* Bagian di dalam satu tab (detail Mahasiswa Asing): judul + isi, bergaris pemisah */
+.sipma-subsection {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--sp-border);
+}
+
+.sipma-subsection > .sipma-card-desc {
+    margin-bottom: 12px;
+}
+
+.sipma-subsection > .sipma-card-title + .sipma-rows {
+    margin-top: 12px;
+}
+
+.sipma-subsection-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+/* Alert di tingkat halaman (di antara kartu): jarak antar-kartu sudah dari halaman */
+.sipma-page-alert {
+    margin-bottom: 0;
+}
+
+/* Alert penutup tab (setelah isi), bukan pembuka */
+.sipma-section > .sipma-def-grid + .sipma-section-alert,
+.sipma-section > .sipma-empty + .sipma-section-alert {
+    margin-top: 16px;
+    margin-bottom: 0;
+}
+
 .sipma-mono {
     font-family: 'DM Mono', ui-monospace, monospace;
 }
