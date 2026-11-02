@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Enums\DocumentStatus;
 use App\Enums\MouStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\StudentCardStatus;
 use App\Enums\StudentStatus;
 use App\Enums\VisaProcessStatus;
 use App\Models\Agent;
@@ -14,6 +15,7 @@ use App\Models\Loa;
 use App\Models\Mou;
 use App\Models\Payment;
 use App\Models\Student;
+use App\Models\StudentCard;
 use App\Models\User;
 use App\Models\VisaStatus;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,6 +36,7 @@ final class ActivityDescriber
         Payment::class => 'payment',
         Loa::class => 'loa',
         VisaStatus::class => 'visa',
+        StudentCard::class => 'card',
     ];
 
     /**
@@ -102,6 +105,10 @@ final class ActivityDescriber
             return __('admin.dashboard.activity_visa', ['causer' => $causer, 'name' => $name, 'status' => $visa->getLabel()]);
         }
 
+        if ($subject instanceof StudentCard && ($card = self::cardEvent($activity)) !== null) {
+            return __("admin.dashboard.activity_card_{$card}", ['causer' => $causer, 'name' => $name]);
+        }
+
         $kind = $subject instanceof Student || $subject === null ? 'student' : self::CHILD_SUBJECTS[$subject::class];
         $event = in_array($activity->event, ['created', 'updated', 'deleted'], true) ? $activity->event : 'updated';
 
@@ -129,6 +136,7 @@ final class ActivityDescriber
             $subject instanceof Mou && ($state = MouStatus::tryFrom($status)) !== null && $state !== MouStatus::Pending => ["mou_{$state->value}", ['name' => $name]],
             $subject instanceof Loa && $activity->event === 'created' => ['loa_issued', ['name' => $name]],
             $subject instanceof VisaStatus && ($visa = VisaProcessStatus::tryFrom($status)) !== null => ['visa', ['name' => $name, 'status' => $visa->getLabel()]],
+            $subject instanceof StudentCard && ($card = self::cardEvent($activity)) !== null => ["card_{$card}", ['name' => $name]],
             default => null,
         };
 
@@ -141,6 +149,18 @@ final class ActivityDescriber
         return __("profile.activity.{$event}", [
             'subject' => __('profile.activity.subject_'.self::subjectKind($subject), ['name' => $name]),
         ]);
+    }
+
+    /**
+     * issued | revoked; perubahan KTM lainnya memakai kalimat umum.
+     */
+    private static function cardEvent(Activity $activity): ?string
+    {
+        return match (true) {
+            $activity->event === 'created' => 'issued',
+            ($activity->properties['attributes']['status'] ?? null) === StudentCardStatus::Revoked->value => 'revoked',
+            default => null,
+        };
     }
 
     private static function subjectKind(mixed $subject): string
@@ -176,6 +196,7 @@ final class ActivityDescriber
             $activity->subject instanceof Payment => 'warning',
             $activity->subject instanceof Loa => 'violet',
             $activity->subject instanceof VisaStatus => VisaProcessStatus::tryFrom((string) ($activity->properties['attributes']['status'] ?? ''))?->getColor() ?? 'info',
+            $activity->subject instanceof StudentCard => self::cardEvent($activity) === 'revoked' ? 'danger' : 'success',
             $activity->subject instanceof Document => 'info',
             $activity->subject instanceof Mou => 'warning',
             default => 'primary',
@@ -192,6 +213,7 @@ final class ActivityDescriber
             $subject instanceof Payment => 'lucide-receipt',
             $subject instanceof Loa => 'lucide-file-check',
             $subject instanceof VisaStatus => 'lucide-plane',
+            $subject instanceof StudentCard => 'lucide-id-card',
             $subject instanceof Document => 'lucide-file-text',
             $subject instanceof Mou => 'lucide-handshake',
             $subject instanceof Agent => 'lucide-building-2',

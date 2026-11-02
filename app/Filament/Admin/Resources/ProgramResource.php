@@ -113,6 +113,15 @@ class ProgramResource extends Resource
                         ->maxLength(255)
                         ->unique(ignoreRecord: true),
 
+                    Forms\Components\TextInput::make('duration_months')
+                        ->label(__('admin.program.fields.duration_months'))
+                        ->helperText(__('admin.program.fields.duration_hint'))
+                        ->suffix(__('admin.program.fields.duration_suffix'))
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(120),
+
                     Forms\Components\Textarea::make('description')
                         ->label(__('admin.program.fields.description'))
                         ->rows(3)
@@ -164,6 +173,13 @@ class ProgramResource extends Resource
                     ->formatStateUsing(fn (string $state): string => Rupiah::format($state))
                     ->color(fn (string $state): ?string => (float) $state > 0 ? null : 'danger')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('duration_months')
+                    ->label(__('admin.program.fields.duration_months'))
+                    ->formatStateUsing(fn (int $state): string => __('admin.program.fields.duration_value', ['count' => $state]))
+                    ->placeholder('—')
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('students_count')
                     ->label(__('admin.program.fields.students_count'))

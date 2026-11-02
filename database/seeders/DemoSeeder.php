@@ -186,6 +186,15 @@ class DemoSeeder extends Seeder
             $this->payments($student, $status);
         }
 
+        // Sebagian mahasiswa Aktif sengaja belum punya KTM agar antreannya terlihat
+        if ($status === StudentStatus::Completed || ($status === StudentStatus::Enrolled && $index % 2 === 0)) {
+            $student->studentCards()->create([
+                'card_number' => Numbering::next(NumberType::StudentCard),
+                'issued_at' => $student->enrolled_at,
+                'valid_until' => now()->addMonths(6)->endOfMonth(),
+            ]);
+        }
+
         if ($status->isAccepted()) {
             $student->loa()->create([
                 'loa_number' => Numbering::next(NumberType::Loa),

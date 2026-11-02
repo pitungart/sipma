@@ -40,6 +40,7 @@ return [
         'enroll' => 'menandai mahasiswa aktif',
         'complete' => 'menandai program selesai',
         'reopen' => 'membuka kembali status aktif',
+        'issue_card' => 'menerbitkan KTM',
     ],
 
     'errors' => [
@@ -61,6 +62,12 @@ return [
         'mou_not_pending' => 'MOU ini sudah diproses.',
         'profile_incomplete' => 'Lengkapi profil perusahaan sebelum mengunggah MOU.',
         'mou_programs_required' => 'Pilih minimal satu program yang dicakup MOU ini.',
+        'card_already_active' => ':name masih punya KTM aktif. Gunakan Terbitkan ulang untuk menggantinya.',
+        'card_not_active' => 'KTM :number sudah tidak aktif.',
+        'card_photo_missing' => 'KTM belum bisa diterbitkan: Pas Foto belum ada atau belum disetujui.',
+        'card_valid_until_required' => 'Isi tanggal berlaku KTM. Tanggal tidak bisa dihitung karena durasi program atau periode masuk masih kosong.',
+        'card_valid_until_past' => 'Tanggal berlaku KTM harus setelah hari ini.',
+        'card_number_taken' => 'Nomor KTM :number sudah dipakai.',
     ],
 
     'notifications' => [
@@ -96,6 +103,18 @@ return [
         'student_enrolled' => [
             'title' => 'Terdaftar sebagai mahasiswa aktif',
             'body' => ':name sudah terdaftar aktif di program :program. KTM dan rubrik akademik akan tersedia di portal.',
+        ],
+        'card_issued' => [
+            'title' => 'KTM Anda sudah terbit',
+            'body' => 'KTM nomor :number sudah terbit dan berlaku sampai :date.',
+        ],
+        'card_reissued' => [
+            'title' => 'KTM Anda diterbitkan ulang',
+            'body' => 'KTM baru nomor :number berlaku sampai :date dan menggantikan KTM lama. Alasan: :reason',
+        ],
+        'card_revoked' => [
+            'title' => 'KTM Anda dicabut',
+            'body' => 'KTM nomor :number sudah tidak berlaku. Alasan: :reason',
         ],
         'student_invitation' => [
             'title' => 'Akun portal SIPMA Anda',

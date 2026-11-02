@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Gender;
 use App\Enums\Religion;
+use App\Enums\StudentCardStatus;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Builder;
@@ -190,5 +191,18 @@ class Student extends Model
     public function visaStatus(): HasOne
     {
         return $this->hasOne(VisaStatus::class);
+    }
+
+    /**
+     * Seluruh KTM, termasuk yang sudah dicabut atau kedaluwarsa (TP-2).
+     */
+    public function studentCards(): HasMany
+    {
+        return $this->hasMany(StudentCard::class);
+    }
+
+    public function activeCard(): HasOne
+    {
+        return $this->hasOne(StudentCard::class)->where('status', StudentCardStatus::Active);
     }
 }

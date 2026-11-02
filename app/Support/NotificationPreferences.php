@@ -13,6 +13,8 @@ use App\Notifications\PaymentRejected;
 use App\Notifications\PaymentReminder;
 use App\Notifications\PaymentSubmitted;
 use App\Notifications\RevisionRequested;
+use App\Notifications\StudentCardIssued;
+use App\Notifications\StudentCardRevoked;
 use App\Notifications\StudentEnrolled;
 use App\Notifications\SubmissionReminder;
 
@@ -35,6 +37,8 @@ final class NotificationPreferences
         PaymentRejected::class => 'payment_rejected',
         LoaIssued::class => 'loa_issued',
         StudentEnrolled::class => 'student_enrolled',
+        StudentCardIssued::class => 'student_card',
+        StudentCardRevoked::class => 'student_card',
         MouReviewed::class => 'mou_reviewed',
         SubmissionReminder::class => 'reminders',
         PaymentReminder::class => 'reminders',
@@ -51,7 +55,7 @@ final class NotificationPreferences
             UserRole::SuperAdmin => ['application_submitted', 'payment_submitted', 'mou_submitted'],
             UserRole::Admin => [],
             UserRole::Agent => ['revision_requested', 'application_approved', 'payment_rejected', 'loa_issued', 'student_enrolled', 'reminders', 'mou_reviewed'],
-            UserRole::Student => ['revision_requested', 'application_approved', 'payment_rejected', 'loa_issued', 'student_enrolled', 'reminders'],
+            UserRole::Student => ['revision_requested', 'application_approved', 'payment_rejected', 'loa_issued', 'student_enrolled', 'student_card', 'reminders'],
         };
     }
 

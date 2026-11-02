@@ -14,6 +14,7 @@ enum NumberType: string implements HasLabel
     case Loa = 'loa';
     case Mou = 'mou';
     case Receipt = 'receipt';
+    case StudentCard = 'student_card';
 
     public function getLabel(): string
     {
@@ -27,6 +28,7 @@ enum NumberType: string implements HasLabel
             self::Loa => 'lucide-file-badge',
             self::Mou => 'lucide-handshake',
             self::Receipt => 'lucide-receipt-text',
+            self::StudentCard => 'lucide-id-card',
         };
     }
 
@@ -54,6 +56,7 @@ enum NumberType: string implements HasLabel
             self::Loa => ['separator' => NumberSeparator::Slash, 'segments' => [$text('LOA'), $text('SIPMA'), $year(4), $sequence]],
             self::Mou => ['separator' => NumberSeparator::Slash, 'segments' => [$text('MOU'), $text('SIPMA'), $year(4), $sequence]],
             self::Receipt => ['separator' => NumberSeparator::Slash, 'segments' => [$text('KW'), $text('SIPMA'), $year(4), $sequence]],
+            self::StudentCard => ['separator' => NumberSeparator::Dash, 'segments' => [$text('KTMA'), $year(4), $sequence]],
         };
     }
 
@@ -66,6 +69,8 @@ enum NumberType: string implements HasLabel
             self::Application => 'submitted_at',
             self::Loa => 'issued_at',
             self::Mou, self::Receipt => 'verified_at',
+            // issued_at hanya tanggal; created_at membedakan beberapa KTM yang terbit di hari yang sama
+            self::StudentCard => 'created_at',
         };
     }
 
@@ -81,6 +86,7 @@ enum NumberType: string implements HasLabel
             self::Loa => ['loas', 'loa_number'],
             self::Mou => ['mous', 'mou_number'],
             self::Receipt => ['payments', 'receipt_number'],
+            self::StudentCard => ['student_cards', 'card_number'],
         };
     }
 }

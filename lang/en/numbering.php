@@ -11,6 +11,7 @@ return [
         'loa' => ['label' => 'LOA number', 'short' => 'LOA', 'when' => 'Issued when the LOA is uploaded, unless staff type a number themselves.'],
         'mou' => ['label' => 'MOU number', 'short' => 'MOU', 'when' => 'Issued when an agent MOU is approved.'],
         'receipt' => ['label' => 'Receipt number', 'short' => 'receipt', 'when' => 'Issued when a payment is verified.'],
+        'student_card' => ['label' => 'Student card number', 'short' => 'student card', 'when' => 'Issued when a student card is issued, unless staff type a number themselves.'],
     ],
     'segment_types' => [
         'text' => 'Fixed text',

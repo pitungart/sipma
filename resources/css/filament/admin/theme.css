@@ -3061,6 +3061,13 @@ select.fi-select-input:has(option[value='']:checked) {
     margin-bottom: 16px;
 }
 
+.sipma-actions-inline {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
 /* Alert di tingkat halaman (di antara kartu): jarak antar-kartu sudah dari halaman */
 .sipma-page-alert {
     margin-bottom: 0;
@@ -3450,14 +3457,17 @@ select.fi-select-input:has(option[value='']:checked) {
 }
 
 /* Kartu jenis nomor */
+/* Tiga kartu per baris; baris terakhir melebar sehingga tidak ada kartu yang sendirian */
 .sipma-num-types {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 12px;
 }
 
 .sipma-num-type {
     position: relative;
+    flex: 1 1 calc(33.333% - 12px);
+    min-width: 240px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -4062,10 +4072,6 @@ select.fi-select-input:has(option[value='']:checked) {
 }
 
 @media (max-width: 1023px) {
-    .sipma-num-types {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .sipma-num-facts {
         grid-template-columns: minmax(0, 1fr);
     }

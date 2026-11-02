@@ -11,6 +11,7 @@ return [
         'loa' => ['label' => 'Nomor LOA', 'short' => 'LOA', 'when' => 'Diberikan saat LOA diunggah, kecuali staf mengetik nomor sendiri.'],
         'mou' => ['label' => 'Nomor MOU', 'short' => 'MOU', 'when' => 'Diberikan saat MOU agen disetujui.'],
         'receipt' => ['label' => 'Nomor kwitansi', 'short' => 'kwitansi', 'when' => 'Diberikan saat pembayaran diverifikasi.'],
+        'student_card' => ['label' => 'Nomor KTM', 'short' => 'KTM', 'when' => 'Diberikan saat KTM diterbitkan, kecuali staf mengetik nomor sendiri.'],
     ],
     'segment_types' => [
         'text' => 'Teks tetap',

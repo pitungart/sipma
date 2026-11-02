@@ -1,10 +1,11 @@
-{{-- Detail Mahasiswa Asing: ringkasan tahap pasca-LOA, lalu tab Info · Visa · Riwayat
-     (KTM, Rubrik, SK Mengajar menyusul lewat ViewAcademicStudent::tabs()). --}}
+{{-- Detail Mahasiswa Asing: ringkasan tahap pasca-LOA, lalu tab Info · Visa · KTM · Riwayat
+     (Rubrik dan SK Mengajar menyusul lewat ViewAcademicStudent::tabs()). --}}
 @php
     use App\Enums\StudentStatus;
 
     $record = $this->record;
     $tabs = $this->tabs();
+    $initialTab = array_key_exists((string) request()->query('tab'), $tabs) ? request()->query('tab') : 'info';
 @endphp
 
 <x-filament-panels::page class="sipma-applicant">
@@ -35,7 +36,7 @@
         </x-sipma.notice>
     @endif
 
-    <div class="sipma-card sipma-clip" x-data="{ tab: 'info' }">
+    <div class="sipma-card sipma-clip" x-data="{ tab: @js($initialTab) }">
         <nav class="sipma-master-tabs" role="tablist">
             @foreach ($tabs as $key => $label)
                 <button
@@ -52,7 +53,7 @@
         </nav>
 
         {{-- Info: data pribadi; Super Admin juga melihat status dokumen, biaya, dan LOA --}}
-        <section x-show="tab === 'info'" class="sipma-section">
+        <section x-show="tab === 'info'" x-cloak class="sipma-section">
             <dl class="sipma-def-grid">
                 @foreach ($profile as $row)
                     <div>
@@ -119,6 +120,87 @@
 
             @unless ($canEditVisa)
                 <x-sipma.notice tone="warning" icon="lucide-lock">{{ __('admin.academic_student.visa.readonly') }}</x-sipma.notice>
+            @endunless
+        </section>
+
+        {{-- KTM: dikelola KUI, dilihat admin fakultas --}}
+        <section x-show="tab === 'card'" x-cloak class="sipma-section">
+            <div class="sipma-subsection-head">
+                <h3 class="sipma-card-title">{{ __('admin.student_card.detail.title') }}</h3>
+                <div class="sipma-actions-inline">
+                    {{-- Dipanggil langsung, action tidak memeriksa visible() sendiri --}}
+                    @foreach ([$this->issueCardAction, $this->reissueCardAction, $this->revokeCardAction] as $cardAction)
+                        @if ($cardAction->isVisible())
+                            {{ $cardAction }}
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+
+            @if ($activeCard)
+                <dl class="sipma-def-grid">
+                    <div>
+                        <dt>{{ __('admin.student_card.fields.card_number') }}</dt>
+                        <dd class="sipma-mono">{{ $activeCard->card_number }}</dd>
+                    </div>
+                    <div>
+                        <dt>{{ __('admin.student_card.fields.status') }}</dt>
+                        <dd><x-sipma.status-badge :status="$activeCard->status" /></dd>
+                    </div>
+                    <div>
+                        <dt>{{ __('admin.student_card.fields.issued_at') }}</dt>
+                        <dd>{{ $activeCard->issued_at->translatedFormat('j F Y') }}</dd>
+                    </div>
+                    <div>
+                        <dt>{{ __('admin.student_card.fields.valid_until') }}</dt>
+                        <dd>{{ $activeCard->valid_until->translatedFormat('j F Y') }}</dd>
+                    </div>
+                    <div>
+                        <dt>{{ __('admin.student_card.fields.issued_by') }}</dt>
+                        <dd @class(['sipma-dd-empty' => ! $activeCard->issuer])>{{ $activeCard->issuer?->name ?? '—' }}</dd>
+                    </div>
+                </dl>
+            @else
+                <x-sipma.empty
+                    icon="lucide-id-card"
+                    :title="__('admin.student_card.detail.none')"
+                    :description="match ($record->status) {
+                        StudentStatus::LoaIssued => __('admin.student_card.detail.not_ready'),
+                        StudentStatus::Completed => __('admin.student_card.detail.none_completed'),
+                        default => $canManageCards ? __('admin.student_card.detail.none_enrolled') : null,
+                    }"
+                />
+            @endif
+
+            @if ($pastCards->isNotEmpty())
+                <div class="sipma-subsection">
+                    <h3 class="sipma-card-title">{{ __('admin.student_card.detail.history') }}</h3>
+                    <ul class="sipma-rows">
+                        @foreach ($pastCards as $card)
+                            <li class="sipma-row" wire:key="card-{{ $card->getKey() }}">
+                                <span @class(['sipma-tile', 'sipma-tone-'.$card->status->getColor()])>
+                                    <x-filament::icon icon="lucide-id-card" class="sipma-tile-icon" />
+                                </span>
+                                <div class="sipma-row-main">
+                                    <div class="sipma-row-title sipma-mono">{{ $card->card_number }}</div>
+                                    <div class="sipma-row-meta">
+                                        {{ __('admin.student_card.detail.history_meta', ['issued' => $card->issued_at->translatedFormat('j M Y'), 'until' => $card->valid_until->translatedFormat('j M Y')]) }}
+                                    </div>
+                                    @if ($card->revoked_at)
+                                        <div class="sipma-row-meta">
+                                            {{ __('admin.student_card.detail.revoked_meta', ['date' => $card->revoked_at->translatedFormat('j M Y'), 'reason' => $card->revoke_reason]) }}
+                                        </div>
+                                    @endif
+                                </div>
+                                <x-sipma.status-badge :status="$card->status" />
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            @unless ($canManageCards)
+                <x-sipma.notice tone="warning" icon="lucide-lock">{{ __('admin.student_card.detail.readonly') }}</x-sipma.notice>
             @endunless
         </section>
 

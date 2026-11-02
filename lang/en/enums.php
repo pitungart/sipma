@@ -86,4 +86,10 @@ return [
         'rejected' => 'Rejected',
     ],
 
+    'student_card_status' => [
+        'active' => 'Active',
+        'expired' => 'Expired',
+        'revoked' => 'Revoked',
+    ],
+
 ];

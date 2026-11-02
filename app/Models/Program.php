@@ -22,6 +22,7 @@ class Program extends Model
         'slug',
         'admission_fee',
         'tuition_fee',
+        'duration_months',
         'description',
         'is_active',
     ];
@@ -31,6 +32,7 @@ class Program extends Model
         return [
             'admission_fee' => 'decimal:2',
             'tuition_fee' => 'decimal:2',
+            'duration_months' => 'integer',
             'is_active' => 'boolean',
         ];
     }

@@ -74,7 +74,7 @@ class AcademicStudentResource extends Resource
         return parent::getEloquentQuery()
             ->visibleTo(Filament::auth()->user())
             ->whereIn('status', StudentStatus::acceptedStatuses())
-            ->with(['program.faculty', 'nationality', 'agent:id,company_name']);
+            ->with(['program.faculty', 'nationality', 'agent:id,company_name', 'activeCard']);
     }
 
     public static function canCreate(): bool
@@ -148,6 +148,19 @@ class AcademicStudentResource extends Resource
                         $record->status->hasAcademicAccess() => __('admin.academic_student.account.failed_hint'),
                         default => __('admin.academic_student.account.pending_hint'),
                     }),
+
+                // Hanya mahasiswa Aktif yang bisa diterbitkan KTM; belum ada = perlu ditindaklanjuti
+                Tables\Columns\TextColumn::make('card')
+                    ->label(__('admin.academic_student.fields.card'))
+                    ->state(fn (Student $record): string => __('admin.student_card.'.($record->activeCard ? 'yes' : 'no')))
+                    ->badge()
+                    ->color(fn (Student $record): string => match (true) {
+                        $record->activeCard !== null => 'success',
+                        $record->status === StudentStatus::Enrolled => 'warning',
+                        default => 'gray',
+                    })
+                    ->icon(fn (Student $record): string => $record->activeCard ? 'lucide-circle-check' : 'lucide-circle-minus')
+                    ->tooltip(fn (Student $record): ?string => $record->activeCard?->card_number),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('admin.dashboard.status'))

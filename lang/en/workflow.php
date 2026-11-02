@@ -41,6 +41,7 @@ return [
         'enroll' => 'mark the student active',
         'complete' => 'mark the program completed',
         'reopen' => 'reopen the active status',
+        'issue_card' => 'issue a student card',
     ],
 
     'errors' => [
@@ -62,6 +63,12 @@ return [
         'mou_not_pending' => 'This MOU has already been processed.',
         'profile_incomplete' => 'Complete your company profile before uploading the MOU.',
         'mou_programs_required' => 'Choose at least one program covered by this MOU.',
+        'card_already_active' => ':name still has an active student card. Use Reissue to replace it.',
+        'card_not_active' => 'Student card :number is no longer active.',
+        'card_photo_missing' => 'The student card cannot be issued yet: the passport photo is missing or not approved.',
+        'card_valid_until_required' => 'Enter the card’s expiry date. It cannot be calculated because the program duration or enrollment period is empty.',
+        'card_valid_until_past' => 'The card’s expiry date must be after today.',
+        'card_number_taken' => 'Student card number :number is already in use.',
     ],
 
     'notifications' => [
@@ -97,6 +104,18 @@ return [
         'student_enrolled' => [
             'title' => 'Registered as an active student',
             'body' => ':name is now active in :program. The student card and academic rubric will be available in the portal.',
+        ],
+        'card_issued' => [
+            'title' => 'Your student card is ready',
+            'body' => 'Student card :number has been issued and is valid until :date.',
+        ],
+        'card_reissued' => [
+            'title' => 'Your student card was reissued',
+            'body' => 'New student card :number is valid until :date and replaces your old card. Reason: :reason',
+        ],
+        'card_revoked' => [
+            'title' => 'Your student card was revoked',
+            'body' => 'Student card :number is no longer valid. Reason: :reason',
         ],
         'student_invitation' => [
             'title' => 'Your SIPMA portal account',

@@ -7,7 +7,9 @@ use App\Enums\VisaProcessStatus;
 use App\Filament\Admin\Resources\AcademicStudentResource;
 use App\Filament\Admin\Resources\StudentResource;
 use App\Filament\Support\FormModal;
+use App\Filament\Support\StudentCardActions;
 use App\Models\Student;
+use App\Models\StudentCard;
 use App\Models\VisaStatus;
 use App\Support\ActivityDescriber;
 use App\Support\ApplicantDetails;
@@ -22,8 +24,8 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * Detail Mahasiswa Asing (TP-1 F2): ringkasan tahap pasca-LOA + tab Info · Visa · Riwayat.
- * Tab KTM, Rubrik, dan SK Mengajar ditambahkan TP-2–TP-4 lewat tabs().
+ * Detail Mahasiswa Asing (TP-1 F2): ringkasan tahap pasca-LOA + tab Info · Visa · KTM · Riwayat.
+ * Tab Rubrik dan SK Mengajar ditambahkan TP-3 dan TP-4 lewat tabs().
  *
  * Super Admin melihat dokumen, biaya, dan LOA (seperti detail Pendaftar); Admin Fakultas hanya
  * data ringkas (keputusan 6 Oktober 2026). Visa diubah hanya oleh Super Admin.
@@ -76,6 +78,7 @@ class ViewAcademicStudent extends ViewRecord
         return [
             'info' => __('admin.academic_student.tabs.info'),
             'visa' => __('admin.academic_student.tabs.visa'),
+            'card' => __('admin.academic_student.tabs.card'),
             'history' => __('admin.academic_student.tabs.history'),
         ];
     }
@@ -187,6 +190,35 @@ class ViewAcademicStudent extends ViewRecord
             });
     }
 
+    // ── KTM ──────────────────────────────────────────────────────────────────
+
+    private function activeCard(): ?StudentCard
+    {
+        return $this->record->activeCard()->first();
+    }
+
+    public function issueCardAction(): Action
+    {
+        return StudentCardActions::issue(Action::make('issueCard'), fn (): Student => $this->record)
+            ->size('sm')
+            ->visible(fn (): bool => StudentCardActions::canIssue($this->record));
+    }
+
+    public function reissueCardAction(): Action
+    {
+        return StudentCardActions::reissue(Action::make('reissueCard'))
+            ->size('sm')
+            ->record(fn (): ?StudentCard => $this->activeCard());
+    }
+
+    public function revokeCardAction(): Action
+    {
+        return StudentCardActions::revoke(Action::make('revokeCard'))
+            ->size('sm')
+            ->outlined()
+            ->record(fn (): ?StudentCard => $this->activeCard());
+    }
+
     // ── Data untuk view ──────────────────────────────────────────────────────
 
     /**
@@ -195,6 +227,9 @@ class ViewAcademicStudent extends ViewRecord
     protected function getViewData(): array
     {
         $student = $this->record->loadMissing(['program.faculty', 'nationality', 'homeUniversityCountry', 'agent', 'loa', 'visaStatus.updater']);
+
+        // Selalu baru: aksi KTM di halaman ini mengubah datanya tanpa memuat ulang halaman
+        $cards = $student->studentCards()->with('issuer')->latest()->latest('id')->get();
         $canVerify = $this->canVerify();
 
         return [
@@ -205,6 +240,9 @@ class ViewAcademicStudent extends ViewRecord
             'fees' => $canVerify ? ApplicantDetails::fees($student) : collect(),
             'visa' => $student->visaStatus,
             'canEditVisa' => $this->canEditVisa(),
+            'activeCard' => $cards->first(fn (StudentCard $card): bool => $card->isActive()),
+            'pastCards' => $cards->reject(fn (StudentCard $card): bool => $card->isActive()),
+            'canManageCards' => Gate::allows('create', StudentCard::class),
             'history' => ActivityDescriber::forStudent($student),
         ];
     }
