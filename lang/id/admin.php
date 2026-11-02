@@ -439,6 +439,23 @@ return [
         ],
     ],
 
+    'lecturer' => [
+        'label' => 'Dosen',
+        'plural' => 'Dosen',
+        'description' => 'Dosen pengajar mahasiswa asing, untuk SK Mengajar. Dosen tidak punya akun SIPMA.',
+        'nip_taken' => 'NIP/NIDN ini sudah dipakai, termasuk oleh dosen yang sudah dihapus. Pulihkan dosen itu atau periksa kembali nomornya.',
+        'fields' => [
+            'name' => 'Nama dosen',
+            'name_hint' => 'Tulis lengkap dengan gelar, mis. Dr. Budi Santoso, M.T.',
+            'faculty' => 'Fakultas',
+            'nip' => 'NIP/NIDN',
+            'nip_hint' => 'Opsional, karena dosen tamu belum tentu punya.',
+            'email' => 'Email',
+            'phone' => 'Telepon',
+            'active_hint' => 'Dosen nonaktif tidak ditawarkan di SK baru.',
+        ],
+    ],
+
     'payment' => [
         'label' => 'Pembayaran',
         'plural' => 'Pembayaran',

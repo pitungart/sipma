@@ -55,7 +55,7 @@ trait MasterData
 
     /**
      * Pengaturan bersama tabel: tab entitas di kepala kartu (bila lebih dari satu yang boleh dibuka,
-     * mis. Admin Fakultas hanya punya Program) dan tombol tambah di empty state.
+     * mis. Admin Fakultas hanya punya Program dan Dosen) dan tombol tambah di empty state.
      */
     public static function masterTable(Table $table): Table
     {

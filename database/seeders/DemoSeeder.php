@@ -16,6 +16,7 @@ use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Models\Agent;
 use App\Models\Course;
+use App\Models\Lecturer;
 use App\Models\PaymentAccount;
 use App\Models\Program;
 use App\Models\Student;
@@ -65,6 +66,7 @@ class DemoSeeder extends Seeder
         $programs = Program::query()->where('is_active', true)->get();
 
         $this->coursePackages($programs->take(3));
+        $this->lecturers($programs->take(3));
 
         $agent = $this->agent('agent@sipma.test', 'EduBridge Australia', 'AU', MouStatus::Approved);
         $this->agent('agent2@sipma.test', 'Nusantara Study Link', 'MY', MouStatus::Pending);
@@ -323,6 +325,19 @@ class DemoSeeder extends Seeder
                 ]);
             }
         }
+    }
+
+    /**
+     * Dosen contoh untuk demo, bukan data sungguhan. Satu per fakultas program demo.
+     */
+    private function lecturers(Collection $programs): void
+    {
+        $programs->pluck('faculty_id')->unique()->values()->each(fn (string $facultyId, int $i) => Lecturer::create([
+            'faculty_id' => $facultyId,
+            'name' => 'Dr. Dosen Demo '.($i + 1).', M.Hum.',
+            'nip' => 'DEMO-'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT),
+            'email' => 'dosen'.($i + 1).'@demo.sipma.test',
+        ]));
     }
 
     private function dummyFile(string $directory, string $extension): string

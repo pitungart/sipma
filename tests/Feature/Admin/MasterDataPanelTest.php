@@ -194,12 +194,13 @@ class MasterDataPanelTest extends TestCase
 
     public function test_master_pages_show_entity_tabs_for_what_the_role_may_open(): void
     {
-        // Admin Fakultas hanya punya Program: satu tab tidak perlu ditampilkan. Diperiksa lebih dulu
-        // karena navigasi Filament tersimpan per instance aplikasi.
+        // Admin Fakultas hanya punya Program dan Dosen, bukan Fakultas. Diperiksa lebih dulu karena
+        // navigasi Filament tersimpan per instance aplikasi.
         $this->actingAs($this->facultyAdmin())
             ->get('/admin/programs')
             ->assertOk()
-            ->assertDontSee('sipma-master-tabs', false)
+            ->assertSee('sipma-master-tabs', false)
+            ->assertSee('/admin/lecturers', false)
             ->assertDontSee('/admin/faculties', false);
 
         $html = $this->actingAs($this->superAdmin())

@@ -439,6 +439,23 @@ return [
         ],
     ],
 
+    'lecturer' => [
+        'label' => 'Lecturer',
+        'plural' => 'Lecturers',
+        'description' => 'Lecturers teaching international students, for teaching decrees. Lecturers do not have SIPMA accounts.',
+        'nip_taken' => 'This NIP/NIDN is already used, including by a deleted lecturer. Restore that lecturer or check the number.',
+        'fields' => [
+            'name' => 'Lecturer name',
+            'name_hint' => 'Write it in full with titles, e.g. Dr. Budi Santoso, M.T.',
+            'faculty' => 'Faculty',
+            'nip' => 'NIP/NIDN',
+            'nip_hint' => 'Optional, since guest lecturers may not have one.',
+            'email' => 'Email',
+            'phone' => 'Phone',
+            'active_hint' => 'Inactive lecturers are not offered in new decrees.',
+        ],
+    ],
+
     'payment' => [
         'label' => 'Payment',
         'plural' => 'Payments',
