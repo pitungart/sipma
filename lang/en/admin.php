@@ -67,6 +67,7 @@ return [
         'activity_subject_card' => 'the student card of :name',
         'activity_card_issued' => ':causer issued the student card of :name',
         'activity_card_revoked' => ':causer revoked the student card of :name',
+        'activity_card_expired' => 'The student card of :name expired',
         'activity_visa' => ':causer set the visa status of :name to :status',
         'sources' => 'Applicant sources',
         'sources_total' => 'applicants',

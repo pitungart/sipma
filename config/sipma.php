@@ -67,6 +67,7 @@ return [
     | - submission_after: draf / perlu revisi yang tidak diubah sekian hari diingatkan (sekali per
     |   masa diam). Tidak ada lagi tenggat periode (wawancara KUI, 25 Oktober 2026).
     | - payment_every: jeda hari pengingat "belum bayar" (VA Unud berlaku 24 jam → 1 hari).
+    | - card_expiry_before: KTM mahasiswa Aktif diingatkan sekian hari sebelum habis, sekali per KTM.
     |
     */
 
@@ -74,6 +75,7 @@ return [
         'enabled' => (bool) env('SIPMA_REMINDERS', true),
         'submission_after' => max(1, (int) env('SIPMA_SUBMISSION_REMINDER_AFTER', 3)),
         'payment_every' => max(1, (int) env('SIPMA_PAYMENT_REMINDER_EVERY', 1)),
+        'card_expiry_before' => max(1, (int) env('SIPMA_CARD_EXPIRY_REMINDER_BEFORE', 30)),
         'time' => (string) env('SIPMA_REMINDER_TIME', '08:00'),
     ],
 

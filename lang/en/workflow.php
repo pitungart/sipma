@@ -141,6 +141,14 @@ return [
             'body_one' => 'The application for :names has not been submitted and has not changed for :days days. Complete and submit it so KUI can review it.',
             'body_many' => ':count students have not been submitted and have not changed for :days days: :names. Complete and submit them so KUI can review them.',
         ],
+        'card_expiring' => [
+            'title' => 'Your student card expires soon',
+            'body' => 'Student card :number is valid until :date. Contact KUI if you still need it after that date.',
+        ],
+        'cards_expiring' => [
+            'title' => 'Student cards expiring soon',
+            'body' => ':count active students’ cards expire soon: :names. Reissue them if the program is still running.',
+        ],
         'payment_reminder' => [
             'title' => 'Fees not paid yet',
             'body_one' => 'The application for :name is approved, but :fees has not been paid. The VA number is valid for 24 hours — pay soon, then upload the proof.',

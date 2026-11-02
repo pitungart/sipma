@@ -152,13 +152,14 @@ final class ActivityDescriber
     }
 
     /**
-     * issued | revoked; perubahan KTM lainnya memakai kalimat umum.
+     * issued | revoked | expired; perubahan KTM lainnya memakai kalimat umum.
      */
     private static function cardEvent(Activity $activity): ?string
     {
         return match (true) {
             $activity->event === 'created' => 'issued',
             ($activity->properties['attributes']['status'] ?? null) === StudentCardStatus::Revoked->value => 'revoked',
+            ($activity->properties['attributes']['status'] ?? null) === StudentCardStatus::Expired->value => 'expired',
             default => null,
         };
     }
@@ -196,7 +197,11 @@ final class ActivityDescriber
             $activity->subject instanceof Payment => 'warning',
             $activity->subject instanceof Loa => 'violet',
             $activity->subject instanceof VisaStatus => VisaProcessStatus::tryFrom((string) ($activity->properties['attributes']['status'] ?? ''))?->getColor() ?? 'info',
-            $activity->subject instanceof StudentCard => self::cardEvent($activity) === 'revoked' ? 'danger' : 'success',
+            $activity->subject instanceof StudentCard => match (self::cardEvent($activity)) {
+                'revoked' => 'danger',
+                'expired' => 'warning',
+                default => 'success',
+            },
             $activity->subject instanceof Document => 'info',
             $activity->subject instanceof Mou => 'warning',
             default => 'primary',

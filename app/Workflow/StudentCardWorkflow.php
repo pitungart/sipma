@@ -90,6 +90,25 @@ final class StudentCardWorkflow
     }
 
     /**
+     * Tandai kedaluwarsa bila masih aktif dan sudah lewat masa berlakunya (dijalankan penjadwal).
+     * false = KTM sudah diganti atau dicabut sebelum sempat diproses.
+     */
+    public function expire(StudentCard $card): bool
+    {
+        return DB::transaction(function () use ($card): bool {
+            $this->locked($card->student);
+
+            if (! StudentCard::query()->overdue()->whereKey($card->getKey())->exists()) {
+                return false;
+            }
+
+            $card->update(['status' => StudentCardStatus::Expired]);
+
+            return true;
+        });
+    }
+
+    /**
      * Akhir bulan terakhir program: masuk November 2026 selama 6 bulan → 30 April 2027.
      * Kosong bila durasi program atau periode masuk belum diisi; KUI mengisi tanggalnya sendiri.
      */

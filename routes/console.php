@@ -14,3 +14,9 @@ Schedule::command('sipma:reminders')
     ->dailyAt(config('sipma.reminders.time'))
     ->withoutOverlapping()
     ->onOneServer();
+
+// KTM yang lewat masa berlakunya; tepat setelah tengah malam dan tidak ikut saklar pengingat.
+Schedule::command('sipma:expire-cards')
+    ->dailyAt('00:05')
+    ->withoutOverlapping()
+    ->onOneServer();

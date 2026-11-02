@@ -13,8 +13,10 @@ use App\Notifications\PaymentRejected;
 use App\Notifications\PaymentReminder;
 use App\Notifications\PaymentSubmitted;
 use App\Notifications\RevisionRequested;
+use App\Notifications\StudentCardExpiring;
 use App\Notifications\StudentCardIssued;
 use App\Notifications\StudentCardRevoked;
+use App\Notifications\StudentCardsExpiring;
 use App\Notifications\StudentEnrolled;
 use App\Notifications\SubmissionReminder;
 
@@ -39,6 +41,8 @@ final class NotificationPreferences
         StudentEnrolled::class => 'student_enrolled',
         StudentCardIssued::class => 'student_card',
         StudentCardRevoked::class => 'student_card',
+        StudentCardExpiring::class => 'student_card',
+        StudentCardsExpiring::class => 'student_cards_expiring',
         MouReviewed::class => 'mou_reviewed',
         SubmissionReminder::class => 'reminders',
         PaymentReminder::class => 'reminders',
@@ -52,7 +56,7 @@ final class NotificationPreferences
     public static function keysFor(User $user): array
     {
         return match ($user->role) {
-            UserRole::SuperAdmin => ['application_submitted', 'payment_submitted', 'mou_submitted'],
+            UserRole::SuperAdmin => ['application_submitted', 'payment_submitted', 'mou_submitted', 'student_cards_expiring'],
             UserRole::Admin => [],
             UserRole::Agent => ['revision_requested', 'application_approved', 'payment_rejected', 'loa_issued', 'student_enrolled', 'reminders', 'mou_reviewed'],
             UserRole::Student => ['revision_requested', 'application_approved', 'payment_rejected', 'loa_issued', 'student_enrolled', 'student_card', 'reminders'],

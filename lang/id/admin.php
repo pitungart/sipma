@@ -67,6 +67,7 @@ return [
         'activity_subject_card' => 'KTM :name',
         'activity_card_issued' => ':causer menerbitkan KTM :name',
         'activity_card_revoked' => ':causer mencabut KTM :name',
+        'activity_card_expired' => 'KTM :name kedaluwarsa',
         'activity_visa' => ':causer mengubah status visa :name menjadi :status',
         'sources' => 'Sumber pendaftar',
         'sources_total' => 'pendaftar',

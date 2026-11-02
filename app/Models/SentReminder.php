@@ -13,6 +13,8 @@ class SentReminder extends Model
 
     public const PAYMENT = 'payment';
 
+    public const CARD_EXPIRY = 'card_expiry';
+
     public $timestamps = false;
 
     protected $fillable = ['kind', 'key', 'user_id', 'sent_at'];

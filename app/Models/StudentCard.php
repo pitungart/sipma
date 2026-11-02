@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StudentCardStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -46,6 +47,14 @@ class StudentCard extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['card_number', 'status', 'valid_until', 'revoke_reason'])->logOnlyDirty()->dontSubmitEmptyLogs();
+    }
+
+    /**
+     * KTM aktif yang tanggal berlakunya sudah lewat. Tanggal itu sendiri masih dihitung sah.
+     */
+    public function scopeOverdue(Builder $query): Builder
+    {
+        return $query->where('status', StudentCardStatus::Active)->whereDate('valid_until', '<', today());
     }
 
     public function isActive(): bool

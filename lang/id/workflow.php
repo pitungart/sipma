@@ -140,6 +140,14 @@ return [
             'body_one' => 'Pendaftaran :names belum diajukan dan tidak diubah selama :days hari. Lengkapi lalu ajukan agar KUI bisa segera memeriksanya.',
             'body_many' => ':count mahasiswa belum diajukan dan tidak diubah selama :days hari: :names. Lengkapi lalu ajukan agar KUI bisa segera memeriksanya.',
         ],
+        'card_expiring' => [
+            'title' => 'KTM Anda segera habis',
+            'body' => 'KTM nomor :number berlaku sampai :date. Hubungi KUI bila Anda masih memerlukannya setelah tanggal itu.',
+        ],
+        'cards_expiring' => [
+            'title' => 'KTM segera habis',
+            'body' => ':count KTM mahasiswa aktif segera habis: :names. Terbitkan ulang bila programnya masih berjalan.',
+        ],
         'payment_reminder' => [
             'title' => 'Biaya belum dibayar',
             'body_one' => 'Pendaftaran :name sudah disetujui, tetapi :fees belum dibayar. Nomor VA berlaku 24 jam — segera bayar lalu unggah buktinya.',
