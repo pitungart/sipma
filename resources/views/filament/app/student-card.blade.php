@@ -1,4 +1,4 @@
-{{-- KTM mahasiswa: belum terbit, dicabut (tanpa unduhan), atau pratinjau kartu + Unduh PDF / Cetak --}}
+{{-- KTM mahasiswa: belum terbit, dicabut (tanpa unduhan), atau pratinjau kartu + Unduh JPG / Cetak --}}
 @php
     use App\Enums\StudentCardStatus;
     use App\Filament\App\Pages\StudentCard;
@@ -24,7 +24,7 @@
 
         <section class="sipma-card sipma-section sipma-idcard-page">
             <div class="sipma-idcard-frame">
-                <x-sipma.student-card :card="$card" class="sipma-idcard" />
+                <img src="{{ StudentCard::fileUrl($card) }}" alt="{{ __('student.card.title') }} {{ $card->card_number }}" class="sipma-idcard">
             </div>
 
             <div class="sipma-idcard-side">

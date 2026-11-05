@@ -36,7 +36,7 @@
         {{-- Belum ada: merah bila wajib, abu bila opsional (boleh kosong) --}}
         <span @class(['sipma-status', $type->isRequired() ? 'sipma-tone-danger' : 'sipma-tone-gray'])><span class="sipma-status-dot"></span>{{ __('admin.applicant.missing') }}</span>
     @endif
-    @if ($slot->isNotEmpty())
+    @if ($slot->hasActualContent())
         <div class="sipma-row-actions">{{ $slot }}</div>
     @endif
 </li>

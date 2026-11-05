@@ -8,17 +8,21 @@ use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Filament\Admin\Resources\AcademicStudentResource\Pages;
 use App\Filament\Admin\Resources\Concerns\AcademicModule;
+use App\Filament\Support\StudentCardBatch;
 use App\Models\Country;
 use App\Models\Faculty;
 use App\Models\Program;
 use App\Models\Student;
+use App\Models\StudentCourse;
 use App\Support\EnrollmentPeriod;
 use App\Workflow\StudentWorkflow;
 use App\Workflow\WorkflowException;
+use Closure;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -69,6 +73,13 @@ class AcademicStudentResource extends Resource
     {
         return StudentStatus::LoaIssued->getColor();
     }
+
+    /**
+     * Tab tempat tombol massal relevan, agar tidak menawarkan aksi yang pasti dilewati semua.
+     */
+    public const ENROLL_TABS = ['all', StudentStatus::LoaIssued->value];
+
+    public const ENROLLED_TABS = ['all', StudentStatus::Enrolled->value];
 
     public static function getEloquentQuery(): Builder
     {
@@ -132,7 +143,9 @@ class AcademicStudentResource extends Resource
                     ->label(__('admin.academic_student.fields.enrolled_at'))
                     ->date('j M Y')
                     ->placeholder('—')
-                    ->sortable(),
+                    ->sortable()
+                    // Disembunyikan bawaan agar ikon aksi baris tidak terpotong di tepi tabel
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 // Mahasiswa via agen baru punya akun setelah diaktifkan (StudentAccounts)
                 Tables\Columns\TextColumn::make('account')
@@ -229,6 +242,19 @@ class AcademicStudentResource extends Resource
                     ->modalSubmitActionLabel(__('admin.academic_student.actions.enroll'))
                     ->action(fn (Student $record) => static::runStep($record, 'enroll')),
 
+                Tables\Actions\Action::make('complete')
+                    ->iconButton()
+                    ->icon('lucide-badge-check')
+                    ->color('gray')
+                    ->tooltip(__('admin.academic_student.actions.complete'))
+                    ->visible(fn (Student $record): bool => $record->status === StudentStatus::Enrolled && Gate::allows('complete', $record))
+                    ->requiresConfirmation()
+                    ->modalIcon('lucide-badge-check')
+                    ->modalHeading(fn (Student $record): string => __('admin.academic_student.confirm.complete_heading', ['name' => $record->full_name]))
+                    ->modalDescription(fn (Student $record): string => static::completeDescription($record))
+                    ->modalSubmitActionLabel(__('admin.academic_student.actions.complete'))
+                    ->action(fn (Student $record) => static::runStep($record, 'complete')),
+
                 Tables\Actions\ViewAction::make()
                     ->iconButton()
                     ->icon('lucide-eye')
@@ -240,18 +266,73 @@ class AcademicStudentResource extends Resource
                     ->label(__('admin.academic_student.actions.enroll_bulk'))
                     ->icon('lucide-graduation-cap')
                     ->color('success')
+                    ->tooltip(__('admin.academic_student.guide.enroll_tip'))
+                    ->hidden(static::notOnTabs(self::ENROLL_TABS))
                     ->requiresConfirmation()
                     ->modalIcon('lucide-graduation-cap')
                     ->modalIconColor('success')
                     ->modalHeading(fn (Collection $records): string => __('admin.academic_student.confirm.bulk_heading', ['count' => $records->count()]))
                     ->modalDescription(__('admin.academic_student.confirm.bulk_body'))
+                    ->modalContent(fn () => view('filament.admin.action-info', ['text' => __('admin.academic_student.guide.enroll')]))
                     ->modalSubmitActionLabel(__('admin.academic_student.actions.enroll'))
                     ->deselectRecordsAfterCompletion()
                     ->action(fn (Collection $records) => static::enrollMany($records)),
+
+                StudentCardBatch::issueSelected(Tables\Actions\BulkAction::make('issueCards'))
+                    ->tooltip(__('admin.academic_student.guide.issue_tip'))
+                    ->modalContent(fn () => view('filament.admin.action-info', ['text' => __('admin.academic_student.guide.issue')]))
+                    ->hidden(static::notOnTabs(self::ENROLLED_TABS)),
+
+                Tables\Actions\BulkAction::make('completeSelected')
+                    ->label(__('admin.academic_student.actions.complete'))
+                    ->icon('lucide-badge-check')
+                    ->color('gray')
+                    ->tooltip(__('admin.academic_student.guide.complete_tip'))
+                    ->hidden(static::notOnTabs(self::ENROLLED_TABS))
+                    ->requiresConfirmation()
+                    ->modalIcon('lucide-badge-check')
+                    ->modalHeading(fn (Collection $records): string => trans_choice('admin.academic_student.confirm.complete_bulk_heading', $records->count(), ['count' => $records->count()]))
+                    ->modalDescription(__('admin.academic_student.confirm.complete_bulk_body'))
+                    ->modalContent(fn (Collection $records) => view('filament.admin.action-info', [
+                        'text' => __('admin.academic_student.guide.complete'),
+                        'warning' => static::ungradedWarning($records),
+                    ]))
+                    ->modalSubmitActionLabel(__('admin.academic_student.actions.complete'))
+                    ->deselectRecordsAfterCompletion()
+                    ->action(fn (Collection $records) => static::completeMany($records)),
             ]);
     }
 
     // ── Langkah pasca-LOA (dipakai daftar & halaman detail) ──────────────────
+
+    private static function notOnTabs(array $tabs): Closure
+    {
+        return fn (HasTable $livewire): bool => ! in_array($livewire->activeTab ?? 'all', $tabs, true);
+    }
+
+    public static function completeDescription(Student $student): string
+    {
+        $ungraded = $student->studentCourses()->where('status', StudentCourseStatus::Active)->count();
+
+        return collect([
+            __('admin.academic_student.confirm.complete_body'),
+            $ungraded > 0 ? __('admin.academic_student.confirm.complete_ungraded', ['count' => $ungraded]) : null,
+        ])->filter()->implode(' ');
+    }
+
+    /**
+     * @param  Collection<int, Student>  $students
+     */
+    private static function ungradedWarning(Collection $students): ?string
+    {
+        $count = StudentCourse::query()
+            ->whereIn('student_id', $students->where('status', StudentStatus::Enrolled)->modelKeys())
+            ->where('status', StudentCourseStatus::Active)
+            ->distinct()
+            ->count('student_id');
+
+        return $count > 0 ? trans_choice('admin.academic_student.confirm.complete_bulk_ungraded', $count, ['count' => $count]) : null;
+    }
 
     /**
      * Isi konfirmasi Aktifkan; mahasiswa tanpa akun diberi tahu bahwa akun & undangan akan dibuat.
@@ -328,6 +409,41 @@ class AcademicStudentResource extends Resource
                 $withoutAccount ? __('admin.academic_student.success.bulk_accounts', ['count' => $withoutAccount]) : null,
             ])->filter()->implode(' ') ?: null)
             ->status($enrolled === 0 ? 'danger' : ($skipped || $withoutAccount ? 'warning' : 'success'))
+            ->send();
+    }
+
+    /**
+     * Tandai selesai beberapa sekaligus: yang bukan Aktif atau di luar akses dilewati.
+     *
+     * @param  Collection<int, Student>  $students
+     */
+    public static function completeMany(Collection $students): void
+    {
+        $workflow = app(StudentWorkflow::class);
+        $completed = $skipped = 0;
+
+        foreach ($students as $student) {
+            if ($student->status !== StudentStatus::Enrolled || ! Gate::allows('complete', $student)) {
+                $skipped++;
+
+                continue;
+            }
+
+            try {
+                $workflow->complete($student);
+            } catch (WorkflowException) {
+                $skipped++;
+
+                continue;
+            }
+
+            $completed++;
+        }
+
+        Notification::make()
+            ->title(trans_choice('admin.academic_student.success.bulk_completed', $completed, ['count' => $completed]))
+            ->body($skipped ? __('admin.academic_student.success.bulk_skipped', ['count' => $skipped]) : null)
+            ->status($completed === 0 ? 'danger' : ($skipped ? 'warning' : 'success'))
             ->send();
     }
 

@@ -6,9 +6,12 @@ use App\Enums\UserRole;
 use App\Filament\Admin\Resources\Concerns\AcademicModule;
 use App\Filament\Admin\Resources\StudentCardResource\Pages;
 use App\Filament\Support\StudentCardActions;
+use App\Filament\Support\StudentCardBatch;
 use App\Models\Faculty;
 use App\Models\Program;
+use App\Models\Student;
 use App\Models\StudentCard;
+use App\Support\EnrollmentPeriod;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -132,6 +135,13 @@ class StudentCardResource extends Resource
                     ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null)
                         ? $query->whereHas('student', fn (Builder $student) => $student->where('program_id', $data['value']))
                         : $query),
+
+                Tables\Filters\SelectFilter::make('period')
+                    ->label(__('admin.student_card.batch.period'))
+                    ->options(fn (): array => EnrollmentPeriod::options(Student::query()->visibleTo(Filament::auth()->user())->whereHas('studentCards')))
+                    ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null)
+                        ? $query->whereHas('student', fn (Builder $student) => $student->inEnrollmentPeriod($data['value']))
+                        : $query),
             ])
             ->actions([
                 Tables\Actions\Action::make('download')
@@ -150,7 +160,9 @@ class StudentCardResource extends Resource
                     ->iconButton()
                     ->tooltip(__('admin.student_card.actions.revoke')),
             ])
-            ->bulkActions([]);
+            ->bulkActions([
+                StudentCardBatch::downloadSelected(Tables\Actions\BulkAction::make('downloadZip')),
+            ]);
     }
 
     public static function getPages(): array

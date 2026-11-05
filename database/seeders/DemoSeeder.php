@@ -11,22 +11,28 @@ use App\Enums\MouStatus;
 use App\Enums\NumberType;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
+use App\Enums\StudentCardStatus;
 use App\Enums\StudentCourseStatus;
 use App\Enums\StudentStatus;
 use App\Enums\TeachingRole;
 use App\Enums\UserRole;
+use App\Enums\VisaProcessStatus;
 use App\Models\Agent;
 use App\Models\Course;
+use App\Models\Faculty;
 use App\Models\Lecturer;
 use App\Models\PaymentAccount;
 use App\Models\Program;
 use App\Models\Student;
+use App\Models\StudentCard;
 use App\Models\TeachingDecree;
 use App\Models\User;
 use App\Support\Numbering;
 use App\Support\PrivateFiles;
+use App\Workflow\StudentCardWorkflow;
 use App\Workflow\StudentWorkflow;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -37,7 +43,8 @@ use Illuminate\Support\Str;
  * jalankan manual: `php artisan db:seed --class=DemoSeeder`. Menolak berjalan di production.
  *
  * Akun (password: "password"): agent@sipma.test (MOU disetujui), agent2@sipma.test (MOU menunggu),
- * student@sipma.test (pendaftaran draf). Berkas dummy kecil ditulis ke storage/app/private.
+ * student@sipma.test (pendaftaran draf), admin.fk@sipma.test (Admin Fakultas Kedokteran).
+ * Berkas dummy kecil ditulis ke storage/app/private.
  */
 class DemoSeeder extends Seeder
 {
@@ -46,6 +53,8 @@ class DemoSeeder extends Seeder
     private const FIRST = ['Emma', 'Kenji', 'Lukas', 'Sofie', 'Liam', 'Ana', 'Chen', 'Olivia', 'Noah', 'Mia', 'Yuki', 'Lucas', 'Hana', 'Oscar', 'Ella', 'Arjun', 'Lea', 'Mateo', 'Nina', 'Tomás'];
 
     private const LAST = ['Wilson', 'Tanaka', 'Becker', 'van Dijk', 'Murphy', 'Souza', 'Wei', 'Brown', 'Schmidt', 'Rossi', 'Sato', 'Martin', 'Kim', 'Berg', 'Novak'];
+
+    private ?string $staffId = null;
 
     public function run(): void
     {
@@ -63,13 +72,17 @@ class DemoSeeder extends Seeder
 
         $this->call(DatabaseSeeder::class);
 
+        $this->staffId = User::query()->where('role', UserRole::SuperAdmin)->value('id');
+
         $this->demoFees();
+        $this->facultyAdmin();
 
-        $programs = Program::query()->where('is_active', true)->get();
+        // Urutan tetap: sebaran status di bawah bergantung pada indeks program
+        $programs = Program::query()->where('is_active', true)->orderBy('code')->get();
 
-        $this->coursePackages($programs->take(3));
-        $this->lecturers($programs->take(3));
-        $this->teachingDecrees($programs->take(3));
+        $this->coursePackages($programs);
+        $this->lecturers($programs);
+        $this->teachingDecrees($programs);
 
         $agent = $this->agent('agent@sipma.test', 'EduBridge Australia', 'AU', MouStatus::Approved);
         $this->agent('agent2@sipma.test', 'Nusantara Study Link', 'MY', MouStatus::Pending);
@@ -91,10 +104,11 @@ class DemoSeeder extends Seeder
             ...array_fill(0, 5, StudentStatus::Revision),
             ...array_fill(0, 5, StudentStatus::Approved),
             // Aktif sebelum LOA terbit agar keduanya punya pendaftar mandiri (indeks kelipatan 5) untuk
-            // StudentAccountSeeder
+            // StudentAccountSeeder. Selesai di tengah agar program Kedokteran (indeks 5) kebagian
+            // mahasiswa Aktif dan LOA terbit, sehingga admin.fk@ bisa mencoba mengaktifkan.
             ...array_fill(0, 4, StudentStatus::Enrolled),
-            ...array_fill(0, 5, StudentStatus::LoaIssued),
             ...array_fill(0, 2, StudentStatus::Completed),
+            ...array_fill(0, 5, StudentStatus::LoaIssued),
             ...array_fill(0, 3, StudentStatus::Draft),
         ];
 
@@ -161,6 +175,12 @@ class DemoSeeder extends Seeder
     ): Student {
         $country = self::COUNTRIES[$index % count(self::COUNTRIES)];
         $isDraft = $status === StudentStatus::Draft;
+        $enrolledAt = match ($status) {
+            StudentStatus::Enrolled => now()->subDays(random_int(30, 90)),
+            // Sudah melewati durasi program demo (6 bulan), jadi KTM-nya bisa kedaluwarsa
+            StudentStatus::Completed => now()->subMonths(8),
+            default => null,
+        };
 
         $student = new Student([
             'user_id' => $user?->id,
@@ -182,7 +202,9 @@ class DemoSeeder extends Seeder
             'status' => $status,
             'submitted_at' => $isDraft ? null : $createdAt,
             'revision_note' => $status === StudentStatus::Revision ? 'Please re-upload the medical statement signed by a doctor.' : null,
-            'enrolled_at' => $status->hasAcademicAccess() ? now()->subDays(random_int(30, 90)) : null,
+            'enrollment_month' => $enrolledAt?->month,
+            'enrollment_year' => $enrolledAt?->year,
+            'enrolled_at' => $enrolledAt,
             'completed_at' => $status === StudentStatus::Completed ? now()->subDays(random_int(1, 20)) : null,
         ]);
         $student->created_at = $createdAt ?? now();
@@ -198,28 +220,8 @@ class DemoSeeder extends Seeder
         }
 
         if ($status->hasAcademicAccess()) {
-            $program->courses()->active()->get()->each(function (Course $course) use ($student, $status): void {
-                // Mahasiswa Selesai sudah dinilai; MK tanpa SKS memakai Lulus
-                $grade = $status === StudentStatus::Completed ? ($course->credits ? Grade::B : Grade::Pass) : null;
-
-                $student->studentCourses()->create([
-                    'course_id' => $course->getKey(),
-                    'status' => $grade ? StudentCourseStatus::Completed : StudentCourseStatus::Active,
-                    'grade' => $grade,
-                    'grade_point' => $grade?->point(),
-                    'graded_credits' => $grade ? $course->credits : null,
-                    'graded_at' => $grade ? now() : null,
-                ]);
-            });
-        }
-
-        // Sebagian mahasiswa Aktif sengaja belum punya KTM agar antreannya terlihat
-        if ($status === StudentStatus::Completed || ($status === StudentStatus::Enrolled && $index % 2 === 0)) {
-            $student->studentCards()->create([
-                'card_number' => Numbering::next(NumberType::StudentCard),
-                'issued_at' => $student->enrolled_at,
-                'valid_until' => now()->addMonths(6)->endOfMonth(),
-            ]);
+            $this->studentCourses($student, $program, $status, $index);
+            $this->studentCards($student, $status, $index);
         }
 
         if ($status->isAccepted()) {
@@ -229,6 +231,8 @@ class DemoSeeder extends Seeder
                 'status' => LoaStatus::Uploaded,
                 'issued_at' => now()->subDays(random_int(1, 60)),
             ]);
+
+            $this->visa($student, $status, $index);
         }
 
         return $student;
@@ -259,13 +263,14 @@ class DemoSeeder extends Seeder
     }
 
     /**
-     * Biaya & rekening CONTOH agar alur pembayaran bisa dicoba; biaya resmi menunggu KUI
-     * (ProgramSeeder tetap Rp 0). Biaya tidak boleh Rp 0, jadi semua program diberi biaya contoh
-     * yang sama; tanpa ini pendaftar demo berstatus Disetujui/LOA terbit tidak punya tagihan.
+     * Biaya, durasi & rekening CONTOH agar alur pembayaran dan masa berlaku KTM bisa dicoba; data
+     * resmi menunggu KUI (ProgramSeeder tetap Rp 0, durasi kosong). Biaya tidak boleh Rp 0, jadi semua
+     * program diberi biaya contoh yang sama; tanpa ini pendaftar demo berstatus Disetujui/LOA terbit
+     * tidak punya tagihan.
      */
     private function demoFees(): void
     {
-        Program::query()->update(['admission_fee' => 500_000, 'tuition_fee' => 4_500_000]);
+        Program::query()->update(['admission_fee' => 500_000, 'tuition_fee' => 4_500_000, 'duration_months' => 6]);
 
         PaymentAccount::query()->firstOrCreate(
             ['va_number' => '8808 1234 5678 0001'],
@@ -303,8 +308,111 @@ class DemoSeeder extends Seeder
     }
 
     /**
-     * Berkas dummy kecil yang valid (PDF satu halaman / PNG 1×1) agar pratinjau bisa dicoba.
+     * Admin Fakultas contoh. Kedokteran dipilih karena punya mahasiswa Aktif dan LOA terbit.
      */
+    private function facultyAdmin(): void
+    {
+        User::create([
+            'name' => 'Admin Fakultas Kedokteran',
+            'email' => 'admin.fk@sipma.test',
+            'password' => 'password',
+            'role' => UserRole::Admin,
+            'faculty_id' => Faculty::query()->where('code', 'FK')->value('id'),
+            'email_verified_at' => now(),
+            'locale' => 'id',
+        ]);
+    }
+
+    /**
+     * Paket program masuk ke rubrik mahasiswa. Selesai: semua MK dinilai. Aktif bernomor ganjil: baru
+     * MK semester 1 yang dinilai agar IP terlihat sambil masih ada MK berjalan.
+     */
+    private function studentCourses(Student $student, Program $program, StudentStatus $status, int $index): void
+    {
+        $program->courses()->active()->orderBy('code')->get()->each(function (Course $course, int $position) use ($student, $status, $index): void {
+            $graded = $status === StudentStatus::Completed
+                || ($index % 2 === 1 && $course->semester === 1);
+            // MK tanpa SKS memakai Lulus
+            $grade = $graded ? ($course->credits ? [Grade::A, Grade::BPlus, Grade::B][$position % 3] : Grade::Pass) : null;
+
+            $student->studentCourses()->create([
+                'course_id' => $course->getKey(),
+                'status' => $grade ? StudentCourseStatus::Completed : StudentCourseStatus::Active,
+                'grade' => $grade,
+                'grade_point' => $grade?->point(),
+                'graded_credits' => $grade ? $course->credits : null,
+                'graded_at' => $grade ? now() : null,
+                'graded_by' => $grade ? $this->staffId : null,
+            ]);
+        });
+    }
+
+    /**
+     * Semua keadaan KTM. Aktif bernomor genap sengaja belum punya KTM agar antreannya terlihat.
+     */
+    private function studentCards(Student $student, StudentStatus $status, int $index): void
+    {
+        if ($status === StudentStatus::Completed) {
+            $index % 2 === 0
+                ? $this->studentCard($student, ['status' => StudentCardStatus::Expired])
+                : $this->studentCard($student, $this->revoked('Student withdrew the card after completing the program.'));
+
+            return;
+        }
+
+        if ($index % 2 === 0) {
+            return;
+        }
+
+        // Selebihnya: satu hampir habis (memicu pengingat), satu sudah diganti karena hilang (student.active@)
+        if ($index % 4 === 3) {
+            $this->studentCard($student, ['valid_until' => now()->addDays(20)]);
+
+            return;
+        }
+
+        $lost = $this->studentCard($student, $this->revoked('Card reported lost by the student.'));
+        $this->studentCard($student, ['issued_at' => now()->subDays(3), 'replaces_id' => $lost->getKey()]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function studentCard(Student $student, array $attributes = []): StudentCard
+    {
+        return $student->studentCards()->create([
+            'card_number' => Numbering::next(NumberType::StudentCard),
+            'issued_at' => $student->enrolled_at,
+            'valid_until' => StudentCardWorkflow::defaultValidUntil($student),
+            'issued_by' => $this->staffId,
+            ...$attributes,
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function revoked(string $reason): array
+    {
+        return ['status' => StudentCardStatus::Revoked, 'revoked_at' => now()->subDays(3), 'revoke_reason' => $reason];
+    }
+
+    /**
+     * Mahasiswa Aktif/Selesai visanya sudah beres; yang baru LOA terbit masih beragam.
+     */
+    private function visa(Student $student, StudentStatus $status, int $index): void
+    {
+        $visa = $status->hasAcademicAccess()
+            ? VisaProcessStatus::Approved
+            : [VisaProcessStatus::NotStarted, VisaProcessStatus::InProcess, VisaProcessStatus::Rejected][$index % 3];
+
+        $student->visaStatus()->create([
+            'status' => $visa,
+            'notes' => $visa === VisaProcessStatus::Rejected ? 'Immigration asked for an additional sponsor letter.' : null,
+            'updated_by' => $this->staffId,
+        ]);
+    }
+
     /**
      * Paket contoh untuk demo, bukan kurikulum resmi. Satu MK sengaja tanpa SKS dan satu nonaktif.
      */
@@ -344,29 +452,53 @@ class DemoSeeder extends Seeder
     }
 
     /**
-     * SK contoh untuk demo, tanpa berkas: satu per fakultas program demo.
+     * SK contoh untuk demo, per fakultas program demo: yang berjalan dan satu periode tahun lalu.
      */
     private function teachingDecrees(Collection $programs): void
     {
-        $programs->unique('faculty_id')->values()->each(function (Program $program, int $i): void {
-            $decree = TeachingDecree::create([
-                'faculty_id' => $program->faculty_id,
-                'decree_number' => 'DEMO/SK/'.now()->year.'/'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT),
-                'decree_date' => now()->subMonth(),
-                'period_start' => now()->startOfMonth(),
-                'period_end' => now()->addMonths(5)->endOfMonth(),
-            ]);
+        $programs->groupBy('faculty_id')->values()->each(function (Collection $facultyPrograms, int $i): void {
+            $number = str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT);
 
-            $lecturer = Lecturer::query()->where('faculty_id', $program->faculty_id)->first();
+            foreach ([0, 1] as $yearsAgo) {
+                $start = now()->subYears($yearsAgo)->subMonths(3)->startOfMonth();
 
-            $program->courses()->active()->get()->each(fn (Course $course) => $decree->assignments()->create([
-                'lecturer_id' => $lecturer->getKey(),
-                'course_id' => $course->getKey(),
-                'role' => TeachingRole::Lecturer,
-            ]));
+                $this->teachingDecree(
+                    $facultyPrograms,
+                    'DEMO/SK/'.$start->year.'/'.$number,
+                    $start,
+                    $start->copy()->addMonths(5)->endOfMonth(),
+                );
+            }
         });
     }
 
+    private function teachingDecree(Collection $programs, string $number, CarbonInterface $start, CarbonInterface $end): void
+    {
+        $facultyId = $programs->first()->faculty_id;
+
+        $decree = TeachingDecree::create([
+            'faculty_id' => $facultyId,
+            'decree_number' => $number,
+            'decree_date' => $start->copy()->subMonth(),
+            'period_start' => $start,
+            'period_end' => $end,
+            'created_by' => $this->staffId,
+        ]);
+
+        $decree->update(['document' => $this->dummyFile("teaching-decrees/{$decree->getKey()}", 'pdf')]);
+
+        $lecturer = Lecturer::query()->where('faculty_id', $facultyId)->first();
+
+        Course::query()->whereIn('program_id', $programs->pluck('id'))->active()->get()->each(fn (Course $course) => $decree->assignments()->create([
+            'lecturer_id' => $lecturer->getKey(),
+            'course_id' => $course->getKey(),
+            'role' => TeachingRole::Lecturer,
+        ]));
+    }
+
+    /**
+     * Berkas dummy kecil yang valid (PDF satu halaman / PNG 1×1) agar pratinjau bisa dicoba.
+     */
     private function dummyFile(string $directory, string $extension): string
     {
         $path = $directory.'/'.Str::uuid().'.'.$extension;

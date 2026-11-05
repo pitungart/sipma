@@ -3,6 +3,8 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\AccountProvision;
+use App\Enums\DocumentStatus;
+use App\Enums\DocumentType;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Enums\VisaProcessStatus;
@@ -13,6 +15,7 @@ use App\Filament\Admin\Resources\StudentResource;
 use App\Filament\Admin\Resources\StudentResource\Pages\ListApplicants;
 use App\Filament\Admin\Widgets\StatCards;
 use App\Models\Agent;
+use App\Models\Document;
 use App\Models\Faculty;
 use App\Models\Student;
 use App\Models\User;
@@ -20,6 +23,10 @@ use App\Notifications\StudentAccountInvitation;
 use App\Notifications\StudentEnrolled;
 use App\Support\ActivityDescriber;
 use Filament\Facades\Filament;
+use Filament\Notifications\Notification as FilamentNotification;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\Feature\Workflow\WorkflowTestCase;
@@ -74,6 +81,26 @@ class AcademicStudentsTest extends WorkflowTestCase
             ->assertSee(StudentStatus::Completed->getLabel());
 
         $this->assertSame('1', AcademicStudentResource::getNavigationBadge(), 'one student waits to be activated');
+    }
+
+    /**
+     * Test berjalan di SQLite yang longgar; MySQL (only_full_group_by) menolak kolom lain bersama GROUP BY.
+     */
+    public function test_tab_counts_group_only_by_status(): void
+    {
+        $this->oneOfEach();
+
+        $this->actingAs($this->superAdmin());
+
+        DB::enableQueryLog();
+
+        Livewire::test(ListAcademicStudents::class)->assertOk();
+
+        $grouped = collect(DB::getQueryLog())->pluck('query')->filter(fn (string $sql): bool => str_contains($sql, 'group by'));
+
+        $this->assertNotEmpty($grouped);
+        $grouped->each(fn (string $sql) => $this->assertStringNotContainsString('"students".*', $sql));
+        $grouped->each(fn (string $sql) => $this->assertStringNotContainsString('courses_taken', $sql));
     }
 
     public function test_applicants_list_stops_at_loa_issued(): void
@@ -307,7 +334,7 @@ class AcademicStudentsTest extends WorkflowTestCase
         Livewire::test(ViewAcademicStudent::class, ['record' => $student->getRouteKey()])
             ->callAction('enroll')
             ->assertNotified(
-                \Filament\Notifications\Notification::make()
+                FilamentNotification::make()
                     ->title(__('admin.academic_student.success.enrolled', ['name' => $student->full_name]))
                     ->body(AccountProvision::EmailTaken->getLabel())
                     ->warning()
@@ -347,7 +374,7 @@ class AcademicStudentsTest extends WorkflowTestCase
         Livewire::test(ListAcademicStudents::class)
             ->callTableBulkAction('enrollSelected', [...$ready, $active])
             ->assertNotified(
-                \Filament\Notifications\Notification::make()
+                FilamentNotification::make()
                     ->title(__('admin.academic_student.success.bulk', ['count' => 2]))
                     ->body(__('admin.academic_student.success.bulk_skipped', ['count' => 2]))
                     ->warning()
@@ -357,6 +384,209 @@ class AcademicStudentsTest extends WorkflowTestCase
             $this->assertSame(StudentStatus::Enrolled, $student->fresh()->status);
         }
         Notification::assertSentToTimes($ready[1]->user, StudentEnrolled::class, 1);
+    }
+
+    private function withPhoto(Student $student, DocumentStatus $status = DocumentStatus::Approved): Document
+    {
+        return $student->documents()->create([
+            'type' => DocumentType::Photo,
+            'file_path' => UploadedFile::fake()->image('photo.jpg', 600, 800)->store('photos', 'local'),
+            'original_name' => 'photo.jpg',
+            'file_size' => 1024,
+            'mime_type' => 'image/jpeg',
+            'status' => $status,
+        ]);
+    }
+
+    public function test_documents_can_be_previewed_and_downloaded_from_the_detail_page(): void
+    {
+        $student = $this->student(status: StudentStatus::Enrolled);
+        $document = $this->withPhoto($student);
+
+        $this->actingAs($this->superAdmin());
+
+        $this->get(AcademicStudentResource::getUrl('view', ['record' => $student]))
+            ->assertOk()
+            ->assertSee(__('admin.applicant.actions.preview'))
+            ->assertSee(route('files.document', ['document' => $document, 'download' => 1]), false);
+
+        Livewire::test(ViewAcademicStudent::class, ['record' => $student->getRouteKey()])
+            ->mountAction('previewDocument', ['document' => $document->getKey()])
+            ->assertSee(route('files.document', $document), false);
+
+        $this->get(route('files.document', ['document' => $document, 'download' => 1]))->assertOk()->assertDownload();
+    }
+
+    public function test_preview_only_opens_documents_of_this_student(): void
+    {
+        $student = $this->student(status: StudentStatus::Enrolled);
+        $foreign = $this->withPhoto($this->student(status: StudentStatus::Enrolled));
+
+        $this->actingAs($this->superAdmin());
+
+        $this->expectException(ModelNotFoundException::class);
+
+        Livewire::test(ViewAcademicStudent::class, ['record' => $student->getRouteKey()])
+            ->mountAction('previewDocument', ['document' => $foreign->getKey()]);
+    }
+
+    public function test_faculty_admin_gets_no_document_buttons_or_files(): void
+    {
+        $student = $this->student(status: StudentStatus::Enrolled);
+        $document = $this->withPhoto($student);
+
+        $this->actingAs(User::factory()->create(['role' => UserRole::Admin, 'faculty_id' => $student->program->faculty_id]));
+
+        $this->get(AcademicStudentResource::getUrl('view', ['record' => $student]))
+            ->assertOk()
+            ->assertDontSee(__('admin.applicant.actions.preview'))
+            ->assertDontSee(route('files.document', $document), false);
+
+        // Tombol disembunyikan bukan satu-satunya pengaman: berkasnya sendiri ditolak
+        $this->get(route('files.document', $document))->assertForbidden();
+    }
+
+    public function test_photo_shows_in_the_summary_and_follows_student_access(): void
+    {
+        $student = $this->student(status: StudentStatus::Enrolled);
+        $url = route('files.student-photo', $student);
+
+        $this->actingAs($this->superAdmin());
+
+        // Belum ada foto: inisial, tanpa gambar rusak
+        $this->get(AcademicStudentResource::getUrl('view', ['record' => $student]))->assertOk()->assertDontSee($url, false);
+        $this->get($url)->assertNotFound();
+
+        // Foto yang belum disetujui tidak ditampilkan
+        $pending = $this->withPhoto($student, DocumentStatus::Pending);
+        $this->get(AcademicStudentResource::getUrl('view', ['record' => $student]))->assertDontSee($url, false);
+        $pending->update(['status' => DocumentStatus::Approved]);
+
+        $this->get(AcademicStudentResource::getUrl('view', ['record' => $student]))->assertSee($url, false);
+
+        $response = $this->get($url)->assertOk();
+        $this->assertSame('image/jpeg', $response->headers->get('Content-Type'));
+        $this->assertSame([248, 331], array_slice(getimagesizefromstring((string) $response->getContent()), 0, 2));
+
+        // Admin Fakultas pemilik boleh; fakultas lain, mahasiswa lain, dan tamu tidak
+        $own = User::factory()->create(['role' => UserRole::Admin, 'faculty_id' => $student->program->faculty_id]);
+        $this->actingAs($own);
+        $this->get(AcademicStudentResource::getUrl('view', ['record' => $student]))->assertSee($url, false);
+        $this->get($url)->assertOk();
+
+        $other = User::factory()->create(['role' => UserRole::Admin, 'faculty_id' => Faculty::create(['code' => 'FK', 'name' => 'Fakultas Kedokteran'])->id]);
+        $this->actingAs($other);
+        $this->get($url)->assertForbidden();
+
+        $this->actingAs($this->studentUser());
+        $this->get($url)->assertForbidden();
+
+        auth()->logout();
+        $this->get($url)->assertRedirect();
+    }
+
+    public function test_list_completes_one_row_or_many_and_skips_the_rest(): void
+    {
+        $program = $this->program();
+        $one = $this->student($program, StudentStatus::Enrolled);
+        $two = $this->student($program, StudentStatus::Enrolled);
+        $three = $this->student($program, StudentStatus::Enrolled);
+        $notYet = $this->student($program, StudentStatus::LoaIssued);
+
+        $this->actingAs($this->superAdmin());
+
+        Livewire::test(ListAcademicStudents::class)->callTableAction('complete', $one);
+        $this->assertSame(StudentStatus::Completed, $one->fresh()->status);
+        $this->assertNotNull($one->fresh()->completed_at);
+
+        // Notifikasi aksi satu baris tidak ikut dibandingkan di bawah
+        session()->forget('filament.notifications');
+
+        Livewire::test(ListAcademicStudents::class)
+            ->assertTableActionHidden('complete', $notYet)
+            ->callTableBulkAction('completeSelected', [$two, $three, $notYet])
+            ->assertHasNoTableBulkActionErrors();
+
+        $this->assertSame(StudentStatus::Completed, $two->fresh()->status);
+        $this->assertSame(StudentStatus::Completed, $three->fresh()->status);
+        $this->assertSame(StudentStatus::LoaIssued, $notYet->fresh()->status);
+
+        FilamentNotification::assertNotified(
+            FilamentNotification::make()
+                ->warning()
+                ->title(trans_choice('admin.academic_student.success.bulk_completed', 2, ['count' => 2]))
+                ->body(__('admin.academic_student.success.bulk_skipped', ['count' => 1])),
+        );
+    }
+
+    public function test_faculty_admin_bulk_complete_skips_other_faculties(): void
+    {
+        $own = $this->student(status: StudentStatus::Enrolled);
+        $admin = User::factory()->create(['role' => UserRole::Admin, 'faculty_id' => $own->program->faculty_id]);
+        $this->actingAs($admin);
+
+        $foreign = $this->student(status: StudentStatus::Enrolled);
+        $foreign->program->update(['faculty_id' => Faculty::create(['code' => 'FK', 'name' => 'Fakultas Kedokteran'])->id]);
+
+        AcademicStudentResource::completeMany(Student::query()->whereKey([$own->id, $foreign->id])->with('program')->get());
+
+        $this->assertSame(StudentStatus::Completed, $own->fresh()->status);
+        $this->assertSame(StudentStatus::Enrolled, $foreign->fresh()->status);
+    }
+
+    public function test_bulk_buttons_and_their_guide_follow_the_active_tab(): void
+    {
+        $this->actingAs($this->superAdmin());
+
+        $guides = fn (): array => [__('admin.academic_student.guide.enroll'), __('admin.academic_student.guide.issue'), __('admin.academic_student.guide.complete')];
+        [$enroll, $issue, $complete] = $guides();
+
+        $page = Livewire::test(ListAcademicStudents::class)
+            ->assertSee($enroll)->assertSee($issue)->assertSee($complete)
+            ->assertTableBulkActionVisible('enrollSelected')
+            ->assertTableBulkActionVisible('issueCards')
+            ->assertTableBulkActionVisible('completeSelected');
+
+        $page->set('activeTab', StudentStatus::LoaIssued->value)
+            ->assertSee($enroll)->assertDontSee($issue)->assertDontSee($complete)
+            ->assertTableBulkActionVisible('enrollSelected')
+            ->assertTableBulkActionHidden('issueCards')
+            ->assertTableBulkActionHidden('completeSelected');
+
+        $page->set('activeTab', StudentStatus::Enrolled->value)
+            ->assertDontSee($enroll)->assertSee($issue)->assertSee($complete)
+            ->assertTableBulkActionHidden('enrollSelected')
+            ->assertTableBulkActionVisible('issueCards')
+            ->assertTableBulkActionVisible('completeSelected');
+
+        $page->set('activeTab', StudentStatus::Completed->value)
+            ->assertDontSee($enroll)->assertDontSee($issue)->assertDontSee($complete)
+            ->assertDontSee(__('admin.academic_student.guide.intro'));
+    }
+
+    public function test_faculty_admin_guide_leaves_out_issuing_cards(): void
+    {
+        $student = $this->student(status: StudentStatus::Enrolled);
+        $this->actingAs(User::factory()->create(['role' => UserRole::Admin, 'faculty_id' => $student->program->faculty_id]));
+
+        Livewire::test(ListAcademicStudents::class)
+            ->assertSee(__('admin.academic_student.guide.complete'))
+            ->assertDontSee(__('admin.academic_student.guide.issue'))
+            ->assertTableBulkActionHidden('issueCards');
+    }
+
+    public function test_bulk_complete_warns_about_ungraded_courses(): void
+    {
+        $student = $this->student(status: StudentStatus::Enrolled);
+        $course = $student->program->courses()->create(['code' => 'MK1', 'name' => 'MK', 'is_active' => true]);
+        $student->studentCourses()->create(['course_id' => $course->id]);
+
+        $this->actingAs($this->superAdmin());
+
+        Livewire::test(ListAcademicStudents::class)
+            ->mountTableBulkAction('completeSelected', [$student])
+            ->assertSee(__('admin.academic_student.guide.complete'))
+            ->assertSee(trans_choice('admin.academic_student.confirm.complete_bulk_ungraded', 1, ['count' => 1]));
     }
 
     public function test_dashboard_counts_active_students_this_month(): void

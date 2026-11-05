@@ -2441,14 +2441,21 @@ select.fi-select-input:has(option[value='']:checked) {
     line-height: 1.35;
 }
 
-/* Aksi baris berupa ikon 32px; hapus memerah saat hover */
+/* Aksi baris berupa ikon 32px; hapus memerah saat hover. Margin negatif bawaan dilepas agar ikon tidak
+   bertumpuk. */
 .fi-ta-actions {
-    gap: 2px;
+    gap: 4px;
 }
 
 .fi-ta-actions .fi-icon-btn {
     width: 32px;
     height: 32px;
+    margin: 0;
+}
+
+/* Tombol massal di kepala tabel berjarak sama dengan tombol kepala halaman */
+.fi-ta-header-toolbar .fi-ta-actions {
+    gap: 12px;
 }
 
 .fi-ta-actions .fi-icon-btn svg {
@@ -3033,6 +3040,66 @@ select.fi-select-input:has(option[value='']:checked) {
     color: var(--sp-heading);
 }
 
+/* Ringkasan detail Mahasiswa Asing: Pas Foto 3×4 di kiri, fakta di kanan */
+.sipma-student-summary {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.sipma-student-summary > dl {
+    flex: 1;
+    min-width: 0;
+}
+
+.sipma-student-photo {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 128px;
+    overflow: hidden;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--sp-primary-ink);
+    background: var(--sp-primary-l);
+    border: 1px solid var(--sp-border);
+    border-radius: 10px;
+}
+
+.sipma-student-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Panduan fungsi tombol massal di atas tabel Mahasiswa Asing */
+.sipma-action-guide ul {
+    margin-top: 4px;
+    list-style: disc;
+    padding-left: 18px;
+}
+
+.sipma-action-guide strong {
+    font-weight: 600;
+}
+
+/* Alert fungsi aksi di dalam modal */
+.sipma-action-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 4px;
+    text-align: left;
+}
+
+@media (max-width: 640px) {
+    .sipma-student-summary {
+        flex-direction: column;
+    }
+}
+
 /* Butir selebar baris (mis. catatan) */
 .sipma-def-grid .sipma-def-wide {
     grid-column: 1 / -1;
@@ -3082,9 +3149,41 @@ select.fi-select-input:has(option[value='']:checked) {
 }
 
 .sipma-idcard {
-    zoom: 1.5;
+    display: block;
+    width: 480px;
+    max-width: 100%;
+    height: auto;
     border: 1px solid var(--sp-border);
     border-radius: 8px;
+}
+
+.sipma-batch-plan-title {
+    margin-top: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sp-text);
+}
+
+.sipma-batch-plan-list {
+    max-height: 220px;
+    margin-top: 8px;
+    overflow-y: auto;
+    font-size: 13px;
+}
+
+.sipma-batch-plan-list li {
+    padding: 8px 0;
+    border-top: 1px solid var(--sp-border);
+}
+
+.sipma-batch-plan-list strong {
+    display: block;
+    font-weight: 600;
+    color: var(--sp-text);
+}
+
+.sipma-batch-plan-list span {
+    color: var(--sp-muted);
 }
 
 .sipma-idcard-side {
@@ -3095,12 +3194,6 @@ select.fi-select-input:has(option[value='']:checked) {
 .sipma-idcard-actions {
     justify-content: flex-start;
     margin-top: 20px;
-}
-
-@media (max-width: 640px) {
-    .sipma-idcard {
-        zoom: 1;
-    }
 }
 
 .sipma-portal-card-row {
@@ -3282,7 +3375,7 @@ select.fi-select-input:has(option[value='']:checked) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 
 .sipma-row-loa {

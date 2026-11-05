@@ -33,7 +33,7 @@ class StudentCardPolicy
     }
 
     /**
-     * Staf yang boleh melihat juga boleh mengunduh (PDF diberi watermark bila tidak aktif);
+     * Staf yang boleh melihat juga boleh mengunduh (JPG diberi watermark bila tidak aktif);
      * mahasiswa tidak bisa mengunduh KTM yang dicabut agar kartu itu tidak beredar.
      */
     public function download(User $user, StudentCard $card): bool

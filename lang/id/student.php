@@ -49,7 +49,7 @@ return [
         'revoked_title' => 'KTM :number dicabut',
         'revoked_body' => 'Dicabut pada :date. Alasan: :reason. Hubungi KUI bila perlu penjelasan atau kartu pengganti.',
         'expired_notice' => 'Masa berlaku KTM ini sudah habis. Hubungi KUI bila Anda masih memerlukannya.',
-        'download' => 'Unduh PDF',
+        'download' => 'Unduh JPG',
         'print' => 'Cetak',
         'valid_until' => 'berlaku sampai :date',
         'open' => 'Lihat KTM',

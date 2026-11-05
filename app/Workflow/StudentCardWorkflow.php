@@ -32,21 +32,31 @@ final class StudentCardWorkflow
     {
         return DB::transaction(function () use ($student, $validUntil, $number): StudentCard {
             $student = $this->locked($student);
+            $validUntil ??= self::defaultValidUntil($student);
 
-            $this->expectEnrolled($student);
+            $this->expectIssuable($student, $validUntil);
 
-            if ($student->studentCards()->where('status', StudentCardStatus::Active)->exists()) {
-                throw WorkflowException::because('card_already_active', ['name' => $student->full_name]);
-            }
-
-            $this->expectApprovedPhoto($student);
-
-            $card = $this->createCard($student, $validUntil ?? self::defaultValidUntil($student), $number);
+            $card = $this->createCard($student, $validUntil, $number);
 
             DB::afterCommit(fn () => $student->user?->notify(new StudentCardIssued($card)));
 
             return $card;
         });
+    }
+
+    /**
+     * Alasan KTM mahasiswa ini belum bisa diterbitkan, atau null bila siap. Memakai pemeriksaan yang
+     * sama dengan issue(), untuk ringkasan terbit massal sebelum dikonfirmasi.
+     */
+    public function issueBlocker(Student $student, ?CarbonInterface $validUntil = null): ?string
+    {
+        try {
+            $this->expectIssuable($student, $validUntil ?? self::defaultValidUntil($student));
+        } catch (WorkflowException $e) {
+            return $e->getMessage();
+        }
+
+        return null;
     }
 
     /**
@@ -62,9 +72,12 @@ final class StudentCardWorkflow
             $this->expectEnrolled($student);
             $this->expectApprovedPhoto($student);
 
+            $validUntil ??= $card->valid_until;
+            $this->expectValidUntil($validUntil);
+
             $this->markRevoked($card, $reason);
 
-            $replacement = $this->createCard($student, $validUntil ?? $card->valid_until, $number, $card);
+            $replacement = $this->createCard($student, $validUntil, $number, $card);
 
             DB::afterCommit(fn () => $student->user?->notify(new StudentCardIssued($replacement, $reason)));
 
@@ -125,16 +138,8 @@ final class StudentCardWorkflow
             ->subDay();
     }
 
-    private function createCard(Student $student, ?CarbonInterface $validUntil, ?string $number, ?StudentCard $replaces = null): StudentCard
+    private function createCard(Student $student, CarbonInterface $validUntil, ?string $number, ?StudentCard $replaces = null): StudentCard
     {
-        if ($validUntil === null) {
-            throw WorkflowException::because('card_valid_until_required');
-        }
-
-        if (! $validUntil->isAfter(today())) {
-            throw WorkflowException::because('card_valid_until_past');
-        }
-
         if (filled($number) && StudentCard::query()->where('card_number', $number)->exists()) {
             throw WorkflowException::because('card_number_taken', ['number' => $number]);
         }
@@ -164,6 +169,32 @@ final class StudentCardWorkflow
     private function locked(Student $student): Student
     {
         return Student::query()->whereKey($student->getKey())->lockForUpdate()->firstOrFail();
+    }
+
+    private function expectIssuable(Student $student, ?CarbonInterface $validUntil): void
+    {
+        $this->expectEnrolled($student);
+
+        if ($student->studentCards()->where('status', StudentCardStatus::Active)->exists()) {
+            throw WorkflowException::because('card_already_active', ['name' => $student->full_name]);
+        }
+
+        $this->expectApprovedPhoto($student);
+        $this->expectValidUntil($validUntil);
+    }
+
+    /**
+     * @phpstan-assert CarbonInterface $validUntil
+     */
+    private function expectValidUntil(?CarbonInterface $validUntil): void
+    {
+        if ($validUntil === null) {
+            throw WorkflowException::because('card_valid_until_required');
+        }
+
+        if (! $validUntil->isAfter(today())) {
+            throw WorkflowException::because('card_valid_until_past');
+        }
     }
 
     private function expectEnrolled(Student $student): void

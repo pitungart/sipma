@@ -8,8 +8,16 @@
 @endphp
 
 <x-filament-panels::page class="sipma-applicant">
-    <section class="sipma-card">
-        <dl class="sipma-def-grid sipma-section">
+    <section class="sipma-card sipma-section sipma-student-summary">
+        <div class="sipma-student-photo">
+            @if ($photoUrl)
+                <img src="{{ $photoUrl }}" alt="{{ __('admin.academic_student.photo', ['name' => $record->full_name]) }}">
+            @else
+                <span title="{{ __('admin.academic_student.photo_missing') }}">{{ \App\Support\StudentCardDocument::initials($record->full_name) }}</span>
+            @endif
+        </div>
+
+        <dl class="sipma-def-grid">
             @foreach ($facts as $fact)
                 <div>
                     <dt>{{ $fact['label'] }}</dt>
@@ -68,7 +76,17 @@
                     <p class="sipma-card-desc">{{ __('admin.academic_student.documents_hint') }}</p>
                     <ul class="sipma-rows">
                         @foreach ($documents as $item)
-                            <x-sipma.document-row :item="$item" wire:key="doc-{{ $item['type']->value }}" />
+                            @php($doc = $item['document'])
+
+                            <x-sipma.document-row :item="$item" wire:key="doc-{{ $item['type']->value }}-{{ $doc?->getKey() }}">
+                                @if ($doc)
+                                    {{ ($this->previewDocumentAction)(['document' => $doc->getKey()]) }}
+
+                                    <x-filament::button tag="a" :href="route('files.document', ['document' => $doc, 'download' => 1])" color="gray" size="sm" icon="lucide-download">
+                                        {{ __('admin.applicant.actions.download') }}
+                                    </x-filament::button>
+                                @endif
+                            </x-sipma.document-row>
                         @endforeach
                     </ul>
                 </div>

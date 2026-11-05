@@ -49,10 +49,10 @@ final class StudentCardActions
             ->modalHeading(fn (): string => $student
                 ? __('admin.student_card.confirm.issue_for', ['name' => $student()->full_name])
                 : __('admin.student_card.confirm.issue_heading'))
-            ->modalDescription(fn (): string => collect([
-                __('admin.student_card.confirm.issue_body'),
-                $student && $student()->user_id === null ? __('admin.student_card.confirm.no_account') : null,
-            ])->filter()->implode(' '))
+            ->modalContent(fn () => view('filament.admin.action-info', [
+                'text' => __('admin.student_card.guide.issue').' '.__('admin.student_card.confirm.issue_body'),
+                'warning' => $student && $student()->user_id === null ? __('admin.student_card.confirm.no_account') : null,
+            ]))
             ->modalSubmitActionLabel(__('admin.student_card.actions.issue'))
             ->fillForm(fn (): array => ['valid_until' => $student ? StudentCardWorkflow::defaultValidUntil($student())?->toDateString() : null])
             ->form(array_values(array_filter([
@@ -100,7 +100,7 @@ final class StudentCardActions
             ->modalIcon('lucide-refresh-cw')
             ->modalWidth(MaxWidth::Large)
             ->modalHeading(fn (?StudentCard $record): string => __('admin.student_card.confirm.reissue_heading', ['number' => $record?->card_number]))
-            ->modalDescription(__('admin.student_card.confirm.reissue_body'))
+            ->modalContent(fn () => view('filament.admin.action-info', ['text' => __('admin.student_card.guide.reissue')]))
             ->modalSubmitActionLabel(__('admin.student_card.actions.reissue'))
             ->visible(fn (?StudentCard $record): bool => self::canReissue($record))
             ->fillForm(fn (StudentCard $record): array => ['valid_until' => $record->valid_until->toDateString()])
@@ -137,7 +137,7 @@ final class StudentCardActions
             ->modalIconColor('danger')
             ->modalWidth(MaxWidth::Large)
             ->modalHeading(fn (?StudentCard $record): string => __('admin.student_card.confirm.revoke_heading', ['number' => $record?->card_number]))
-            ->modalDescription(__('admin.student_card.confirm.revoke_body'))
+            ->modalContent(fn () => view('filament.admin.action-info', ['text' => __('admin.student_card.guide.revoke')]))
             ->modalSubmitActionLabel(__('admin.student_card.actions.revoke'))
             ->visible(fn (?StudentCard $record): bool => $record?->isActive() === true && Gate::allows('revoke', $record))
             ->form([self::reasonField()])

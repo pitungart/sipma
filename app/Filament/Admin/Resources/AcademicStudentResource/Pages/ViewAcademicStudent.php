@@ -8,6 +8,7 @@ use App\Enums\StudentStatus;
 use App\Enums\VisaProcessStatus;
 use App\Filament\Admin\Resources\AcademicStudentResource;
 use App\Filament\Admin\Resources\StudentResource;
+use App\Filament\Support\FilePreview;
 use App\Filament\Support\FormModal;
 use App\Filament\Support\StudentCardActions;
 use App\Models\Course;
@@ -19,6 +20,7 @@ use App\Support\AcademicSummary;
 use App\Support\ActivityDescriber;
 use App\Support\ApplicantDetails;
 use App\Support\EnrollmentPeriod;
+use App\Support\StudentCardDocument;
 use App\Support\TeachingRecords;
 use App\Workflow\AcademicRecordWorkflow;
 use App\Workflow\WorkflowException;
@@ -124,12 +126,7 @@ class ViewAcademicStudent extends ViewRecord
                 ->requiresConfirmation()
                 ->modalIcon('lucide-badge-check')
                 ->modalHeading(fn (): string => __('admin.academic_student.confirm.complete_heading', ['name' => $this->record->full_name]))
-                ->modalDescription(fn (): string => collect([
-                    __('admin.academic_student.confirm.complete_body'),
-                    ($ungraded = $this->record->studentCourses()->where('status', StudentCourseStatus::Active)->count()) > 0
-                        ? __('admin.academic_student.confirm.complete_ungraded', ['count' => $ungraded])
-                        : null,
-                ])->filter()->implode(' '))
+                ->modalDescription(fn (): string => AcademicStudentResource::completeDescription($this->record))
                 ->modalSubmitActionLabel(__('admin.academic_student.actions.complete'))
                 ->action($step('complete')),
 
@@ -152,6 +149,24 @@ class ViewAcademicStudent extends ViewRecord
                 ->color('gray')
                 ->url(fn (): string => StudentResource::getUrl('view', ['record' => $this->record])),
         ];
+    }
+
+    // ── Dokumen ──────────────────────────────────────────────────────────────
+
+    public function previewDocumentAction(): Action
+    {
+        return FilePreview::action('previewDocument', function (array $arguments): array {
+            abort_unless($this->canVerify(), 403);
+
+            // Argumen datang dari browser: selalu dicari di dalam mahasiswa ini
+            $document = $this->record->documents()->findOrFail($arguments['document'] ?? null);
+
+            return [
+                'url' => route('files.document', $document),
+                'image' => str_starts_with((string) $document->mime_type, 'image/'),
+                'title' => $document->type->getLabel(),
+            ];
+        });
     }
 
     // ── Visa ─────────────────────────────────────────────────────────────────
@@ -461,6 +476,7 @@ class ViewAcademicStudent extends ViewRecord
 
         return [
             'canVerify' => $canVerify,
+            'photoUrl' => StudentCardDocument::photo($student) ? route('files.student-photo', $student) : null,
             'facts' => $this->facts($student),
             'profile' => ApplicantDetails::profile($student, withEnrollment: true),
             'documents' => $canVerify ? ApplicantDetails::documents($student) : collect(),

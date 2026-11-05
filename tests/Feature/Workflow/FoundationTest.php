@@ -6,15 +6,20 @@ use App\Enums\DocumentType;
 use App\Enums\LoaStatus;
 use App\Enums\MouStatus;
 use App\Enums\PaymentType;
+use App\Enums\StudentCardStatus;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
 use App\Models\Payment;
 use App\Models\Program;
 use App\Models\Student;
+use App\Models\StudentCard;
+use App\Models\TeachingDecree;
 use App\Models\User;
 use App\Notifications\LoaIssued;
 use App\Notifications\MouReviewed;
 use App\Notifications\MouSubmitted;
+use App\Support\PrivateFiles;
+use App\Support\TeachingRecords;
 use App\Workflow\MouWorkflow;
 use App\Workflow\StatusTimeline;
 use App\Workflow\StudentWorkflow;
@@ -185,5 +190,30 @@ class FoundationTest extends WorkflowTestCase
         $count = Student::query()->count();
         $this->seed(DemoSeeder::class);
         $this->assertSame($count, Student::query()->count());
+    }
+
+    public function test_demo_seeder_fills_the_post_loa_features(): void
+    {
+        $this->seed(DemoSeeder::class);
+
+        foreach (Student::query()->whereIn('status', [StudentStatus::Enrolled, StudentStatus::Completed])->get() as $student) {
+            $this->assertTrue($student->studentCourses()->exists(), "{$student->full_name} has an empty rubric");
+            $this->assertTrue(TeachingRecords::forStudent($student)->isNotEmpty(), "{$student->full_name} has no teaching decree");
+            $this->assertNotNull($student->visaStatus);
+        }
+
+        foreach (StudentCardStatus::cases() as $status) {
+            $this->assertTrue(StudentCard::query()->where('status', $status)->exists(), "no demo card is {$status->value}");
+        }
+
+        // Antrean KTM tetap terlihat: ada mahasiswa Aktif yang belum punya kartu
+        $this->assertTrue(Student::query()->where('status', StudentStatus::Enrolled)->doesntHave('studentCards')->exists());
+
+        $this->assertTrue(PrivateFiles::exists(TeachingDecree::query()->first()->document));
+
+        // Admin Fakultas contoh bisa mencoba mengaktifkan dan melihat mahasiswa Aktif
+        $visible = Student::query()->visibleTo(User::query()->where('email', 'admin.fk@sipma.test')->first());
+        $this->assertTrue((clone $visible)->where('status', StudentStatus::LoaIssued)->exists());
+        $this->assertTrue((clone $visible)->where('status', StudentStatus::Enrolled)->exists());
     }
 }

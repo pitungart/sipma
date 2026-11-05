@@ -24,7 +24,7 @@ use Livewire\Livewire;
 use Tests\Feature\Workflow\WorkflowTestCase;
 
 /**
- * TP-2 F2: PDF KTM, hak unduh, dan halaman KTM di portal mahasiswa.
+ * TP-2 F2 & F4: gambar KTM, hak unduh, dan halaman KTM di portal mahasiswa.
  */
 class StudentCardPortalTest extends WorkflowTestCase
 {
@@ -62,19 +62,28 @@ class StudentCardPortalTest extends WorkflowTestCase
         return route('files.student-card', ['card' => $card, 'download' => $download ? 1 : null]);
     }
 
-    public function test_owner_downloads_a_real_single_page_pdf(): void
+    public function test_owner_downloads_a_real_jpg_of_card_size(): void
     {
         $card = $this->issued();
 
         $response = $this->actingAs($card->student->user)->get($this->url($card))->assertOk();
 
-        $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
+        $this->assertSame('image/jpeg', $response->headers->get('Content-Type'));
         $this->assertStringContainsString('attachment', (string) $response->headers->get('Content-Disposition'));
-        $this->assertStringContainsString('KTM-KTMA-'.now()->year.'-0001.pdf', (string) $response->headers->get('Content-Disposition'));
-        $this->assertStringStartsWith('%PDF', (string) $response->getContent());
+        $this->assertStringContainsString('KTM-KTMA-'.now()->year.'-0001.jpg', (string) $response->headers->get('Content-Disposition'));
+
+        $bytes = (string) $response->getContent();
+        [$width, $height, $type] = getimagesizefromstring($bytes);
+
+        $this->assertSame(IMAGETYPE_JPEG, $type);
+        $this->assertEqualsWithDelta(85.6, $width / 300 * 25.4, 0.1);
+        $this->assertEqualsWithDelta(54, $height / 300 * 25.4, 0.1);
+
+        // Header JFIF: satuan inci dan 300 DPI, agar tercetak seukuran kartu
+        $this->assertSame([1, 300], array_values(unpack('Cunit/ndensity', substr($bytes, 13, 3))));
     }
 
-    public function test_print_opens_the_pdf_inline(): void
+    public function test_print_opens_the_image_inline(): void
     {
         $card = $this->issued();
 
@@ -83,28 +92,41 @@ class StudentCardPortalTest extends WorkflowTestCase
         $this->assertStringContainsString('inline', (string) $response->headers->get('Content-Disposition'));
     }
 
-    public function test_extreme_text_still_fits_one_page(): void
+    public function test_extreme_text_stays_on_the_card(): void
     {
         $student = $this->enrolled();
         $student->update(['full_name' => 'Şahin Ñandú Müller-Đặng '.str_repeat('Abdullah Muhammad ', 8)]);
         $student->program->update(['name' => str_repeat('Indonesian Language for Foreign Speakers ', 5)]);
         $student->program->faculty->update(['name' => str_repeat('Fakultas Matematika dan Ilmu Pengetahuan Alam ', 4)]);
 
-        $pdf = StudentCardDocument::pdf($this->issued($student->fresh()));
-        $pdf->render();
+        [$width, $height] = getimagesizefromstring(StudentCardDocument::jpeg($this->issued($student->fresh())));
 
-        $this->assertSame(1, $pdf->getDomPDF()->getCanvas()->get_page_count());
+        $this->assertSame([StudentCardDocument::WIDTH, StudentCardDocument::HEIGHT], [$width, $height]);
+
+        $lines = StudentCardDocument::fit(str_repeat('Abdullah Muhammad ', 8), 6.5, 55.5, 2, true);
+
+        $this->assertCount(2, $lines);
+        $this->assertStringEndsWith('…', $lines[1]);
+        $this->assertSame(['Ana Sato'], StudentCardDocument::fit('Ana   Sato', 9.5, 55.5, 2, true));
+        $this->assertStringEndsWith('…', StudentCardDocument::fit(str_repeat('x', 200), 6.2, 55.5, 2)[0]);
     }
 
-    public function test_paper_is_the_size_of_a_card(): void
+    public function test_names_outside_dm_sans_use_the_fallback_font(): void
     {
-        $pdf = StudentCardDocument::pdf($this->issued());
-        $pdf->render();
+        foreach (['Ana Sato', 'Şahin Ñandú Müller-Đoàn', 'KTMA-2026-0001'] as $text) {
+            $this->assertStringEndsWith('DMSans-Regular.ttf', StudentCardDocument::font($text));
+        }
 
-        $canvas = $pdf->getDomPDF()->getCanvas();
+        foreach (['Nguyễn Văn An', 'Đặng', 'Trương', 'Ольга'] as $text) {
+            $font = StudentCardDocument::font($text);
 
-        $this->assertEqualsWithDelta(85.6, $canvas->get_width() / 72 * 25.4, 0.1);
-        $this->assertEqualsWithDelta(54, $canvas->get_height() / 72 * 25.4, 0.1);
+            $this->assertStringEndsWith('DejaVuSans.ttf', $font);
+            $this->assertFileExists($font);
+        }
+
+        $this->assertStringEndsWith('DMSans-Bold.ttf', StudentCardDocument::font('Ana', bold: true));
+        $this->assertFileExists(StudentCardDocument::font('Đặng', bold: true));
+        $this->assertStringEndsWith('DejaVuSans-Bold.ttf', StudentCardDocument::font('Đặng', bold: true));
     }
 
     public function test_access_follows_role_faculty_and_status(): void
@@ -153,48 +175,38 @@ class StudentCardPortalTest extends WorkflowTestCase
     public function test_non_active_cards_carry_a_watermark(): void
     {
         $card = $this->issued();
+        $active = StudentCardDocument::jpeg($card);
 
-        $this->assertStringNotContainsString('REVOKED', view('pdf.student-card', ['card' => $card])->render());
+        $this->assertNull(StudentCardDocument::watermark($card));
 
         $card->update(['status' => StudentCardStatus::Revoked]);
-        $this->assertStringContainsString('DICABUT / REVOKED', view('pdf.student-card', ['card' => $card->fresh()])->render());
+        $this->assertSame('DICABUT / REVOKED', StudentCardDocument::watermark($card->fresh()));
+        $this->assertNotSame($active, StudentCardDocument::jpeg($card->fresh()));
 
         $card->update(['status' => StudentCardStatus::Expired]);
-        $this->assertStringContainsString('KEDALUWARSA / EXPIRED', view('pdf.student-card', ['card' => $card->fresh()])->render());
+        $this->assertSame('KEDALUWARSA / EXPIRED', StudentCardDocument::watermark($card->fresh()));
+        $this->assertNotSame($active, StudentCardDocument::jpeg($card->fresh()));
     }
 
     public function test_photo_is_cropped_and_a_missing_or_broken_file_falls_back_to_initials(): void
     {
         $student = $this->enrolled(photo: UploadedFile::fake()->image('wide.png', 1200, 600));
 
-        $uri = StudentCardDocument::photo($student);
-        $this->assertStringStartsWith('data:image/jpeg;base64,', $uri);
-
-        [$width, $height] = getimagesizefromstring(base64_decode(substr($uri, strlen('data:image/jpeg;base64,'))));
-        $this->assertSame([300, 400], [$width, $height]);
+        $photo = StudentCardDocument::photo($student);
+        $this->assertSame([248, 331], [imagesx($photo), imagesy($photo)]);
 
         // Rusak: bukan gambar
         $path = $student->documents()->value('file_path');
         Storage::disk('local')->put($path, 'not an image');
         $this->assertNull(StudentCardDocument::photo($student));
 
-        // Hilang: PDF tetap terbentuk dengan inisial
+        // Hilang: kartu tetap terbentuk dengan inisial
         Storage::disk('local')->delete($path);
         $this->assertNull(StudentCardDocument::photo($student));
+        $this->assertSame('AS', StudentCardDocument::initials('Ana  Sato Putri'));
 
         $card = $this->issued($student);
-        $this->assertStringContainsString('>MM</div>', view('pdf.student-card', ['card' => $card])->render());
         $this->actingAs($student->user)->get($this->url($card))->assertOk();
-    }
-
-    public function test_user_text_cannot_inject_markup_into_the_card(): void
-    {
-        $student = $this->enrolled();
-        $student->update(['full_name' => '<img src="http://evil.test/x.png">']);
-
-        $html = view('pdf.student-card', ['card' => $this->issued($student->fresh())])->render();
-
-        $this->assertStringNotContainsString('<img src="http://evil.test', $html);
     }
 
     public function test_portal_page_is_only_for_active_or_completed_students(): void
@@ -226,6 +238,7 @@ class StudentCardPortalTest extends WorkflowTestCase
         Livewire::test(StudentCardPage::class)
             ->assertSee($card->card_number)
             ->assertSee($this->url($card), false)
+            ->assertSee($this->url($card, download: false).'"', false)
             ->assertSee(__('student.card.download'))
             ->assertSee(__('student.card.print'));
 
@@ -240,7 +253,7 @@ class StudentCardPortalTest extends WorkflowTestCase
         Livewire::test(StudentCardPage::class)
             ->assertSee('Nomor paspor salah')
             ->assertDontSee(__('student.card.download'))
-            ->assertDontSee('ktm-photo');
+            ->assertDontSee('sipma-idcard');
     }
 
     public function test_active_card_wins_over_older_revoked_ones(): void

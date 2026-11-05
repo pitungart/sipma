@@ -7,6 +7,7 @@ use App\Enums\Religion;
 use App\Enums\StudentCardStatus;
 use App\Enums\StudentStatus;
 use App\Enums\UserRole;
+use App\Support\EnrollmentPeriod;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -112,6 +113,15 @@ class Student extends Model
     /**
      * Batasi query sesuai role (dipakai di getEloquentQuery() resource Filament).
      */
+    public function scopeInEnrollmentPeriod(Builder $query, string $period): Builder
+    {
+        $parsed = EnrollmentPeriod::parse($period);
+
+        return $parsed === null
+            ? $query->whereRaw('0 = 1')
+            : $query->where('enrollment_year', $parsed[0])->where('enrollment_month', $parsed[1]);
+    }
+
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
         return match ($user->role) {

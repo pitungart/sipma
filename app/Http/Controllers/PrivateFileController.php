@@ -7,11 +7,13 @@ use App\Models\Document;
 use App\Models\Loa;
 use App\Models\Mou;
 use App\Models\Payment;
+use App\Models\Student;
 use App\Models\StudentCard;
 use App\Models\TeachingDecree;
 use App\Models\User;
 use App\Support\FileTemplates;
 use App\Support\PrivateFiles;
+use App\Support\StudentCardArchive;
 use App\Support\StudentCardDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -71,10 +73,48 @@ class PrivateFileController extends Controller
     {
         Gate::authorize('download', $card);
 
-        $pdf = StudentCardDocument::pdf($card);
-        $filename = StudentCardDocument::filename($card);
+        return response(StudentCardDocument::jpeg($card), 200, [
+            'Content-Type' => 'image/jpeg',
+            'Content-Disposition' => ($request->boolean('download') ? 'attachment' : 'inline').'; filename="'.StudentCardDocument::filename($card).'"',
+        ]);
+    }
 
-        return $request->boolean('download') ? $pdf->download($filename) : $pdf->stream($filename);
+    /**
+     * Pas Foto yang disetujui, dipotong 3×4. Siapa pun yang boleh melihat mahasiswanya boleh melihat
+     * fotonya: foto yang sama sudah tercetak di KTM.
+     */
+    public function studentPhoto(Student $student): Response
+    {
+        Gate::authorize('view', $student);
+
+        $photo = StudentCardDocument::photoJpeg($student);
+
+        abort_if($photo === null, 404);
+
+        return response($photo, 200, ['Content-Type' => 'image/jpeg']);
+    }
+
+    /**
+     * ZIP KTM dari tautan sekali pakai yang disiapkan aksi massal. Hak unduh diperiksa lagi per kartu.
+     */
+    public function studentCardArchive(string $token): BinaryFileResponse
+    {
+        $archive = StudentCardArchive::pull($token);
+
+        abort_if($archive === null, 404);
+
+        $cards = StudentCard::query()
+            ->with(['student.program.faculty', 'student.nationality'])
+            ->whereKey($archive['ids'])
+            ->lazyById()
+            ->filter(fn (StudentCard $card): bool => Gate::allows('download', $card));
+
+        abort_if($cards->isEmpty(), 403);
+
+        // Ratusan kartu bisa melewati batas waktu bawaan PHP
+        set_time_limit(0);
+
+        return response()->download(StudentCardArchive::build($cards), $archive['filename'], ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
     }
 
     /**

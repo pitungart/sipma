@@ -8,6 +8,7 @@ use App\Enums\NumberType;
 use App\Enums\StudentStatus;
 use App\Filament\Admin\Resources\AcademicStudentResource;
 use App\Filament\Admin\Resources\StudentResource;
+use App\Filament\Support\FilePreview;
 use App\Filament\Support\FormModal;
 use App\Filament\Support\TemplateDownload;
 use App\Models\Document;
@@ -250,7 +251,7 @@ class ViewApplicant extends ViewRecord
 
     public function previewDocumentAction(): Action
     {
-        return $this->previewAction('previewDocument', fn (array $arguments): array => [
+        return FilePreview::action('previewDocument', fn (array $arguments): array => [
             'url' => route('files.document', $this->document($arguments)),
             'image' => str_starts_with((string) $this->document($arguments)->mime_type, 'image/'),
             'title' => $this->document($arguments)->type->getLabel(),
@@ -311,7 +312,7 @@ class ViewApplicant extends ViewRecord
 
     public function previewPaymentAction(): Action
     {
-        return $this->previewAction('previewPayment', fn (array $arguments): array => [
+        return FilePreview::action('previewPayment', fn (array $arguments): array => [
             'url' => route('files.payment', $this->payment($arguments)),
             'image' => ! str_ends_with((string) $this->payment($arguments)->proof_file, '.pdf'),
             'title' => $this->payment($arguments)->type->getLabel(),
@@ -441,20 +442,6 @@ class ViewApplicant extends ViewRecord
         $this->record->refresh();
 
         Notification::make()->success()->title(__("admin.applicant.done.{$successKey}"))->send();
-    }
-
-    private function previewAction(string $name, Closure $file): Action
-    {
-        return Action::make($name)
-            ->label(__('admin.applicant.actions.preview'))
-            ->icon('lucide-eye')
-            ->color('gray')
-            ->size('sm')
-            ->modalHeading(fn (array $arguments): string => $file($arguments)['title'])
-            ->modalWidth(MaxWidth::FiveExtraLarge)
-            ->modalContent(fn (array $arguments) => view('filament.admin.applicants.preview', $file($arguments)))
-            ->modalSubmitAction(false)
-            ->modalCancelActionLabel(__('admin.applicant.actions.close'));
     }
 
     /**

@@ -102,7 +102,8 @@ class PaymentResource extends Resource
                     ->label(__('admin.payment.fields.account'))
                     ->description(fn (Payment $record): ?string => $record->paymentAccount?->bank_name)
                     ->placeholder(__('admin.payment.no_account'))
-                    ->toggleable(),
+                    // Disembunyikan bawaan agar ikon aksi baris tidak keluar dari tepi tabel
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('admin.dashboard.status'))

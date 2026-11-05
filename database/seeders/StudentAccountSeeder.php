@@ -19,7 +19,7 @@ use Illuminate\Database\Seeder;
  * - student.revision@sipma.test  pendaftar mandiri demo yang diminta revisi
  * - student.approved@sipma.test  disetujui, program BIPA (biaya demo) belum dibayar
  * - student.loa@sipma.test       LOA terbit
- * - student.active@sipma.test    Aktif (tahap pasca-LOA)
+ * - student.active@sipma.test    Aktif: rubrik dengan nilai sebagian, KTM pengganti, SK Mengajar
  * Draf: student@sipma.test (DemoSeeder).
  */
 class StudentAccountSeeder extends Seeder

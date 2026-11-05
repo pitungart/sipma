@@ -5,8 +5,10 @@ namespace App\Filament\Admin\Resources\AcademicStudentResource\Pages;
 use App\Enums\StudentStatus;
 use App\Filament\Admin\Resources\AcademicStudentResource;
 use App\Filament\Admin\Resources\Pages\ListWithStatusTabs;
+use App\Models\StudentCard;
 use Filament\Resources\Components\Tab;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Tab mengikuti tahap pasca-LOA: Semua · Siap diaktifkan (LOA terbit) · Aktif · Selesai.
@@ -15,6 +17,8 @@ use Illuminate\Database\Eloquent\Builder;
 class ListAcademicStudents extends ListWithStatusTabs
 {
     protected static string $resource = AcademicStudentResource::class;
+
+    protected static string $view = 'filament.admin.list-with-guide';
 
     /**
      * @return array<int|string, string>
@@ -29,11 +33,43 @@ class ListAcademicStudents extends ListWithStatusTabs
         return __('admin.academic_student.description');
     }
 
+    public function actionGuideIntro(): string
+    {
+        return __('admin.academic_student.guide.intro');
+    }
+
+    /**
+     * Fungsi tombol massal yang tersedia di tab ini; Selesai tidak punya aksi massal.
+     *
+     * @return list<array{label: string, text: string}>
+     */
+    public function actionGuide(): array
+    {
+        $tab = $this->activeTab ?? 'all';
+        $guide = [];
+
+        if (in_array($tab, AcademicStudentResource::ENROLL_TABS, true)) {
+            $guide[] = ['label' => __('admin.academic_student.actions.enroll_bulk'), 'text' => __('admin.academic_student.guide.enroll')];
+        }
+
+        if (in_array($tab, AcademicStudentResource::ENROLLED_TABS, true)) {
+            if (Gate::allows('create', StudentCard::class)) {
+                $guide[] = ['label' => __('admin.student_card.actions.issue'), 'text' => __('admin.academic_student.guide.issue')];
+            }
+
+            $guide[] = ['label' => __('admin.academic_student.actions.complete'), 'text' => __('admin.academic_student.guide.complete')];
+        }
+
+        return $guide;
+    }
+
     public function getTabs(): array
     {
         $counts = AcademicStudentResource::getEloquentQuery()
             ->toBase()
-            ->selectRaw('status, COUNT(*) as total')
+            // select() membuang withCount dari resource; MySQL menolak kolom itu bersama GROUP BY
+            ->select('status')
+            ->selectRaw('COUNT(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
 
