@@ -92,6 +92,7 @@ return [
         'notifications_title' => 'Notifikasi email',
         'notifications_desc' => 'Pilih kejadian yang juga dikirim ke email Anda. Lonceng di panel selalu menerima semuanya.',
         'mail_disabled' => 'Email notifikasi sedang dinonaktifkan untuk seluruh sistem. Pilihan ini akan berlaku setelah email diaktifkan.',
+        'mail_disabled_title' => 'Email notifikasi nonaktif',
         'none' => 'Peran Anda tidak menerima notifikasi email.',
         'types' => [
             'application_submitted' => ['Pendaftaran diajukan', 'Saat agen atau pendaftar mandiri mengajukan pendaftaran.'],

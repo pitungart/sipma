@@ -92,6 +92,7 @@ return [
         'notifications_title' => 'Email notifications',
         'notifications_desc' => 'Choose which events are also sent to your email. The bell in the panel always gets everything.',
         'mail_disabled' => 'Email notifications are turned off for the whole system. These choices take effect once email is turned on.',
+        'mail_disabled_title' => 'Email notifications are off',
         'none' => 'Your role doesn’t receive email notifications.',
         'types' => [
             'application_submitted' => ['Application submitted', 'When an agent or applicant submits an application.'],

@@ -106,6 +106,7 @@ return [
         'enrollment_modal' => 'Dipakai untuk pelaporan. Terisi otomatis saat diajukan; ubah bila pendaftar mulai di bulan lain.',
         'source_hint' => 'Kosongkan untuk pendaftar mandiri.',
         'upload_on_behalf' => 'Unggah dokumen atas nama pendaftar, lalu ajukan pendaftaran dari kanan atas.',
+        'upload_on_behalf_title' => 'Unggah atas nama pendaftar',
         'submit_heading' => 'Ajukan pendaftaran :name?',
         'submit_description' => 'Data diri dan dokumen terkunci setelah diajukan. Kantor Urusan Internasional akan menerima notifikasi.',
         'export' => 'Ekspor CSV',
@@ -114,8 +115,10 @@ return [
         'documents_hint' => 'Dokumen wajib yang sudah disetujui',
         'required' => 'Wajib',
         'missing' => 'Belum ada',
-        'revision_note' => 'Catatan untuk pendaftar:',
+        'revision_note' => 'Catatan perbaikan untuk pendaftar',
         'review_locked' => 'Dokumen bisa diperiksa setelah verifikasi dimulai. Status sekarang: :status.',
+        'payment_setup_title' => 'Belum bisa disetujui',
+        'review_locked_title' => 'Pemeriksaan belum dibuka',
         'loa' => 'Letter of Acceptance',
         'revision_modal' => 'Pendaftar menerima email dan dapat memperbaiki dokumen yang Anda tandai.',
         'general_note_hint' => 'Opsional bila sudah ada dokumen yang ditandai revisi.',
@@ -277,6 +280,8 @@ return [
         'notice' => [
             'ready' => 'LOA sudah terbit. Tandai mahasiswa Aktif saat program dimulai; KTM dan rubrik akademik terbuka setelah itu.',
             'no_account' => 'Mahasiswa belum punya akun portal sehingga belum bisa melihat KTM dan rubrik akademik.',
+            'ready_title' => 'Siap dimulai',
+            'no_account_title' => 'Belum punya akun portal',
         ],
         'actions' => [
             'enroll' => 'Aktifkan',
@@ -376,7 +381,6 @@ return [
             'no_account' => 'Mahasiswa belum punya akun portal, jadi belum bisa melihat KTM ini.',
         ],
         'guide' => [
-            'intro' => 'Fungsi tombol di halaman ini:',
             'issue_period' => 'Menerbitkan KTM sekaligus untuk semua mahasiswa Aktif pada satu periode masuk yang belum punya KTM aktif. Siapa yang terbit dan dilewati tampil sebelum dikonfirmasi.',
             'issue' => 'Menerbitkan KTM untuk satu mahasiswa Aktif yang dipilih.',
             'download_zip' => 'Mengunduh banyak KTM sebagai JPG dalam satu berkas ZIP: semua KTM aktif per periode, atau centang baris di tabel.',
@@ -399,6 +403,8 @@ return [
             'valid_until_hint' => 'Hanya dipakai untuk mahasiswa yang masa berlakunya tidak bisa dihitung. Kosongkan untuk melewati mereka.',
             'ready' => ':count KTM akan terbit.',
             'nothing_ready' => 'Belum ada KTM yang bisa diterbitkan.',
+            'nothing_ready_body' => 'Semua mahasiswa terpilih dilewati — alasannya tercantum di bawah.',
+            'ready_title' => 'Siap diterbitkan',
             'skipped' => ':count mahasiswa dilewati',
             'without_account' => ':count mahasiswa belum punya akun portal, jadi belum bisa melihat KTM-nya.',
             'issued' => ':count KTM diterbitkan',
@@ -452,6 +458,7 @@ return [
         'empty_not_active' => 'Mata kuliah terpasang otomatis saat mahasiswa diaktifkan.',
         'empty_active' => 'Program ini belum punya paket. Isi dulu di menu Paket mata kuliah, lalu Terapkan paket, atau tambahkan satu per satu.',
         'locked' => 'Daftar mata kuliah terkunci karena program sudah selesai. Super Admin bisa membuka kembali status Aktif untuk mengoreksinya, dan bisa langsung mengoreksi nilainya.',
+        'locked_title' => 'Daftar mata kuliah terkunci',
         'fields' => [
             'drop_note' => 'Alasan (opsional)',
         ],
@@ -654,7 +661,7 @@ return [
             'delete_hint' => 'Tombol unduh template untuk dokumen ini tidak akan tampil lagi.',
             'delete_mou_hint' => 'Agen akan kembali mengunduh template MOU bawaan (sementara).',
         ],
-        'server_title' => 'Server saat ini menerima berkas sampai :max.',
+        'server_title' => 'Server saat ini menerima berkas sampai :max',
         'server_ok' => 'Semua batas di bawah masih di dalam batas server.',
         'server_over' => ':fields melebihi batas server — berkas sebesar itu akan ditolak server sebelum sampai ke aplikasi. Minta pengelola server menaikkan upload_max_filesize dan post_max_size, atau turunkan batasnya.',
         'saved' => 'Batas unggahan disimpan',
@@ -795,4 +802,11 @@ return [
         ],
     ],
 
+    // Judul alert bersama (x-sipma.notice)
+    'notice' => [
+        'guide_title' => 'Fungsi tombol di halaman ini',
+        'action_title' => 'Yang dilakukan aksi ini',
+        'warning_title' => 'Perhatikan sebelum lanjut',
+        'readonly_title' => 'Hanya bisa dilihat',
+    ],
 ];

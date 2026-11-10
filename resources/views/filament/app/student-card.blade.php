@@ -19,7 +19,7 @@
         </section>
     @else
         @if ($card->status === StudentCardStatus::Expired)
-            <x-sipma.notice tone="warning" class="sipma-page-alert">{{ __('student.card.expired_notice') }}</x-sipma.notice>
+            <x-sipma.notice tone="warning" :title="__('student.card.expired_title')" class="sipma-page-alert">{{ __('student.card.expired_notice') }}</x-sipma.notice>
         @endif
 
         <section class="sipma-card sipma-section sipma-idcard-page">

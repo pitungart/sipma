@@ -331,7 +331,7 @@ class StudentCardBatchTest extends WorkflowTestCase
         $guide = fn (string $key): string => __("admin.student_card.guide.{$key}");
 
         Livewire::test(ListStudentCards::class)
-            ->assertSee($guide('intro'))
+            ->assertSee(__('admin.notice.guide_title'))
             ->assertSee($guide('issue_period'))
             ->assertSee($guide('issue'))
             ->assertSee($guide('download_zip'))

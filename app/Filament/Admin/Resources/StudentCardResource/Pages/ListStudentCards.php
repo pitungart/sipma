@@ -48,9 +48,10 @@ class ListStudentCards extends ListWithStatusTabs
         ];
     }
 
+    /** Judul alert sudah menjelaskan isinya, jadi tidak perlu kalimat pembuka. */
     public function actionGuideIntro(): string
     {
-        return __('admin.student_card.guide.intro');
+        return '';
     }
 
     /**

@@ -2930,10 +2930,9 @@ select.fi-select-input:has(option[value='']:checked) {
     font-size: 11px;
 }
 
-/* Petunjuk di dalam tab berupa alert bergaris */
+/* Petunjuk di dalam tab: jarak ke isi di bawahnya */
 .sipma-section-alert {
     margin-bottom: 16px;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 22%, transparent);
 }
 
 /* Pembayaran & LOA sebelum disetujui: dua kartu yang menjelaskan kapan terbuka */
@@ -3003,20 +3002,80 @@ select.fi-select-input:has(option[value='']:checked) {
     color: var(--sp-muted);
 }
 
+/* Alert (x-sipma.notice): kartu netral, ikon berwarna dalam bingkai tonal nada yang sama,
+   judul gelap + teks penjelas redup. Garis tepi netral. */
 .sipma-alert {
     display: flex;
-    gap: 10px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    background-color: var(--tone-l);
-    color: var(--tone-ink);
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 18px;
+    border: 1px solid var(--sp-border);
+    border-radius: 16px;
+    background-color: var(--sp-card);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
     font-size: 13.5px;
 }
 
-.sipma-alert-icon {
-    width: 18px;
-    height: 18px;
+.sipma-alert-frame {
+    display: grid;
     flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background-color: var(--tone-l);
+    color: var(--tone);
+}
+
+.sipma-alert-icon {
+    width: 22px;
+    height: 22px;
+    flex: none;
+}
+
+/* Tengah terhadap bingkai ikon bila isinya pendek (mis. hanya judul); isi panjang tetap mulai dari atas */
+.sipma-alert-body {
+    flex: 1;
+    align-self: center;
+    min-width: 0;
+}
+
+.sipma-alert-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--sp-heading);
+}
+
+.sipma-alert-text {
+    line-height: 1.55;
+    color: var(--sp-muted);
+}
+
+.sipma-alert-title + .sipma-alert-text {
+    margin-top: 2px;
+}
+
+.sipma-alert-text ul {
+    margin-top: 4px;
+    padding-inline-start: 18px;
+    list-style: disc;
+}
+
+.sipma-alert-text li + li {
+    margin-top: 2px;
+}
+
+.sipma-alert-text b,
+.sipma-alert-text strong {
+    font-weight: 600;
+    color: var(--sp-text);
+}
+
+.sipma-alert-text code {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 12.5px;
+    color: var(--sp-text);
 }
 
 .sipma-section {
@@ -3072,17 +3131,6 @@ select.fi-select-input:has(option[value='']:checked) {
     width: 100%;
     height: 100%;
     object-fit: cover;
-}
-
-/* Panduan fungsi tombol massal di atas tabel Mahasiswa Asing */
-.sipma-action-guide ul {
-    margin-top: 4px;
-    list-style: disc;
-    padding-left: 18px;
-}
-
-.sipma-action-guide strong {
-    font-weight: 600;
 }
 
 /* Alert fungsi aksi di dalam modal */
@@ -3991,17 +4039,6 @@ select.fi-select-input:has(option[value='']:checked) {
 /* Aturan penomoran di atas daftar atribut */
 .sipma-num-rules {
     margin-bottom: 14px;
-    font-size: 13px;
-}
-
-.sipma-num-rules ul {
-    margin-top: 4px;
-    padding-inline-start: 18px;
-    list-style: disc;
-}
-
-.sipma-num-rules li + li {
-    margin-top: 2px;
 }
 
 /* Yang perlu diketahui: tiga fakta sejajar di satu kartu */
@@ -4536,7 +4573,7 @@ select.fi-select-input:has(option[value='']:checked) {
 }
 
 .sipma-agent-note {
-    margin-top: 12px;
+    margin: 12px 0 0;
 }
 
 .sipma-agent-next-cta {

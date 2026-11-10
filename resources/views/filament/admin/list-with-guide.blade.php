@@ -1,4 +1,4 @@
-{{-- Daftar dengan panduan fungsi tombol di atas tabel. Halamannya menyediakan actionGuide() dan actionGuideIntro(). --}}
+{{-- Daftar dengan panduan fungsi tombol di atas tabel. Halamannya menyediakan actionGuide() dan actionGuideIntro() (boleh kosong). --}}
 <x-filament-panels::page
     @class([
         'fi-resource-list-records-page',
@@ -9,8 +9,10 @@
         @php($guide = $this->actionGuide())
 
         @if ($guide !== [])
-            <x-sipma.notice class="sipma-action-guide">
-                <p>{{ $this->actionGuideIntro() }}</p>
+            <x-sipma.notice :title="__('admin.notice.guide_title')">
+                @if (filled($intro = $this->actionGuideIntro()))
+                    <p>{{ $intro }}</p>
+                @endif
                 <ul>
                     @foreach ($guide as $item)
                         <li><strong>{{ $item['label'] }}:</strong> {{ $item['text'] }}</li>

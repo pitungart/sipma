@@ -36,9 +36,9 @@
     </section>
 
     @if ($record->status === StudentStatus::LoaIssued)
-        <x-sipma.notice class="sipma-page-alert">{{ __('admin.academic_student.notice.ready') }}</x-sipma.notice>
+        <x-sipma.notice :title="__('admin.academic_student.notice.ready_title')" class="sipma-page-alert">{{ __('admin.academic_student.notice.ready') }}</x-sipma.notice>
     @elseif ($record->user_id === null)
-        <x-sipma.notice tone="warning" class="sipma-page-alert">
+        <x-sipma.notice tone="warning" :title="__('admin.academic_student.notice.no_account_title')" class="sipma-page-alert">
             {{ __('admin.academic_student.notice.no_account') }} {{ __('admin.academic_student.account.failed_hint') }}
         </x-sipma.notice>
     @endif
@@ -136,7 +136,7 @@
             @endif
 
             @unless ($canEditVisa)
-                <x-sipma.notice tone="warning" icon="lucide-lock">{{ __('admin.academic_student.visa.readonly') }}</x-sipma.notice>
+                <x-sipma.notice tone="warning" icon="lucide-lock" :title="__('admin.notice.readonly_title')">{{ __('admin.academic_student.visa.readonly') }}</x-sipma.notice>
             @endunless
         </section>
 
@@ -231,7 +231,7 @@
             @endif
 
             @unless ($canManageCards)
-                <x-sipma.notice tone="warning" icon="lucide-lock">{{ __('admin.student_card.detail.readonly') }}</x-sipma.notice>
+                <x-sipma.notice tone="warning" icon="lucide-lock" :title="__('admin.notice.readonly_title')">{{ __('admin.student_card.detail.readonly') }}</x-sipma.notice>
             @endunless
         </section>
 
@@ -306,7 +306,7 @@
             @endif
 
             @if ($record->status === StudentStatus::Completed)
-                <x-sipma.notice tone="warning" icon="lucide-lock" class="sipma-rubric-note">{{ __('admin.student_course.locked') }}</x-sipma.notice>
+                <x-sipma.notice tone="warning" icon="lucide-lock" :title="__('admin.student_course.locked_title')" class="sipma-rubric-note">{{ __('admin.student_course.locked') }}</x-sipma.notice>
             @endif
         </section>
 

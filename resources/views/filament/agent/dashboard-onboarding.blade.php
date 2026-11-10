@@ -21,10 +21,9 @@
             <p class="sipma-agent-next-body">{{ $next['body'] }}</p>
 
             @if ($stage === AgentOnboarding::REJECTED && filled($latest?->revision_note))
-                <div class="sipma-alert sipma-tone-danger sipma-agent-note" role="status">
-                    <x-filament::icon icon="lucide-triangle-alert" class="sipma-alert-icon" />
-                    <div><b>{{ __('agent.mou.note') }}</b> {{ $latest->revision_note }}</div>
-                </div>
+                <x-sipma.notice tone="danger" icon="lucide-triangle-alert" :title="__('agent.mou.note_title')" role="status" class="sipma-agent-note">
+                    {{ $latest->revision_note }}
+                </x-sipma.notice>
             @endif
 
             <x-filament::button

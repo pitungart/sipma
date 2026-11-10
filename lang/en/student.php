@@ -49,6 +49,7 @@ return [
         'revoked_title' => 'Student card :number was revoked',
         'revoked_body' => 'Revoked on :date. Reason: :reason. Contact KUI if you need an explanation or a replacement card.',
         'expired_notice' => 'This student card has expired. Contact KUI if you still need it.',
+        'expired_title' => 'Student card expired',
         'download' => 'Download JPG',
         'print' => 'Print',
         'valid_until' => 'valid until :date',

@@ -316,7 +316,7 @@
 
                 <div class="sipma-section sipma-profile-prefs">
                     @if (! $mailEnabled && count($preferences))
-                        <x-sipma.notice tone="warning" icon="lucide-mail-x">{{ __('profile.preferences.mail_disabled') }}</x-sipma.notice>
+                        <x-sipma.notice tone="warning" icon="lucide-mail-x" :title="__('profile.preferences.mail_disabled_title')">{{ __('profile.preferences.mail_disabled') }}</x-sipma.notice>
                     @endif
 
                     @forelse ($preferences as $key => $enabled)

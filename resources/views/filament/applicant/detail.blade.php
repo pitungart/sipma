@@ -12,13 +12,9 @@
 <x-sipma.status-timeline :status="$record->status" />
 
 @if ($record->status === StudentStatus::Revision)
-    <div class="sipma-alert sipma-tone-danger" role="status">
-        <x-filament::icon icon="lucide-triangle-alert" class="sipma-alert-icon" />
-        <div>
-            <b>{{ __('agent.students.revision_title') }}</b>
-            {{ filled($record->revision_note) ? $record->revision_note : __('agent.students.revision_body') }}
-        </div>
-    </div>
+    <x-sipma.notice tone="danger" icon="lucide-triangle-alert" :title="__('agent.students.revision_title')" role="status" class="sipma-page-alert">
+        {{ filled($record->revision_note) ? $record->revision_note : __('agent.students.revision_body') }}
+    </x-sipma.notice>
 @endif
 
 {{-- Kelengkapan sebelum diajukan --}}
@@ -51,7 +47,7 @@
     {{-- Data --}}
     <section x-show="tab === 'profile'" x-cloak class="sipma-section">
         @if ($canChange)
-            <x-sipma.notice>
+            <x-sipma.notice :title="__('agent.students.profile_hint_title')">
                 {!! __('agent.students.profile_hint', ['button' => '<b>"'.e(__('admin.applicant.actions.edit')).'"</b>']) !!}
             </x-sipma.notice>
         @endif
@@ -68,9 +64,9 @@
     {{-- Dokumen --}}
     <section x-show="tab === 'documents'" x-cloak class="sipma-section">
         @if ($canChange)
-            <x-sipma.notice>{{ __('agent.students.documents_intro') }}</x-sipma.notice>
+            <x-sipma.notice :title="__('agent.students.documents_intro_title')">{{ __('agent.students.documents_intro') }}</x-sipma.notice>
         @else
-            <x-sipma.notice tone="warning" icon="lucide-lock">{{ __('agent.students.documents_locked', ['status' => $record->status->getLabel()]) }}</x-sipma.notice>
+            <x-sipma.notice tone="warning" icon="lucide-lock" :title="__('agent.students.documents_locked_title')">{{ __('agent.students.documents_locked', ['status' => $record->status->getLabel()]) }}</x-sipma.notice>
         @endif
 
         <ul class="sipma-rows">

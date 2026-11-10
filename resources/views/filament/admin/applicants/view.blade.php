@@ -16,15 +16,14 @@
     </div>
 
     @if ($record->status === StudentStatus::Revision && filled($record->revision_note))
-        <div class="sipma-alert sipma-tone-danger" role="status">
-            <x-filament::icon icon="lucide-triangle-alert" class="sipma-alert-icon" />
-            <div><b>{{ __('admin.applicant.revision_note') }}</b> {{ $record->revision_note }}</div>
-        </div>
+        <x-sipma.notice tone="danger" icon="lucide-triangle-alert" :title="__('admin.applicant.revision_note')" role="status" class="sipma-page-alert">
+            {{ $record->revision_note }}
+        </x-sipma.notice>
     @endif
 
     {{-- Biaya program / VA belum siap: tombol Setujui nonaktif, beri tahu sebabnya di muka --}}
     @if ($paymentSetupProblem)
-        <x-sipma.notice tone="warning" icon="lucide-triangle-alert">{{ $paymentSetupProblem }}</x-sipma.notice>
+        <x-sipma.notice tone="warning" icon="lucide-triangle-alert" :title="__('admin.applicant.payment_setup_title')" class="sipma-page-alert">{{ $paymentSetupProblem }}</x-sipma.notice>
     @endif
 
     <div class="sipma-card sipma-clip" x-data="{ tab: 'profile' }">
@@ -64,9 +63,9 @@
             {{-- Dokumen --}}
             <section x-show="tab === 'documents'" x-cloak class="sipma-section">
                 @if ($canUpload)
-                    <x-sipma.notice>{{ __('admin.applicant.upload_on_behalf') }}</x-sipma.notice>
+                    <x-sipma.notice :title="__('admin.applicant.upload_on_behalf_title')">{{ __('admin.applicant.upload_on_behalf') }}</x-sipma.notice>
                 @elseif (! $canReview)
-                    <x-sipma.notice tone="warning" icon="lucide-lock">{{ __('admin.applicant.review_locked', ['status' => $record->status->getLabel()]) }}</x-sipma.notice>
+                    <x-sipma.notice tone="warning" icon="lucide-lock" :title="__('admin.applicant.review_locked_title')">{{ __('admin.applicant.review_locked', ['status' => $record->status->getLabel()]) }}</x-sipma.notice>
                 @endif
 
                 <ul class="sipma-rows">

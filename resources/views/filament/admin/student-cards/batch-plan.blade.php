@@ -1,14 +1,18 @@
 {{-- Ringkasan terbit massal KTM: berapa yang terbit dan siapa yang dilewati beserta alasannya --}}
 <div class="sipma-batch-plan">
     @if ($plan['ready'] > 0)
-        <x-sipma.notice tone="success" icon="lucide-circle-check">
+        <x-sipma.notice tone="success" icon="lucide-circle-check" :title="__('admin.student_card.batch.ready_title')">
             {{ trans_choice('admin.student_card.batch.ready', $plan['ready'], ['count' => $plan['ready']]) }}
             @if ($plan['withoutAccount'] > 0)
                 {{ trans_choice('admin.student_card.batch.without_account', $plan['withoutAccount'], ['count' => $plan['withoutAccount']]) }}
             @endif
         </x-sipma.notice>
     @else
-        <x-sipma.notice tone="danger" icon="lucide-circle-x">{{ __('admin.student_card.batch.nothing_ready') }}</x-sipma.notice>
+        <x-sipma.notice tone="danger" icon="lucide-circle-x" :title="__('admin.student_card.batch.nothing_ready')">
+            @if ($plan['skipped'] !== [])
+                {{ __('admin.student_card.batch.nothing_ready_body') }}
+            @endif
+        </x-sipma.notice>
     @endif
 
     @if ($plan['skipped'] !== [])

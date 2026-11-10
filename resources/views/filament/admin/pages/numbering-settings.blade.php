@@ -134,17 +134,13 @@
                 </div>
             </div>
 
-            <div class="sipma-alert sipma-tone-warning sipma-num-rules" role="note">
-                <x-filament::icon icon="lucide-triangle-alert" class="sipma-alert-icon" />
-                <div>
-                    <b>{{ __('numbering.rules.title') }}</b>
-                    <ul>
-                        @foreach (__('numbering.rules.items') as $rule)
-                            <li>{{ $rule }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
+            <x-sipma.notice tone="warning" :title="__('numbering.rules.title')" class="sipma-num-rules">
+                <ul>
+                    @foreach (__('numbering.rules.items') as $rule)
+                        <li>{{ $rule }}</li>
+                    @endforeach
+                </ul>
+            </x-sipma.notice>
 
             @if (blank($format['segments']))
                 <div class="sipma-num-empty">{{ __('numbering.no_segments') }}</div>

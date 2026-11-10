@@ -14,10 +14,9 @@
 
 <x-filament-panels::page class="sipma-agent-mou">
     @if ($stage === AgentOnboarding::PROFILE)
-        <div class="sipma-alert sipma-tone-warning" role="status">
-            <x-filament::icon icon="lucide-triangle-alert" class="sipma-alert-icon" />
-            <div>{{ __('agent.mou.profile_needed') }}</div>
-        </div>
+        <x-sipma.notice tone="warning" :title="__('agent.mou.profile_needed_title')" role="status" class="sipma-page-alert">
+            {{ __('agent.mou.profile_needed') }}
+        </x-sipma.notice>
     @endif
 
     {{-- Status MOU terbaru --}}
@@ -37,10 +36,9 @@
 
         @if ($latest?->status === MouStatus::Rejected && filled($latest->revision_note))
             <div class="sipma-agent-status-note">
-                <div class="sipma-alert sipma-tone-danger" role="status">
-                    <x-filament::icon icon="lucide-triangle-alert" class="sipma-alert-icon" />
-                    <div><b>{{ __('agent.mou.note') }}</b> {{ $latest->revision_note }}</div>
-                </div>
+                <x-sipma.notice tone="danger" icon="lucide-triangle-alert" :title="__('agent.mou.note_title')" role="status" class="sipma-page-alert">
+                    {{ $latest->revision_note }}
+                </x-sipma.notice>
             </div>
         @endif
 

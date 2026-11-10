@@ -106,6 +106,7 @@ return [
         'enrollment_modal' => 'Used for reporting. Filled in automatically on submit; change it if the applicant starts in another month.',
         'source_hint' => 'Leave empty for a self-registered applicant.',
         'upload_on_behalf' => 'Upload the documents on behalf of the applicant, then submit the application from the top right.',
+        'upload_on_behalf_title' => 'Uploading for the applicant',
         'submit_heading' => 'Submit the application of :name?',
         'submit_description' => 'Personal data and documents are locked after submitting. The International Office is notified.',
         'export' => 'Export CSV',
@@ -114,8 +115,10 @@ return [
         'documents_hint' => 'Required documents approved',
         'required' => 'Required',
         'missing' => 'Missing',
-        'revision_note' => 'Note for the applicant:',
+        'revision_note' => 'Changes requested from the applicant',
         'review_locked' => 'Documents can be reviewed after you start the verification. Current status: :status.',
+        'payment_setup_title' => 'Cannot approve yet',
+        'review_locked_title' => 'Review not open yet',
         'loa' => 'Letter of Acceptance',
         'revision_modal' => 'The applicant gets an email and can fix the documents you marked.',
         'general_note_hint' => 'Optional when you have already marked documents for revision.',
@@ -277,6 +280,8 @@ return [
         'notice' => [
             'ready' => 'The LOA has been issued. Mark the student active when the program starts; the student card and academic rubric open after that.',
             'no_account' => 'The student has no portal account yet, so they cannot see their student card or academic rubric.',
+            'ready_title' => 'Ready to start',
+            'no_account_title' => 'No portal account yet',
         ],
         'actions' => [
             'enroll' => 'Activate',
@@ -376,7 +381,6 @@ return [
             'no_account' => 'The student has no portal account yet, so they cannot see this card.',
         ],
         'guide' => [
-            'intro' => 'What the buttons on this page do:',
             'issue_period' => 'Issues cards at once for every active student in one intake period who has no active card. Who gets a card and who is skipped is shown before you confirm.',
             'issue' => 'Issues a card for one active student you choose.',
             'download_zip' => 'Downloads many cards as JPG files in one ZIP: every active card in a period, or the rows you tick in the table.',
@@ -399,6 +403,8 @@ return [
             'valid_until_hint' => 'Only used for students whose validity cannot be calculated. Leave empty to skip them.',
             'ready' => '{1} :count card will be issued.|[2,*] :count cards will be issued.',
             'nothing_ready' => 'No cards can be issued yet.',
+            'nothing_ready_body' => 'Every selected student was skipped — the reasons are listed below.',
+            'ready_title' => 'Ready to issue',
             'skipped' => '{1} :count student skipped|[2,*] :count students skipped',
             'without_account' => '{1} :count student has no portal account yet, so they cannot see the card.|[2,*] :count students have no portal account yet, so they cannot see their cards.',
             'issued' => '{1} :count card issued|[2,*] :count cards issued',
@@ -452,6 +458,7 @@ return [
         'empty_not_active' => 'Courses are added automatically when the student is activated.',
         'empty_active' => 'This program has no package yet. Fill it in under Course packages, then Apply package, or add courses one by one.',
         'locked' => 'The course list is locked because the program has ended. A Super Admin can reopen the active status to correct it, and can correct its grades directly.',
+        'locked_title' => 'Course list locked',
         'fields' => [
             'drop_note' => 'Reason (optional)',
         ],
@@ -654,7 +661,7 @@ return [
             'delete_hint' => 'The template download button for this document will no longer appear.',
             'delete_mou_hint' => 'Agents will download the built-in (temporary) MOU template again.',
         ],
-        'server_title' => 'The server currently accepts files up to :max.',
+        'server_title' => 'The server currently accepts files up to :max',
         'server_ok' => 'All limits below are within the server limit.',
         'server_over' => ':fields exceed the server limit — files that large are rejected by the server before reaching the app. Ask the server administrator to raise upload_max_filesize and post_max_size, or lower the limit.',
         'saved' => 'Upload limits saved',
@@ -795,4 +802,11 @@ return [
         ],
     ],
 
+    // Judul alert bersama (x-sipma.notice)
+    'notice' => [
+        'guide_title' => 'What the buttons on this page do',
+        'action_title' => 'What this action does',
+        'warning_title' => 'Check before you continue',
+        'readonly_title' => 'View only',
+    ],
 ];

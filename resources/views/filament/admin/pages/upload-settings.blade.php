@@ -1,17 +1,19 @@
 {{-- Sistem → Unggahan berkas: batas server di atas (peringatan bila ada isian melebihinya), lalu form --}}
 <x-filament-panels::page>
     @if ($server !== PHP_INT_MAX)
-        <div @class(['sipma-alert', $overServer->isNotEmpty() ? 'sipma-tone-warning' : 'sipma-tone-info']) role="status">
-            <x-filament::icon :icon="$overServer->isNotEmpty() ? 'lucide-triangle-alert' : 'lucide-server'" class="sipma-alert-icon" />
-            <div>
-                <b>{{ __('admin.uploads.server_title', ['max' => \App\Support\UploadLimits::label($server)]) }}</b>
-                @if ($overServer->isNotEmpty())
-                    {{ __('admin.uploads.server_over', ['fields' => $overServer->implode(', ')]) }}
-                @else
-                    {{ __('admin.uploads.server_ok') }}
-                @endif
-            </div>
-        </div>
+        <x-sipma.notice
+            :tone="$overServer->isNotEmpty() ? 'warning' : 'info'"
+            :icon="$overServer->isNotEmpty() ? 'lucide-triangle-alert' : 'lucide-server'"
+            :title="__('admin.uploads.server_title', ['max' => \App\Support\UploadLimits::label($server)])"
+            role="status"
+            class="sipma-page-alert"
+        >
+            @if ($overServer->isNotEmpty())
+                {{ __('admin.uploads.server_over', ['fields' => $overServer->implode(', ')]) }}
+            @else
+                {{ __('admin.uploads.server_ok') }}
+            @endif
+        </x-sipma.notice>
     @endif
 
     <x-filament-panels::form wire:submit="save">
