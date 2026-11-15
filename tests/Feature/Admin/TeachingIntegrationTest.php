@@ -140,36 +140,24 @@ class TeachingIntegrationTest extends WorkflowTestCase
         $student = $this->student($this->program, StudentStatus::LoaIssued);
 
         $this->assertTrue(TeachingRecords::forStudent($student)->isEmpty());
-
-        $this->actingAs($this->superAdmin());
-
-        Livewire::test(ViewAcademicStudent::class, ['record' => $student->getKey()])
-            ->assertSee(__('admin.teaching_decree.student.not_active'));
     }
 
-    public function test_tab_lists_the_decree_and_rubric_names_the_teacher(): void
+    public function test_rubric_names_the_teacher_without_a_decree_tab(): void
     {
         $decree = $this->decree(attributes: ['decree_number' => 'SK/TAMPIL']);
         $student = $this->enrolled();
 
         $this->actingAs($this->superAdmin());
 
+        // Tab SK Mengajar dihapus (13 November 2026): pengajar cukup tampil di Rubrik
         Livewire::test(ViewAcademicStudent::class, ['record' => $student->getKey()])
-            ->assertSee('SK/TAMPIL')
-            ->assertSee('Dr. Ayu Lestari ('.TeachingRole::Coordinator->getLabel().')');
+            ->assertSee('Dr. Ayu Lestari ('.TeachingRole::Coordinator->getLabel().')')
+            ->assertDontSee('SK/TAMPIL');
 
         $this->assertNotNull($decree->fresh());
     }
 
-    public function test_tab_shows_the_empty_hint_without_a_decree(): void
-    {
-        $this->actingAs($this->superAdmin());
-
-        Livewire::test(ViewAcademicStudent::class, ['record' => $this->enrolled()->getKey()])
-            ->assertSee(__('admin.teaching_decree.student.empty_hint'));
-    }
-
-    public function test_cross_faculty_admin_sees_names_but_no_file_link(): void
+    public function test_cross_faculty_course_names_the_teacher_but_the_file_stays_protected(): void
     {
         // MK milik fakultas lain, ditempuh mahasiswa fakultas ini
         $otherProgram = $this->program();
@@ -188,16 +176,12 @@ class TeachingIntegrationTest extends WorkflowTestCase
         $this->actingAs($admin);
 
         Livewire::test(ViewAcademicStudent::class, ['record' => $student->getKey()])
-            ->assertSee('SK/LINTAS')
             ->assertSee('Dr. Ayu Lestari')
             ->assertDontSee(htmlspecialchars($url), false);
 
         $this->get($url)->assertForbidden();
 
-        $this->actingAs($this->superAdmin());
-
-        Livewire::test(ViewAcademicStudent::class, ['record' => $student->getKey()])
-            ->assertSee(htmlspecialchars($url), false);
+        $this->actingAs($this->superAdmin())->get($url)->assertOk();
     }
 
     public function test_portal_shows_name_and_role_only(): void

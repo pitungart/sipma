@@ -196,8 +196,9 @@ class AcademicStudentsTest extends WorkflowTestCase
             ->assertSee($student->program->name)
             ->assertSee('2 November 2026')
             ->assertSee(__('admin.academic_student.account.yes'))
-            ->assertSee(__('admin.academic_student.sections.documents'))
-            ->assertSee(__('admin.academic_student.sections.payments'))
+            ->assertSee(__('admin.academic_student.tabs.documents'))
+            ->assertSee(__('admin.academic_student.documents_hint'))
+            ->assertSee(__('admin.academic_student.tabs.payments'))
             ->assertSee(__('admin.academic_student.tabs.visa'))
             ->assertSee(__('admin.academic_student.visa.none'))
             ->assertSee(__('admin.academic_student.actions.open_application'));
@@ -265,7 +266,8 @@ class AcademicStudentsTest extends WorkflowTestCase
             ->assertSee(VisaProcessStatus::InProcess->getLabel())
             ->assertSee('At immigration')
             ->assertSee(__('admin.academic_student.visa.readonly'))
-            ->assertDontSee(__('admin.academic_student.sections.documents'));
+            ->assertDontSee(__('admin.academic_student.documents_hint'))
+            ->assertDontSee(__('admin.academic_student.tabs.payments'));
 
         Livewire::test(ViewAcademicStudent::class, ['record' => $student->getRouteKey()])
             ->assertActionHidden('editVisa');

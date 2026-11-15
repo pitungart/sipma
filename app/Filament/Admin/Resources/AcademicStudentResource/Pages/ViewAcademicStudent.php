@@ -37,9 +37,10 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 /**
- * Detail Mahasiswa Asing (TP-1 F2): ringkasan tahap pasca-LOA + tab Info · Visa · KTM · Rubrik · SK Mengajar · Riwayat.
+ * Detail Mahasiswa Asing (TP-1 F2): ringkasan tahap pasca-LOA + tab Info · Dokumen · Pembayaran & LOA ·
+ * Visa · KTM · Rubrik · Riwayat. Pengajar tiap MK tampil di Rubrik (tab SK Mengajar dihapus 13 November 2026).
  *
- * Super Admin melihat dokumen, biaya, dan LOA (seperti detail Pendaftar); Admin Fakultas hanya
+ * Tab Dokumen dan Pembayaran & LOA hanya untuk Super Admin (seperti detail Pendaftar); Admin Fakultas hanya
  * data ringkas (keputusan 6 Oktober 2026). Visa diubah hanya oleh Super Admin.
  *
  * @property Student $record
@@ -87,14 +88,17 @@ class ViewAcademicStudent extends ViewRecord
      */
     public function tabs(): array
     {
-        return [
+        $verify = $this->canVerify();
+
+        return array_filter([
             'info' => __('admin.academic_student.tabs.info'),
+            'documents' => $verify ? __('admin.academic_student.tabs.documents') : null,
+            'payments' => $verify ? __('admin.academic_student.tabs.payments') : null,
             'visa' => __('admin.academic_student.tabs.visa'),
             'card' => __('admin.academic_student.tabs.card'),
             'rubric' => __('admin.academic_student.tabs.rubric'),
-            'decrees' => __('admin.academic_student.tabs.decrees'),
             'history' => __('admin.academic_student.tabs.history'),
-        ];
+        ]);
     }
 
     protected function getHeaderActions(): array
@@ -488,8 +492,7 @@ class ViewAcademicStudent extends ViewRecord
             'canManageCards' => Gate::allows('create', StudentCard::class),
             'courses' => $courses = StudentCourse::inPackageOrder($student->studentCourses()->with('course.program')->get()),
             'courseSummary' => AcademicSummary::from($courses),
-            'teaching' => $teaching = TeachingRecords::forStudent($student),
-            'teachers' => TeachingRecords::teachersByCourse($teaching),
+            'teachers' => TeachingRecords::teachersByCourse(TeachingRecords::forStudent($student)),
             'canManageCourses' => $this->canManageCourses(),
             'history' => ActivityDescriber::forStudent($student),
         ];
